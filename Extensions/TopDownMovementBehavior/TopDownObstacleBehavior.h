@@ -1,12 +1,12 @@
 /**
 
-GDevelop - Top-down movement Behavior Extension
-Copyright (c) 2010-present Florian Rival (Florian.Rival@gmail.com)
+GDevelop - Platform Behavior Extension
+Copyright (c) 2013-2016 Florian Rival (Florian.Rival@gmail.com)
 This project is released under the MIT License.
 */
 
-#ifndef TOPDOWNMOVEMENTBEHAVIOR_H
-#define TOPDOWNMOVEMENTBEHAVIOR_H
+#ifndef TOPDOWNOBSTACLEBEHAVIOR_H
+#define TOPDOWNOBSTACLEBEHAVIOR_H
 #include <map>
 #include "GDCore/Project/Behavior.h"
 #include "GDCore/Project/Object.h"
@@ -15,13 +15,16 @@ class SerializerElement;
 }  // namespace gd
 
 /**
- * \brief Allow to move an object in 4 or 8 directions.
+ * \brief Behavior that mark object as being a platform for objects using
+ * PlatformerObject behavior.
  */
-class GD_EXTENSION_API TopDownMovementBehavior : public gd::Behavior {
+class GD_EXTENSION_API TopDownObstacleBehavior : public gd::Behavior {
  public:
-  TopDownMovementBehavior(){};
-  virtual ~TopDownMovementBehavior(){};
-  virtual Behavior* Clone() const override { return new TopDownMovementBehavior(*this); }
+  TopDownObstacleBehavior(){};
+  virtual ~TopDownObstacleBehavior(){};
+  virtual Behavior* Clone() const override {
+    return new TopDownObstacleBehavior(*this);
+  }
 
 #if defined(GD_IDE_ONLY)
   virtual std::map<gd::String, gd::PropertyDescriptor> GetProperties(
@@ -30,12 +33,10 @@ class GD_EXTENSION_API TopDownMovementBehavior : public gd::Behavior {
                               const gd::String& name,
                               const gd::String& value) override;
 #endif
-  /**
-   * \brief Serialize the behavior
-   */
   virtual void InitializeContent(
       gd::SerializerElement& behaviorContent) override;
 
  private:
 };
-#endif  // TOPDOWNMOVEMENTBEHAVIOR_H
+
+#endif  // PLATFORMBEHAVIOR_H

@@ -10,6 +10,8 @@ This project is released under the MIT License.
 #include "GDCore/Project/BehaviorsSharedData.h"
 #include "GDCore/Tools/Localization.h"
 #include "TopDownMovementBehavior.h"
+#include "TopDownObstacleBehavior.h"
+//#include "TopDownObstacleRuntimeBehavior.h" no native implementation
 
 void DeclareTopDownMovementBehaviorExtension(gd::PlatformExtension& extension) {
   extension
@@ -25,6 +27,7 @@ void DeclareTopDownMovementBehaviorExtension(gd::PlatformExtension& extension) {
   extension.AddInstructionOrExpressionGroupMetadata(_("Top-down movement"))
       .SetIcon("CppPlatform/Extensions/topdownmovementicon16.png");
 
+  {
   gd::BehaviorMetadata& aut = extension.AddBehavior(
       "TopDownMovementBehavior",
       _("Top-down movement (4 or 8 directions)"),
@@ -441,7 +444,7 @@ void DeclareTopDownMovementBehaviorExtension(gd::PlatformExtension& extension) {
 
   aut.AddAction("AllowDiagonals",
                 _("Diagonal movement"),
-                _("Allow or restrict diagonal movemment"),
+                _("Allow or restrict diagonal movement"),
                 _("Allow diagonal moves for _PARAM0_: _PARAM2_"),
                 _("Movement"),
                 "CppPlatform/Extensions/topdownmovementicon24.png",
@@ -584,5 +587,49 @@ void DeclareTopDownMovementBehaviorExtension(gd::PlatformExtension& extension) {
           "number",
           gd::ParameterOptions::MakeNewOptions().SetDescription(
               _("Angle (in degrees)")));
+
+  //TODO can use AddExpressionAndConditionAndAction?
+  aut.AddAction("EnableAssistance",
+                _("Enable obstacles bypass assistance"),
+                _("Enable or disable obstacles bypass assistance"),
+                _("Enable obstacles bypass assistance _PARAM0_: _PARAM2_"),
+                _("Movement"),
+                "CppPlatform/Extensions/topdownmovementicon24.png",
+                "CppPlatform/Extensions/topdownmovementicon16.png")
+      .AddParameter("object", _("Object"))
+      .AddParameter("behavior", _("Behavior"), "TopDownMovementBehavior")
+      .AddParameter("yesorno", _("Enable?"))
+      .SetFunctionName("EnableAssistance")
+      .SetIncludeFile(
+          "TopDownMovementBehavior/TopDownMovementRuntimeBehavior.h");
+
+  aut.AddCondition("IsAssistanceEnable",
+                   _("Obstacles bypass assistance activation"),
+                   _("Check if the object is assisted to bypass obstacles"),
+                   _("_PARAM0_ is assisted to bypass obstacles"),
+                   _("Movement"),
+                   "CppPlatform/Extensions/topdownmovementicon24.png",
+                   "CppPlatform/Extensions/topdownmovementicon16.png")
+      .AddParameter("object", _("Object"))
+      .AddParameter("behavior", _("Behavior"), "TopDownMovementBehavior")
+      .MarkAsAdvanced()
+      .SetFunctionName("IsAssistanceEnable")
+      .SetIncludeFile(
+          "TopDownMovementBehavior/TopDownMovementRuntimeBehavior.h");
+
 #endif
+  }
+  {
+    gd::BehaviorMetadata& aut = extension.AddBehavior(
+        "TopDownObstacleBehavior",
+        _("Obstacle for Top-down movement"),
+        "TopDownObstacle",
+        _("Make the player slide on its corners."),
+        "",
+        "CppPlatform/Extensions/topdownmovementicon.png",
+        "TopDownObstacleBehavior",
+        std::make_shared<TopDownObstacleBehavior>(),
+        std::make_shared<gd::BehaviorsSharedData>());
+    aut.SetIncludeFile("TopDownMovementBehavior/TopDownObstacleRuntimeBehavior.h");
+  }
 }
