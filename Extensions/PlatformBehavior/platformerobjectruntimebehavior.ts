@@ -1869,11 +1869,6 @@ namespace gdjs {
     beforeMovingY(timeDelta: float, oldX: float) {
       const behavior = this._behavior;
 
-      //Fall
-      if (!this._jumpingFirstDelta || !this._behavior._useLegacyTrajectory) {
-        behavior._fall(timeDelta);
-      }
-
       // Check if the jump key is continuously held since
       // the beginning of the jump.
       if (!behavior._jumpKey) {
@@ -1882,6 +1877,11 @@ namespace gdjs {
       this._timeSinceCurrentJumpStart += timeDelta;
 
       if (this._behavior._useLegacyTrajectory) {
+        //Fall
+        if (!this._jumpingFirstDelta || !this._behavior._useLegacyTrajectory) {
+          behavior._fall(timeDelta);
+        }
+
         const previousJumpSpeed = this._currentJumpSpeed;
         // Decrease jump speed after the (optional) jump sustain time is over.
         const sustainJumpSpeed =
@@ -1893,33 +1893,53 @@ namespace gdjs {
 
         behavior._requestedDeltaY -= previousJumpSpeed * timeDelta;
       } else {
-        const previousJumpSpeed = this._currentJumpSpeed;
-        let currentJumpSpeed = this._currentJumpSpeed;
         // Decrease jump speed after the (optional) jump sustain time is over.
         const sustainJumpSpeed =
           this._jumpKeyHeldSinceJumpStart &&
           this._timeSinceCurrentJumpStart < behavior._jumpSustainTime;
 
-          if (this._jumpingFirstDelta) {
-            const previousAcceleration = 0;
-            const currentAcceleration = -behavior._jumpSpeed;
-  
-            currentJumpSpeed = -(previousAcceleration + currentAcceleration) * timeDelta / 2;
-          }
-          if (this._jumpingSecondDelta) {
-            const previousAcceleration = -behavior._jumpSpeed;
-            const currentAcceleration = 0;
-  
-            currentJumpSpeed += -(previousAcceleration + currentAcceleration) * timeDelta / 2;
-          }
+        if (this._jumpingFirstDelta) {
+          const speed = 0;
+          const acceleration = -behavior._jumpSpeed / timeDelta + behavior._gravity;
 
-        if (!sustainJumpSpeed) {
-          this._currentJumpSpeed -= behavior._gravity * timeDelta;
-          currentJumpSpeed -= behavior._gravity * timeDelta;
+          behavior._requestedDeltaY += speed * timeDelta + acceleration * timeDelta * timeDelta / 2;
+          // new_acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)
+          // new_speed = speed + (acceleration                                         + new_acceleration                                              ) * timeDelta / 2
+          // new_speed =     0 + (-behavior._jumpSpeed / timeDelta + behavior._gravity + behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)) * timeDelta / 2
+        }
+        if (this._jumpingSecondDelta) {
+          const speed = 0 + (-behavior._jumpSpeed / timeDelta + behavior._gravity + behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)) * timeDelta / 2;
+          const acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity);
+
+          behavior._requestedDeltaY += speed * timeDelta + acceleration * timeDelta * timeDelta / 2;
+          // new_acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)
+          // new_speed = speed + (acceleration + new_acceleration) * timeDelta / 2
+        }
+        // else if (this._jumpingThirdDelta) {
+        //   const oldSpeed = 0 + (-behavior._jumpSpeed + behavior._gravity * timeDelta) / 2;
+        //   const acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity);
+        //   const speed = oldSpeed + acceleration * timeDelta;
+
+        //   behavior._requestedDeltaY += speed * timeDelta + acceleration * timeDelta * timeDelta / 2;
+        //   // new_acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)
+        //   // new_speed = speed + (acceleration + new_acceleration) * timeDelta / 2
+        // }
+        else {
+
+        //Fall
+        if (!this._jumpingFirstDelta || !this._behavior._useLegacyTrajectory) {
+          behavior._fall(timeDelta);
         }
 
+        const previousJumpSpeed = this._currentJumpSpeed;
+
+          if (!sustainJumpSpeed) {
+            this._currentJumpSpeed -= behavior._gravity * timeDelta;
+          }
+
         behavior._requestedDeltaY +=
-          ((-currentJumpSpeed - previousJumpSpeed) * timeDelta) / 2;
+          ((-this._currentJumpSpeed - previousJumpSpeed) * timeDelta) / 2;
+        }
       }
 
       this._jumpingSecondDelta = this._jumpingFirstDelta;
