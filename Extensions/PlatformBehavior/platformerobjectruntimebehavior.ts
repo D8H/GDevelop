@@ -1899,21 +1899,29 @@ namespace gdjs {
           this._timeSinceCurrentJumpStart < behavior._jumpSustainTime;
 
         if (this._jumpingFirstDelta) {
-          const speed = 0;
-          const acceleration = -behavior._jumpSpeed / timeDelta + behavior._gravity;
+          const halfTimeDelta = timeDelta;
+          {
+            this._currentJumpSpeed = 0;
+            const acceleration = 0;
+            const newAcceleration = -behavior._jumpSpeed / halfTimeDelta;
 
-          behavior._requestedDeltaY += speed * timeDelta + acceleration * timeDelta * timeDelta / 2;
-          // new_acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)
-          // new_speed = speed + (acceleration                                         + new_acceleration                                              ) * timeDelta / 2
-          // new_speed =     0 + (-behavior._jumpSpeed / timeDelta + behavior._gravity + behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)) * timeDelta / 2
+            behavior._requestedDeltaY += -this._currentJumpSpeed * halfTimeDelta + acceleration * halfTimeDelta * halfTimeDelta / 2;
+            this._currentJumpSpeed = -(acceleration + newAcceleration) * halfTimeDelta / 2;
+          }
+          {
+            const acceleration = -behavior._jumpSpeed / halfTimeDelta;
+            const newAcceleration = (sustainJumpSpeed ? 0 : behavior._gravity);
+
+            behavior._requestedDeltaY += -this._currentJumpSpeed * halfTimeDelta + acceleration * halfTimeDelta * halfTimeDelta / 2;
+            this._currentJumpSpeed += -(acceleration + newAcceleration) * halfTimeDelta / 2;
+          }
         }
-        if (this._jumpingSecondDelta) {
-          const speed = 0 + (-behavior._jumpSpeed / timeDelta + behavior._gravity + behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)) * timeDelta / 2;
-          const acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity);
+        else if (true || this._jumpingSecondDelta) {
+          const acceleration = (sustainJumpSpeed ? 0 : behavior._gravity);
+          const newAcceleration = (sustainJumpSpeed ? 0 : behavior._gravity);
 
-          behavior._requestedDeltaY += speed * timeDelta + acceleration * timeDelta * timeDelta / 2;
-          // new_acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)
-          // new_speed = speed + (acceleration + new_acceleration) * timeDelta / 2
+          behavior._requestedDeltaY += -this._currentJumpSpeed * timeDelta + acceleration * timeDelta * timeDelta / 2;
+          this._currentJumpSpeed += -(acceleration + newAcceleration) * timeDelta / 2;
         }
         // else if (this._jumpingThirdDelta) {
         //   const oldSpeed = 0 + (-behavior._jumpSpeed + behavior._gravity * timeDelta) / 2;
@@ -1928,7 +1936,7 @@ namespace gdjs {
 
         //Fall
         if (!this._jumpingFirstDelta || !this._behavior._useLegacyTrajectory) {
-          behavior._fall(timeDelta);
+          //behavior._fall(timeDelta);
         }
 
         const previousJumpSpeed = this._currentJumpSpeed;
