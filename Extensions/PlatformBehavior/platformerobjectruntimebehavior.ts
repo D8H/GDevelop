@@ -105,7 +105,6 @@ namespace gdjs {
     private _hasReallyMoved: boolean = false;
     private _manager: gdjs.PlatformObjectsManager;
 
-
     constructor(
       runtimeScene: gdjs.RuntimeScene,
       behaviorData,
@@ -125,7 +124,7 @@ namespace gdjs {
       this._jumpSustainTime = behaviorData.jumpSustainTime || 0;
       this._ignoreDefaultControls = behaviorData.ignoreDefaultControls;
       this._useLegacyTrajectory = behaviorData.useLegacyTrajectory;
-      console.log("useLegacyTrajectory:" + this._useLegacyTrajectory);
+      console.log('useLegacyTrajectory:' + this._useLegacyTrajectory);
       this._slopeMaxAngle = 0;
       this.setSlopeMaxAngle(behaviorData.slopeMaxAngle);
 
@@ -293,7 +292,15 @@ namespace gdjs {
         Math.abs(object.getY() - oldY) >= 1;
       this._lastDeltaY = object.getY() - oldY;
 
-      console.log(this._state + " " + object.getX() + " " + object.getY() + "\tJump: " + this._jumping._currentJumpSpeed);
+      console.log(
+        this._state +
+          ' ' +
+          object.getX() +
+          ' ' +
+          object.getY() +
+          '\tJump: ' +
+          this._jumping._currentJumpSpeed
+      );
     }
 
     doStepPostEvents(runtimeScene: gdjs.RuntimeScene) {}
@@ -1815,7 +1822,6 @@ namespace gdjs {
     private _timeSinceCurrentJumpStart: number = 0;
     private _jumpKeyHeldSinceJumpStart: boolean = false;
     private _jumpingFirstDelta: boolean = false;
-    private _jumpingSecondDelta: boolean = false;
 
     constructor(behavior: PlatformerObjectRuntimeBehavior) {
       this._behavior = behavior;
@@ -1876,81 +1882,29 @@ namespace gdjs {
       }
       this._timeSinceCurrentJumpStart += timeDelta;
 
-        //Fall
-        if (!this._jumpingFirstDelta || !this._behavior._useLegacyTrajectory) {
-          behavior._fall(timeDelta);
-        }
-
-      if (this._behavior._useLegacyTrajectory) {
-        const previousJumpSpeed = this._currentJumpSpeed;
-        // Decrease jump speed after the (optional) jump sustain time is over.
-        const sustainJumpSpeed = 
-          this._jumpKeyHeldSinceJumpStart &&
-          this._timeSinceCurrentJumpStart < behavior._jumpSustainTime;
-        if (!sustainJumpSpeed) {
-          this._currentJumpSpeed -= behavior._gravity * timeDelta;
-        }
-
-        behavior._requestedDeltaY -= previousJumpSpeed * timeDelta;
-      } else {
-        // Decrease jump speed after the (optional) jump sustain time is over.
-        const sustainJumpSpeed = 
-          this._jumpKeyHeldSinceJumpStart &&
-          this._timeSinceCurrentJumpStart < behavior._jumpSustainTime;
-
-        if (false && this._jumpingFirstDelta) {
-          const halfTimeDelta = timeDelta;
-          {
-            this._currentJumpSpeed = 0;
-            const acceleration = 0;
-            const newAcceleration = -behavior._jumpSpeed / halfTimeDelta;
-
-            behavior._requestedDeltaY += -this._currentJumpSpeed * halfTimeDelta + acceleration * halfTimeDelta * halfTimeDelta / 2;
-            this._currentJumpSpeed = -(acceleration + newAcceleration) * halfTimeDelta / 2;
-          }
-          {
-            const acceleration = -behavior._jumpSpeed / halfTimeDelta;
-            const newAcceleration = (sustainJumpSpeed ? 0 : behavior._gravity);
-
-            behavior._requestedDeltaY += -this._currentJumpSpeed * halfTimeDelta + acceleration * halfTimeDelta * halfTimeDelta / 2;
-            this._currentJumpSpeed += -(acceleration + newAcceleration) * halfTimeDelta / 2;
-          }
-        }
-        else if (true || this._jumpingSecondDelta) {
-          const acceleration = (sustainJumpSpeed ? 0 : behavior._gravity);
-          const newAcceleration = (sustainJumpSpeed ? 0 : behavior._gravity);
-
-          behavior._requestedDeltaY += -this._currentJumpSpeed * timeDelta + acceleration * timeDelta * timeDelta / 2;
-          this._currentJumpSpeed += -(acceleration + newAcceleration) * timeDelta / 2;
-        }
-        // else if (this._jumpingThirdDelta) {
-        //   const oldSpeed = 0 + (-behavior._jumpSpeed + behavior._gravity * timeDelta) / 2;
-        //   const acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity);
-        //   const speed = oldSpeed + acceleration * timeDelta;
-
-        //   behavior._requestedDeltaY += speed * timeDelta + acceleration * timeDelta * timeDelta / 2;
-        //   // new_acceleration = behavior._gravity + (sustainJumpSpeed ? 0 : behavior._gravity)
-        //   // new_speed = speed + (acceleration + new_acceleration) * timeDelta / 2
-        // }
-        else {
-
-        //Fall
-        if (!this._jumpingFirstDelta || !this._behavior._useLegacyTrajectory) {
-          //behavior._fall(timeDelta);
-        }
-
-        const previousJumpSpeed = this._currentJumpSpeed;
-
-          if (!sustainJumpSpeed) {
-            this._currentJumpSpeed -= behavior._gravity * timeDelta;
-          }
-
-        behavior._requestedDeltaY +=
-          ((-this._currentJumpSpeed - previousJumpSpeed) * timeDelta) / 2;
-        }
+      const previousJumpSpeed = this._currentJumpSpeed;
+      // Decrease jump speed after the (optional) jump sustain time is over.
+      const sustainJumpSpeed =
+        this._jumpKeyHeldSinceJumpStart &&
+        this._timeSinceCurrentJumpStart < behavior._jumpSustainTime;
+      if (!sustainJumpSpeed) {
+        this._currentJumpSpeed -= behavior._gravity * timeDelta;
       }
 
-      this._jumpingSecondDelta = this._jumpingFirstDelta;
+      if (this._behavior._useLegacyTrajectory) {
+        behavior._requestedDeltaY -= previousJumpSpeed * timeDelta;
+
+        //Fall
+        if (!this._jumpingFirstDelta) {
+          behavior._fall(timeDelta);
+        }
+      } else {
+        behavior._requestedDeltaY +=
+          ((-previousJumpSpeed - this._currentJumpSpeed) * timeDelta) / 2;
+
+        //Fall
+        behavior._fall(timeDelta);
+      }
       this._jumpingFirstDelta = false;
 
       if (this._currentJumpSpeed < 0) {
