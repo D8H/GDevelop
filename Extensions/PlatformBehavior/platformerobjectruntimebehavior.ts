@@ -293,7 +293,7 @@ namespace gdjs {
         Math.abs(object.getY() - oldY) >= 1;
       this._lastDeltaY = object.getY() - oldY;
 
-      console.log(this._state + " " + object.getX() + " " + object.getY());
+      console.log(this._state + " " + object.getX() + " " + object.getY() + "\tJump: " + this._jumping._currentJumpSpeed);
     }
 
     doStepPostEvents(runtimeScene: gdjs.RuntimeScene) {}
@@ -1876,15 +1876,15 @@ namespace gdjs {
       }
       this._timeSinceCurrentJumpStart += timeDelta;
 
-      if (this._behavior._useLegacyTrajectory) {
         //Fall
         if (!this._jumpingFirstDelta || !this._behavior._useLegacyTrajectory) {
           behavior._fall(timeDelta);
         }
 
+      if (this._behavior._useLegacyTrajectory) {
         const previousJumpSpeed = this._currentJumpSpeed;
         // Decrease jump speed after the (optional) jump sustain time is over.
-        const sustainJumpSpeed =
+        const sustainJumpSpeed = 
           this._jumpKeyHeldSinceJumpStart &&
           this._timeSinceCurrentJumpStart < behavior._jumpSustainTime;
         if (!sustainJumpSpeed) {
@@ -1894,11 +1894,11 @@ namespace gdjs {
         behavior._requestedDeltaY -= previousJumpSpeed * timeDelta;
       } else {
         // Decrease jump speed after the (optional) jump sustain time is over.
-        const sustainJumpSpeed =
+        const sustainJumpSpeed = 
           this._jumpKeyHeldSinceJumpStart &&
           this._timeSinceCurrentJumpStart < behavior._jumpSustainTime;
 
-        if (this._jumpingFirstDelta) {
+        if (false && this._jumpingFirstDelta) {
           const halfTimeDelta = timeDelta;
           {
             this._currentJumpSpeed = 0;

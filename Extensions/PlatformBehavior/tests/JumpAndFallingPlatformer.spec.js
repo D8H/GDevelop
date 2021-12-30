@@ -1,4 +1,5 @@
 describe('gdjs.PlatformerObjectRuntimeBehavior', function () {
+  const epsilon = 1 / (2 << 8);
   describe('(falling)', function () {
     let runtimeScene;
     let object;
@@ -171,9 +172,14 @@ describe('gdjs.PlatformerObjectRuntimeBehavior', function () {
         );
         expect(object.getBehavior('auto1').isMoving()).to.be(false);
 
+        // Jump with sustaining 1/10 of second
+        for (let i = 0; i < framesPerSecond / 10; ++i) {
+          object.getBehavior('auto1').simulateJumpKey();
+          runtimeScene.renderAndStep(1000 / framesPerSecond);
+        }
+
         // Jump without sustaining
-        object.getBehavior('auto1').simulateJumpKey();
-        for (let i = 0; i < 500 + (framesPerSecond * 3) / 10; ++i) {
+        for (let i = 0; i < framesPerSecond * 2.5 / 10 - 1; ++i) {
           runtimeScene.renderAndStep(1000 / framesPerSecond);
           expect(object.getBehavior('auto1').isJumping()).to.be(true);
           expect(object.getBehavior('auto1').isFalling()).to.be(false);
@@ -183,14 +189,17 @@ describe('gdjs.PlatformerObjectRuntimeBehavior', function () {
         }
 
         // Check that we reached the maximum height
-        expect(object.getY()).to.be.within(-172.4, -172);
-        runtimeScene.renderAndStep(1000 / 60);
-        expect(object.getY()).to.be(-172.5);
-        runtimeScene.renderAndStep(1000 / 60);
-        expect(object.getY()).to.be.within(-172.4, -172);
+        expect(object.getY()).to.be.above(-206.25);
+        // At 30 fps, the maximum value is between 2 frames.
+        if (framesPerSecond !== 30) {
+          runtimeScene.renderAndStep(1000 / framesPerSecond);
+          expect(object.getY()).to.be.within(-206.25 - epsilon, -206.25 + epsilon);
+        }
+        runtimeScene.renderAndStep(1000 / framesPerSecond);
+        expect(object.getY()).to.be.above(-206.25);
 
         // Then let the object fall
-        for (let i = 0; i < (framesPerSecond * 7) / 24; ++i) {
+        for (let i = 0; i < framesPerSecond / 3 - 2; ++i) {
           runtimeScene.renderAndStep(1000 / framesPerSecond);
           expect(object.getBehavior('auto1').isJumping()).to.be(true);
           expect(object.getBehavior('auto1').isFalling()).to.be(true);
@@ -198,6 +207,11 @@ describe('gdjs.PlatformerObjectRuntimeBehavior', function () {
             false
           );
         }
+        // The landing happens 1 or 2 frames sooner for some fps.
+        // This is expected as a collision is involved.
+        runtimeScene.renderAndStep(1000 / framesPerSecond);
+        runtimeScene.renderAndStep(1000 / framesPerSecond);
+
         runtimeScene.renderAndStep(1000 / framesPerSecond);
         expect(object.getBehavior('auto1').isFalling()).to.be(false);
         expect(object.getBehavior('auto1').isFallingWithoutJumping()).to.be(
