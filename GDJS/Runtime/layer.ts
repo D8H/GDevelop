@@ -22,6 +22,11 @@ namespace gdjs {
     _cachedGameResolutionWidth: integer;
     _cachedGameResolutionHeight: integer;
 
+    _transformation: gdjs.AffineTransformation | null = null;
+    _invertedTransformation: gdjs.AffineTransformation | null = null;
+    _transformationDirty: boolean = true;
+    _invertedTransformationDirty: boolean = true;
+
     _runtimeScene: gdjs.RuntimeScene;
     _effectsManager: gdjs.EffectsManager;
 
@@ -32,6 +37,8 @@ namespace gdjs {
 
     _rendererEffects: Record<string, PixiFiltersTools.Filter> = {};
     _renderer: LayerRenderer;
+
+    private static readonly pointForTransformation: FloatPoint = [0, 0];
 
     /**
      * @param layerData The data used to initialize the layer
@@ -111,6 +118,8 @@ namespace gdjs {
         (this._cachedGameResolutionWidth - oldGameResolutionWidth) / 2;
       this._cameraY +=
         (this._cachedGameResolutionHeight - oldGameResolutionHeight) / 2;
+      this._transformationDirty = true;
+      this._invertedTransformationDirty = true;
       this._renderer.updatePosition();
     }
 
@@ -169,6 +178,8 @@ namespace gdjs {
      */
     setCameraX(x: float, cameraId?: integer): void {
       this._cameraX = x;
+      this._transformationDirty = true;
+      this._invertedTransformationDirty = true;
       this._renderer.updatePosition();
     }
 
@@ -180,6 +191,8 @@ namespace gdjs {
      */
     setCameraY(y: float, cameraId?: integer): void {
       this._cameraY = y;
+      this._transformationDirty = true;
+      this._invertedTransformationDirty = true;
       this._renderer.updatePosition();
     }
 
@@ -231,6 +244,8 @@ namespace gdjs {
      */
     setCameraZoom(newZoom: float, cameraId?: integer): void {
       this._zoomFactor = newZoom;
+      this._transformationDirty = true;
+      this._invertedTransformationDirty = true;
       this._renderer.updatePosition();
     }
 
@@ -263,6 +278,8 @@ namespace gdjs {
      */
     setCameraRotation(rotation: float, cameraId?: integer): void {
       this._cameraRotation = rotation;
+      this._transformationDirty = true;
+      this._invertedTransformationDirty = true;
       this._renderer.updatePosition();
     }
 
@@ -270,45 +287,107 @@ namespace gdjs {
      * Convert a point from the canvas coordinates (For example, the mouse position) to the
      * "world" coordinates.
      *
-     * TODO: Update this method to store the result in a static array
-     *
      * @param x The x position, in canvas coordinates.
      * @param y The y position, in canvas coordinates.
      * @param cameraId The camera number. Currently ignored.
      */
     convertCoords(x: float, y: float, cameraId?: integer): FloatPoint {
-      x -= this._cachedGameResolutionWidth / 2;
-      y -= this._cachedGameResolutionHeight / 2;
-      x /= Math.abs(this._zoomFactor);
-      y /= Math.abs(this._zoomFactor);
-
-      // Only compute angle and cos/sin once (allow heavy optimization from JS engines).
-      const angleInRadians = (this._cameraRotation / 180) * Math.PI;
-      const tmp = x;
-      const cosValue = Math.cos(angleInRadians);
-      const sinValue = Math.sin(angleInRadians);
-      x = cosValue * x - sinValue * y;
-      y = sinValue * tmp + cosValue * y;
-      return [x + this.getCameraX(cameraId), y + this.getCameraY(cameraId)];
+      const result: FloatPoint = Layer.pointForTransformation;
+      const onlyNeedTranslation =
+        this._cameraRotation === 0 && this._zoomFactor === 1;
+      if (onlyNeedTranslation) {
+        // It's faster than applying a whole affine transformation.
+        // And it avoid to instantiate this._affineTransformation
+        // if it's never needed.
+        result[0] = x - this._cachedGameResolutionWidth / 2 + this.getCameraX(cameraId);
+        result[1] = y - this._cachedGameResolutionHeight / 2 + this.getCameraY(cameraId);
+      } else {
+        result[0] = x;
+        result[1] = y;
+        this.getAffineTransformation().transform(result, result);
+      }
+      return result;
     }
 
     convertInverseCoords(x: float, y: float, cameraId?: integer): FloatPoint {
-      x -= this.getCameraX(cameraId);
-      y -= this.getCameraY(cameraId);
+      const result: FloatPoint = Layer.pointForTransformation;
+      const onlyNeedTranslation =
+        this._cameraRotation === 0 && this._zoomFactor === 1;
+      if (onlyNeedTranslation) {
+        // It's faster than applying a whole affine transformation.
+        // And it avoid to instantiate this._affineTransformation
+        // if it's never needed.
+        result[0] = x - this.getCameraX(cameraId) + this._cachedGameResolutionWidth / 2;
+        result[1] = y - this.getCameraY(cameraId) + this._cachedGameResolutionHeight / 2;
+      } else {
+        result[0] = x;
+        result[1] = y;
+        this.getInvertedAffineTransformation().transform(result, result);
+      }
+      return result;
+    }
 
-      // Only compute angle and cos/sin once (allow heavy optimization from JS engines).
-      const angleInRadians = (this._cameraRotation / 180) * Math.PI;
-      const tmp = x;
-      const cosValue = Math.cos(-angleInRadians);
-      const sinValue = Math.sin(-angleInRadians);
-      x = cosValue * x - sinValue * y;
-      y = sinValue * tmp + cosValue * y;
-      x *= Math.abs(this._zoomFactor);
-      y *= Math.abs(this._zoomFactor);
-      return [
-        x + this._cachedGameResolutionWidth / 2,
-        y + this._cachedGameResolutionHeight / 2,
-      ];
+    /**
+     * Return the affine transformation that converts a point
+     * from the canvas coordinates (For example, the mouse position)
+     * to the "world" coordinates.
+     * @returns the affine transformation.
+     */
+    getAffineTransformation(cameraId?: integer): gdjs.AffineTransformation {
+      if (!this._transformation) {
+        this._transformation = new gdjs.AffineTransformation();
+      }
+      if (!this._invertedTransformation) {
+        this._invertedTransformation = new gdjs.AffineTransformation();
+      }
+      if (!this._transformationDirty) {
+        return this._transformation;
+      }
+
+      // Translation
+      this._transformation.setToTranslation(
+        this.getCameraX(cameraId),
+        this.getCameraY(cameraId)
+      );
+
+      // Rotation
+      const angleInRadians = (this._cameraRotation * Math.PI) / 180;
+      this._transformation.rotate(angleInRadians);
+
+      // Scale
+      const scale = 1 / Math.abs(this._zoomFactor);
+      this._transformation.scale(scale, scale);
+      this._transformation.translate(
+        -this._cachedGameResolutionWidth / 2,
+        -this._cachedGameResolutionHeight / 2
+      );
+
+      this._transformationDirty = false;
+
+      return this._transformation;
+    }
+
+    /**
+     * Return the affine transformation that converts a point
+     * from the "world" coordinates
+     * to the canvas coordinates (For example, the mouse position).
+     * @returns the affine transformation.
+     */
+    getInvertedAffineTransformation(
+      cameraId?: integer
+    ): gdjs.AffineTransformation {
+      if (!this._invertedTransformation) {
+        this._invertedTransformation = new gdjs.AffineTransformation();
+      }
+      if (!this._invertedTransformationDirty) {
+        return this._invertedTransformation;
+      }
+      
+      this._invertedTransformation.copyFrom(this.getAffineTransformation(cameraId));
+      this._invertedTransformation.invert();
+      this._invertedTransformationDirty = false;
+
+      return this._invertedTransformation;
     }
 
     getWidth(): float {
