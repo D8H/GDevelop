@@ -293,37 +293,37 @@ namespace gdjs {
      */
     convertCoords(x: float, y: float, cameraId?: integer): FloatPoint {
       const result: FloatPoint = Layer.pointForTransformation;
-      const onlyNeedTranslation =
-        this._cameraRotation === 0 && this._zoomFactor === 1;
-      if (onlyNeedTranslation) {
-        // It's faster than applying a whole affine transformation.
-        // And it avoid to instantiate this._affineTransformation
-        // if it's never needed.
-        result[0] = x - this._cachedGameResolutionWidth / 2 + this.getCameraX(cameraId);
-        result[1] = y - this._cachedGameResolutionHeight / 2 + this.getCameraY(cameraId);
-      } else {
+      // const onlyNeedTranslation =
+      //   this._cameraRotation === 0 && this._zoomFactor === 1;
+      // if (onlyNeedTranslation) {
+      //   // It's faster than applying a whole affine transformation.
+      //   // And it avoid to instantiate this._affineTransformation
+      //   // if it's never needed.
+      //   result[0] = x - this._cachedGameResolutionWidth / 2 + this.getCameraX(cameraId);
+      //   result[1] = y - this._cachedGameResolutionHeight / 2 + this.getCameraY(cameraId);
+      // } else {
         result[0] = x;
         result[1] = y;
         this.getAffineTransformation().transform(result, result);
-      }
+      // }
       return result;
     }
 
     convertInverseCoords(x: float, y: float, cameraId?: integer): FloatPoint {
       const result: FloatPoint = Layer.pointForTransformation;
-      const onlyNeedTranslation =
-        this._cameraRotation === 0 && this._zoomFactor === 1;
-      if (onlyNeedTranslation) {
-        // It's faster than applying a whole affine transformation.
-        // And it avoid to instantiate this._affineTransformation
-        // if it's never needed.
-        result[0] = x - this.getCameraX(cameraId) + this._cachedGameResolutionWidth / 2;
-        result[1] = y - this.getCameraY(cameraId) + this._cachedGameResolutionHeight / 2;
-      } else {
+      // const onlyNeedTranslation =
+      //   this._cameraRotation === 0 && this._zoomFactor === 1;
+      // if (onlyNeedTranslation) {
+      //   // It's faster than applying a whole affine transformation.
+      //   // And it avoid to instantiate this._affineTransformation
+      //   // if it's never needed.
+      //   result[0] = x - this.getCameraX(cameraId) + this._cachedGameResolutionWidth / 2;
+      //   result[1] = y - this.getCameraY(cameraId) + this._cachedGameResolutionHeight / 2;
+      // } else {
         result[0] = x;
         result[1] = y;
         this.getInvertedAffineTransformation().transform(result, result);
-      }
+      // }
       return result;
     }
 
