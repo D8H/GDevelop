@@ -4,8 +4,7 @@ import { t } from '@lingui/macro';
 import React, { Component } from 'react';
 import { type ParameterInlineRendererProps } from './ParameterInlineRenderer.flow';
 import { type ParameterFieldProps } from './ParameterFieldCommons';
-import SelectField from '../../UI/SelectField';
-import SelectOption from '../../UI/SelectOption';
+import RadioButtonGroup from '../../UI/RadioButtonGroup';
 
 const operatorLabels = {
   '=': t`= (equal to)`,
@@ -16,10 +15,19 @@ const operatorLabels = {
   '!=': t`≠ (not equal to)`,
 };
 
+const operatorSymbols = {
+  '=': t`=`,
+  '<': t`<`,
+  '>': t`>`,
+  '<=': t`≤`,
+  '>=': t`≥`,
+  '!=': t`≠`,
+};
+
 const mapTypeToOperators: { [string]: Array<string> } = {
   unknown: Object.keys(operatorLabels),
-  number: ['=', '<', '>', '<=', '>=', '!='],
-  time: ['<', '>', '<=', '>='],
+  number: ['=', '!=', '<', '<=', '>=', '>'],
+  time: ['<', '<=', '>=', '>'],
   string: ['=', '!='],
   color: ['=', '!='],
 };
@@ -43,26 +51,18 @@ export default class RelationalOperatorField extends Component<ParameterFieldPro
       mapTypeToOperators[comparedValueType] || mapTypeToOperators.unknown;
 
     return (
-      <SelectField
+      <RadioButtonGroup
         margin={this.props.isInline ? 'none' : 'dense'}
         fullWidth
-        floatingLabelText={description}
-        helperMarkdownText={
-          parameterMetadata ? parameterMetadata.getLongDescription() : undefined
-        }
         value={this.props.value}
-        onChange={(e, i, value: string) => this.props.onChange(value)}
+        onChange={(value: string) => this.props.onChange(value)}
+        values={operators.map(value => ({
+          value: value,
+          label: operatorSymbols[value],
+        }))}
         ref={field => (this._field = field)}
         hintText={t`Choose an operator`}
-      >
-        {operators.map(operator => (
-          <SelectOption
-            key={operator}
-            value={operator}
-            primaryText={operatorLabels[operator]}
-          />
-        ))}
-      </SelectField>
+      />
     );
   }
 }
