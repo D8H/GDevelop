@@ -39,7 +39,7 @@ export const getLastObjectParameterValue = ({
       objectParameterIndex >= 0 &&
       objectParameterIndex < instruction.getParametersCount()
     ) {
-      objectName = instruction.getParameter(objectParameterIndex);
+      objectName = instruction.getParameter(objectParameterIndex).getPlainString();
     }
   } else if (expressionMetadata && expression) {
     const objectParameterIndex = gd.ParameterMetadataTools.getObjectParameterIndexFor(
@@ -95,7 +95,7 @@ export const getPreviousParameterValue = ({
       parameterIndex >= 1 &&
       parameterIndex < instruction.getParametersCount()
     ) {
-      return instruction.getParameter(parameterIndex - 1);
+      return instruction.getParameter(parameterIndex - 1).getPlainString();
     }
   } else if (expression) {
     if (
