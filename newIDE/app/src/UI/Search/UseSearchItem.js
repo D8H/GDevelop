@@ -132,7 +132,8 @@ export const filterSearchItems = <SearchItem: { tags: Array<string> }>(
     })
     .filter(searchItem => {
       return (
-        !chosenFilters || chosenFilters.size === 0 ||
+        !chosenFilters ||
+        chosenFilters.size === 0 ||
         searchItem.tags.some(tag => chosenFilters.has(tag))
       );
     });

@@ -192,21 +192,24 @@ export class SimilarAssetStoreSearchFilter
   }
 
   getPertinence(searchItem: AssetShortHeader): number {
-    if (this.other === searchItem ||
-      this.other.objectType !== searchItem.objectType) {
+    if (
+      this.other === searchItem ||
+      this.other.objectType !== searchItem.objectType
+    ) {
       return 0;
     }
 
     {
       const hasAnimatedState = searchItem.maxFramesCount > 1;
       const hasSeveralState = searchItem.animationsCount > 1;
-      const mustBeAnimated = this.other.maxFramesCount > 1;
-      const mustHaveSeveralState = this.other.animationsCount > 1;
-      const hasBetterAnimationOrState = ((!mustBeAnimated || hasAnimatedState) &&
-        (!mustHaveSeveralState || hasSeveralState));
-      if (!hasBetterAnimationOrState) {
-          return 0;
-        }
+      const otherHasAnimatedState = this.other.maxFramesCount > 1;
+      const otherHasSeveralState = this.other.animationsCount > 1;
+      if (
+        hasAnimatedState !== otherHasAnimatedState &&
+        hasSeveralState !== otherHasSeveralState
+      ) {
+        return 0;
+      }
     }
 
     {

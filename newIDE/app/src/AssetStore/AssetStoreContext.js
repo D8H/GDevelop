@@ -90,12 +90,8 @@ export const AssetStoreContext = React.createContext<AssetStoreState>({
     licenseFilter: new LicenseAssetStoreSearchFilter(),
     setLicenseFilter: filter => {},
   },
-  useSearchItem: (
-    searchText,
-    chosenCategory,
-    chosenFilters,
-    searchFilters,
-  ) => null,
+  useSearchItem: (searchText, chosenCategory, chosenFilters, searchFilters) =>
+    null,
 });
 
 type AssetStoreStateProviderProps = {|
@@ -282,15 +278,16 @@ export const AssetStoreStateProvider = ({
         searchText,
         chosenCategory,
         chosenFilters,
-        searchFilters,
-      ) => useSearchItem(
-        assetShortHeadersById,
-        getAssetShortHeaderSearchTerms,
-        searchText,
-        chosenCategory,
-        chosenFilters,
         searchFilters
-      ),
+      ) =>
+        useSearchItem(
+          assetShortHeadersById,
+          getAssetShortHeaderSearchTerms,
+          searchText,
+          chosenCategory,
+          chosenFilters,
+          searchFilters
+        ),
     }),
     [
       searchResults,
