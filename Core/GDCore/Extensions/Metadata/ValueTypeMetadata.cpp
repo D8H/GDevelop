@@ -10,12 +10,18 @@
 
 namespace gd {
 
-ValueTypeMetadata::ValueTypeMetadata() {}
+ValueTypeMetadata::ValueTypeMetadata() : optional(false) {}
 
 void ValueTypeMetadata::SerializeTo(SerializerElement& element) const {
   element.SetAttribute("type", name);
   if (!supplementaryInformation.empty()) {
     element.SetAttribute("supplementaryInformation", supplementaryInformation);
+  }
+  if (optional) {
+    element.SetAttribute("optional", optional);
+  }
+  if (!defaultValue.empty()) {
+    element.SetAttribute("defaultValue", defaultValue);
   }
 }
 
@@ -24,6 +30,12 @@ void ValueTypeMetadata::UnserializeFrom(const SerializerElement& element) {
   if (element.HasAttribute("supplementaryInformation")) {
     supplementaryInformation =
         element.GetStringAttribute("supplementaryInformation");
+  }
+  if (element.HasAttribute("optional")) {
+    optional = element.GetBoolAttribute("optional");
+  }
+  if (element.HasAttribute("defaultValue")) {
+    defaultValue = element.GetStringAttribute("defaultValue");
   }
 }
 

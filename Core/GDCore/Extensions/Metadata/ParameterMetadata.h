@@ -78,13 +78,13 @@ class GD_CORE_API ParameterMetadata {
   /**
    * \brief Return true if the parameter is optional.
    */
-  bool IsOptional() const { return optional; }
+  bool IsOptional() const { return valueTypeMetadata.IsOptional(); }
 
   /**
    * \brief Set if the parameter is optional.
    */
   ParameterMetadata &SetOptional(bool optional_ = true) {
-    optional = optional_;
+    valueTypeMetadata.SetOptional(optional_);
     return *this;
   }
 
@@ -119,13 +119,13 @@ class GD_CORE_API ParameterMetadata {
   /**
    * \brief Get the default value for the parameter.
    */
-  const gd::String &GetDefaultValue() const { return defaultValue; }
+  const gd::String &GetDefaultValue() const { return valueTypeMetadata.GetDefaultValue(); }
 
   /**
    * \brief Set the default value, if the parameter is optional.
    */
   ParameterMetadata &SetDefaultValue(const gd::String &defaultValue_) {
-    defaultValue = defaultValue_;
+    valueTypeMetadata.SetDefaultValue(defaultValue_);
     return *this;
   }
 
@@ -158,7 +158,6 @@ class GD_CORE_API ParameterMetadata {
 
   // TODO: Deprecated public fields. Any direct usage should be moved to
   // getter/setter.
-  bool optional;                        ///< True if the parameter is optional
 
   gd::String description;  ///< Description shown in editor
   bool codeOnly;  ///< True if parameter is relative to code generation only,
@@ -166,8 +165,6 @@ class GD_CORE_API ParameterMetadata {
  private:
   gd::ValueTypeMetadata valueTypeMetadata; ///< Parameter type
   gd::String longDescription;  ///< Long description shown in the editor.
-  gd::String defaultValue;     ///< Used as a default value in editor or if an
-                               ///< optional parameter is empty.
   gd::String name;             ///< The name of the parameter to be used in code
                                ///< generation. Optional.
 };

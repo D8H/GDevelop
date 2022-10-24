@@ -63,6 +63,32 @@ class GD_CORE_API ValueTypeMetadata {
   }
 
   /**
+   * \brief Return true if the parameter is optional.
+   */
+  bool IsOptional() const { return optional; }
+
+  /**
+   * \brief Set if the parameter is optional.
+   */
+  ValueTypeMetadata &SetOptional(bool optional_ = true) {
+    optional = optional_;
+    return *this;
+  }
+
+  /**
+   * \brief Get the default value for the parameter.
+   */
+  const gd::String &GetDefaultValue() const { return defaultValue; }
+
+  /**
+   * \brief Set the default value, if the parameter is optional.
+   */
+  ValueTypeMetadata &SetDefaultValue(const gd::String &defaultValue_) {
+    defaultValue = defaultValue_;
+    return *this;
+  }
+
+  /**
    * \brief Return true if the type is defined.
    */
   bool IsDefined() const {
@@ -196,6 +222,9 @@ class GD_CORE_API ValueTypeMetadata {
  private:
   gd::String name;                      ///< Parameter type
   gd::String supplementaryInformation;  ///< Used if needed
+  bool optional;                        ///< True if the parameter is optional
+  gd::String defaultValue;     ///< Used as a default value in editor or if an
+                               ///< optional parameter is empty.
 };
 
 }  // namespace gd

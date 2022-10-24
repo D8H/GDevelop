@@ -40,7 +40,7 @@ gd::ExpressionMetadata& ExpressionMetadata::AddParameter(
   info.GetType().SetName(type);
   info.description = description;
   info.codeOnly = false;
-  info.optional = parameterIsOptional;
+  info.SetOptional(parameterIsOptional);
   info.GetType().SetExtraInfo(
       // For objects/behavior, the supplementary information
       // parameter is an object/behavior type...

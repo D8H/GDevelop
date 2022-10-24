@@ -22,10 +22,12 @@ import { type MessageDescriptor } from '../../Utils/i18n/MessageDescriptor.flow'
 import { ResponsiveLineStackLayout, ColumnStackLayout } from '../../UI/Layout';
 import DismissableAlertMessage from '../../UI/DismissableAlertMessage';
 import SemiControlledAutoComplete from '../../UI/SemiControlledAutoComplete';
+import ValueTypeEditor from './ValueTypeEditor';
 
 const gd: libGDevelop = global.gd;
 
 type Props = {|
+  project: gdProject,
   eventsFunction: gdEventsFunction,
   eventsBasedBehavior: ?gdEventsBasedBehavior,
   eventsBasedObject: ?gdEventsBasedObject,
@@ -147,6 +149,7 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
 > {
   render() {
     const {
+      project,
       eventsFunction,
       freezeEventsFunctionType,
       onConfigurationUpdated,
@@ -273,67 +276,6 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
                   />
                 </SelectField>
               </Line>
-              {eventsFunction.isExpression() && (
-                <Line alignItems="center" noMargin>
-                  <SelectField
-                    value={eventsFunction.getExpressionType().getName()}
-                    floatingLabelText={<Trans>Type</Trans>}
-                    fullWidth
-                    disabled={!!freezeEventsFunctionType}
-                    onChange={(e, i, value: string) => {
-                      eventsFunction.getExpressionType.setName(value);
-                      if (onConfigurationUpdated)
-                        onConfigurationUpdated('type');
-                      this.forceUpdate();
-                    }}
-                  >
-                    {/* TODO factorize this list */}
-                    <SelectOption value="expression" primaryText={t`Number`} />
-                    <SelectOption
-                      value="string"
-                      primaryText={t`String (text)`}
-                    />
-                    <SelectOption
-                      value="stringWithSelector"
-                      primaryText={t`String from a list of options (text)`}
-                    />
-                    <SelectOption
-                      value="key"
-                      primaryText={t`Keyboard Key (text)`}
-                    />
-                    <SelectOption
-                      value="mouse"
-                      primaryText={t`Mouse button (text)`}
-                    />
-                    <SelectOption value="color" primaryText={t`Color (text)`} />
-                    <SelectOption value="layer" primaryText={t`Layer (text)`} />
-                    <SelectOption
-                      value="sceneName"
-                      primaryText={t`Scene name (text)`}
-                    />
-                    <SelectOption
-                      value="yesorno"
-                      primaryText={t`Yes or No (boolean)`}
-                    />
-                    <SelectOption
-                      value="trueorfalse"
-                      primaryText={t`True or False (boolean)`}
-                    />
-                    <SelectOption
-                      value="objectPointName"
-                      primaryText={t`Object point (text)`}
-                    />
-                    <SelectOption
-                      value="objectAnimationName"
-                      primaryText={t`Object animation (text)`}
-                    />
-                    <SelectOption
-                      value="identifier"
-                      primaryText={t`Identifier (text)`}
-                    />
-                  </SelectField>
-                </Line>
-              )}
               <Column expand noMargin>
                 {type === gd.EventsFunction.ActionWithOperator ? (
                   <SelectField
@@ -472,8 +414,8 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
                 />
               )}
             </Line>
-            <Line noMargin>
-              {type === gd.EventsFunction.ActionWithOperator ? (
+            {type === gd.EventsFunction.ActionWithOperator ? (
+              <Line noMargin>
                 <SemiControlledTextField
                   disabled
                   commitOnBlur
@@ -488,39 +430,55 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
                   }
                   onChange={text => {}}
                 />
-              ) : type === gd.EventsFunction.Action ||
+              </Line>
+            ) : (
+              (type === gd.EventsFunction.Action ||
                 type === gd.EventsFunction.Condition ||
-                type === gd.EventsFunction.ExpressionAndCondition ? (
-                <SemiControlledTextField
-                  commitOnBlur
-                  floatingLabelText={
-                    eventsBasedBehavior &&
-                    type === gd.EventsFunction.ExpressionAndCondition ? (
-                      <Trans>
-                        Sentence in Events Sheet (automatically suffixed by "of
-                        _PARAM0_")
-                      </Trans>
-                    ) : (
-                      <Trans>Sentence in Events Sheet</Trans>
-                    )
-                  }
-                  translatableHintText={t`Note: write _PARAMx_ for parameters, e.g: Flash _PARAM1_ for 5 seconds`}
-                  fullWidth
-                  value={eventsFunction.getSentence()}
-                  onChange={text => {
-                    eventsFunction.setSentence(text);
-                    if (onConfigurationUpdated) onConfigurationUpdated();
-                    this.forceUpdate();
-                  }}
-                  errorText={getSentenceErrorText(
-                    i18n,
-                    eventsBasedBehavior,
-                    eventsBasedObject,
-                    eventsFunction
-                  )}
-                />
-              ) : null}
-            </Line>
+                type === gd.EventsFunction.ExpressionAndCondition) && (
+                <Line noMargin>
+                  <SemiControlledTextField
+                    commitOnBlur
+                    floatingLabelText={
+                      eventsBasedBehavior &&
+                      type === gd.EventsFunction.ExpressionAndCondition ? (
+                        <Trans>
+                          Sentence in Events Sheet (automatically suffixed by
+                          "of _PARAM0_")
+                        </Trans>
+                      ) : (
+                        <Trans>Sentence in Events Sheet</Trans>
+                      )
+                    }
+                    translatableHintText={t`Note: write _PARAMx_ for parameters, e.g: Flash _PARAM1_ for 5 seconds`}
+                    fullWidth
+                    value={eventsFunction.getSentence()}
+                    onChange={text => {
+                      eventsFunction.setSentence(text);
+                      if (onConfigurationUpdated) onConfigurationUpdated();
+                      this.forceUpdate();
+                    }}
+                    errorText={getSentenceErrorText(
+                      i18n,
+                      eventsBasedBehavior,
+                      eventsBasedObject,
+                      eventsFunction
+                    )}
+                  />
+                </Line>
+              )
+            )}
+            {eventsFunction.isExpression() && (
+              <ValueTypeEditor
+                isExpressionType
+                project={project}
+                valueTypeMetadata={eventsFunction.getExpressionType()}
+                isTypeSelectorShown={true}
+                onTypeUpdated={() => {
+                  if (onConfigurationUpdated) onConfigurationUpdated();
+                }}
+                getLastObjectParameterObjectType={() => ''}
+              />
+            )}
             {helpPagePath ? (
               <Line noMargin>
                 <HelpButton helpPagePath={helpPagePath} />

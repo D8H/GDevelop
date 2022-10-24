@@ -58,7 +58,7 @@ InstructionMetadata& InstructionMetadata::AddParameter(
   info.GetType().SetName(type);
   info.description = description;
   info.codeOnly = false;
-  info.optional = parameterIsOptional;
+  info.SetOptional(parameterIsOptional);
   info.GetType().SetExtraInfo(
       // For objects/behavior, the supplementary information
       // parameter is an object/behavior type...
@@ -94,7 +94,7 @@ InstructionMetadata& InstructionMetadata::AddCodeOnlyParameter(
 }
 
 InstructionMetadata& InstructionMetadata::UseStandardOperatorParameters(
-    const gd::String& type) {
+    const gd::String& type, const gd::String& typeExtraInfo) {
   SetManipulatedType(type);
 
   if (type == "boolean") {
@@ -122,7 +122,7 @@ InstructionMetadata& InstructionMetadata::UseStandardOperatorParameters(
     AddParameter("operator", _("Modification's sign"), type);
     // The type "string" is not forced because it's declined in several subtype
     // (see ParameterMetadata).
-    AddParameter(type == "number" ? "expression" : type, _("Value"));
+    AddParameter(type == "number" ? "expression" : type, _("Value"), typeExtraInfo);
 
     size_t operatorParamIndex = parameters.size() - 2;
     size_t valueParamIndex = parameters.size() - 1;
@@ -155,7 +155,7 @@ InstructionMetadata& InstructionMetadata::UseStandardOperatorParameters(
 
 InstructionMetadata&
 InstructionMetadata::UseStandardRelationalOperatorParameters(
-    const gd::String& type) {
+    const gd::String& type, const gd::String& typeExtraInfo) {
   SetManipulatedType(type);
 
   if (type == "boolean") {
@@ -175,7 +175,7 @@ InstructionMetadata::UseStandardRelationalOperatorParameters(
     AddParameter("relationalOperator", _("Sign of the test"), type);
     // The type is just forced because it's declined in several subtype
     // (see ParameterMetadata).
-    AddParameter(type, _("Value to compare"));
+    AddParameter(type, _("Value to compare"), typeExtraInfo);
     size_t operatorParamIndex = parameters.size() - 2;
     size_t valueParamIndex = parameters.size() - 1;
 
