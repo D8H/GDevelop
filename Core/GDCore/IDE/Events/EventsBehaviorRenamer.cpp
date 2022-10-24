@@ -120,9 +120,8 @@ bool EventsBehaviorRenamer::DoVisitInstruction(gd::Instruction& instruction,
           const gd::Expression& parameterValue,
           size_t parameterIndex,
           const gd::String& lastObjectName) {
-        const gd::String& type = parameterMetadata.type;
 
-        if (gd::ParameterMetadata::IsBehavior(type)) {
+        if (parameterMetadata.GetType().IsBehavior()) {
           if (lastObjectName == objectName) {
             if (parameterValue.GetPlainString() == oldBehaviorName) {
               instruction.SetParameter(parameterIndex,

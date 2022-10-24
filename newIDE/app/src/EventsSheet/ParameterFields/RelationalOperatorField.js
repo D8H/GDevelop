@@ -37,7 +37,7 @@ export default class RelationalOperatorField extends Component<ParameterFieldPro
       : undefined;
 
     const comparedValueType = parameterMetadata
-      ? parameterMetadata.getExtraInfo()
+      ? parameterMetadata.getType().getExtraInfo()
       : 'unknown';
     const operators =
       mapTypeToOperators[comparedValueType] || mapTypeToOperators.unknown;

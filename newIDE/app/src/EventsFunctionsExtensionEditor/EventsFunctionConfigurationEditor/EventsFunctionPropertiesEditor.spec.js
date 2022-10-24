@@ -17,13 +17,13 @@ describe('EventsFunctionPropertiesEditor', () => {
       );
       {
         const newParameter = new gd.ParameterMetadata();
-        newParameter.setType('expression');
+        newParameter.getType().setName('expression');
         eventsFunction.getParameters().push_back(newParameter);
         newParameter.delete();
       }
       {
         const newParameter = new gd.ParameterMetadata();
-        newParameter.setType('string');
+        newParameter.getType().setName('string');
         eventsFunction.getParameters().push_back(newParameter);
         newParameter.delete();
       }
@@ -48,13 +48,13 @@ describe('EventsFunctionPropertiesEditor', () => {
       );
       {
         const newParameter = new gd.ParameterMetadata();
-        newParameter.setType('expression');
+        newParameter.getType().setName('expression');
         eventsFunction.getParameters().push_back(newParameter);
         newParameter.delete();
       }
       {
         const newParameter = new gd.ParameterMetadata();
-        newParameter.setType('string');
+        newParameter.getType().setName('string');
         eventsFunction.getParameters().push_back(newParameter);
         newParameter.delete();
       }

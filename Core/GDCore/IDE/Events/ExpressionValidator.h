@@ -39,7 +39,7 @@ class GD_CORE_API ExpressionValidator : public ExpressionParser2NodeWorker {
       : platform(platform_),
         globalObjectsContainer(globalObjectsContainer_),
         objectsContainer(objectsContainer_),
-        parentType(StringToType(gd::ParameterMetadata::GetExpressionValueType(rootType_))),
+        parentType(StringToType(gd::ValueTypeMetadata::GetExpressionValueType(rootType_))),
         childType(Type::Unknown) {};
   virtual ~ExpressionValidator(){};
 

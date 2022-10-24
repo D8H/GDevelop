@@ -37,9 +37,7 @@ type Props = {|
   getFunctionGroupNames?: () => string[],
 |};
 
-type State = {|
-  isStringExpression: boolean,
-|};
+type State = {||};
 
 export const getSentenceErrorText = (
   i18n: I18nType,
@@ -62,12 +60,11 @@ export const getSentenceErrorText = (
   const type = eventsFunction.getFunctionType();
   const param0isImplicit =
     (eventsBasedBehavior || eventsBasedObject) &&
-    (type === gd.EventsFunction.ExpressionAndCondition ||
-      type === gd.EventsFunction.StringExpressionAndCondition);
+    type === gd.EventsFunction.ExpressionAndCondition;
   const missingParameters = mapVector(
     eventsFunction.getParameters(),
     (parameter, index) => {
-      if (gd.ParameterMetadata.isBehavior(parameter.getType())) {
+      if (parameter.getType().isBehavior()) {
         // Behaviors are usually not shown in sentences.
         return null;
       }
@@ -115,27 +112,32 @@ export const getSentenceErrorText = (
   return undefined;
 };
 
-const getFullNameHintText = (type: any): MessageDescriptor => {
+const getFullNameHintText = (
+  type: EventsFunction_FunctionType,
+  expressionType: string
+): MessageDescriptor => {
   if (type === gd.EventsFunction.Condition) {
     return t`Example: Is flashing`;
   } else if (type === gd.EventsFunction.Expression) {
-    return t`Example: Remaining life`;
-  } else if (type === gd.EventsFunction.StringExpression) {
-    return t`Example: Equipped shield name`;
+    return gd.ValueTypeMetadata.isExpression('number', expressionType)
+      ? t`Example: Remaining life`
+      : t`Example: Equipped shield name`;
   }
 
   return t`Example: Flash the object`;
 };
 
-const getDescriptionHintText = (type: any): MessageDescriptor => {
+const getDescriptionHintText = (
+  type: EventsFunction_FunctionType,
+  expressionType: gdValueTypeMetadata
+): MessageDescriptor => {
   if (type === gd.EventsFunction.Condition) {
     return t`Example: Check if the object is flashing.`;
   } else if (type === gd.EventsFunction.Expression) {
-    return t`Example: Return the number of remaining lives for the player.`;
-  } else if (type === gd.EventsFunction.StringExpression) {
-    return t`Example: Return the name of the shield equipped by the player.`;
+    return expressionType.isNumber()
+      ? t`Example: Return the number of remaining lives for the player.`
+      : t`Example: Return the name of the shield equipped by the player.`;
   }
-
   return t`Example: Make the object flash for 5 seconds.`;
 };
 
@@ -143,10 +145,6 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
   Props,
   State
 > {
-  state = {
-    isStringExpression: false,
-  };
-
   render() {
     const {
       eventsFunction,
@@ -241,30 +239,14 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
             <ResponsiveLineStackLayout alignItems="center" noMargin>
               <Line alignItems="center" noMargin>
                 <SelectField
-                  value={
-                    // Remove the string/number distinction form the type.
-                    type === gd.EventsFunction.StringExpression
-                      ? gd.EventsFunction.Expression
-                      : type === gd.EventsFunction.StringExpressionAndCondition
-                      ? gd.EventsFunction.ExpressionAndCondition
-                      : type
-                  }
+                  value={type}
                   floatingLabelText={<Trans>Function type</Trans>}
                   fullWidth
                   disabled={!!freezeEventsFunctionType}
                   onChange={(e, i, valueString: string) => {
                     // $FlowFixMe
                     const value: EventsFunction_FunctionType = valueString;
-                    eventsFunction.setFunctionType(
-                      // Put back the string/number distinction in the type.
-                      this.state.isStringExpression
-                        ? type === gd.EventsFunction.Expression
-                          ? gd.EventsFunction.StringExpression
-                          : type === gd.EventsFunction.ExpressionAndCondition
-                          ? gd.EventsFunction.StringExpressionAndCondition
-                          : value
-                        : value
-                    );
+                    eventsFunction.setFunctionType(value);
                     if (onConfigurationUpdated) onConfigurationUpdated('type');
                     this.forceUpdate();
                   }}
@@ -294,37 +276,61 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
               {eventsFunction.isExpression() && (
                 <Line alignItems="center" noMargin>
                   <SelectField
-                    value={
-                      eventsFunction.isStringExpression() ? 'string' : 'number'
-                    }
+                    value={eventsFunction.getExpressionType().getName()}
                     floatingLabelText={<Trans>Type</Trans>}
                     fullWidth
                     disabled={!!freezeEventsFunctionType}
                     onChange={(e, i, value: string) => {
-                      // $FlowFixMe
-                      const isStringExpression = value === 'string';
-                      this.setState({
-                        isStringExpression,
-                      });
-                      const isExpressionAndCondition =
-                        type === gd.EventsFunction.ExpressionAndCondition ||
-                        type === gd.EventsFunction.StringExpressionAndCondition;
-                      eventsFunction.setFunctionType(
-                        isExpressionAndCondition
-                          ? isStringExpression
-                            ? gd.EventsFunction.StringExpressionAndCondition
-                            : gd.EventsFunction.ExpressionAndCondition
-                          : isStringExpression
-                          ? gd.EventsFunction.StringExpression
-                          : gd.EventsFunction.Expression
-                      );
+                      eventsFunction.getExpressionType.setName(value);
                       if (onConfigurationUpdated)
                         onConfigurationUpdated('type');
                       this.forceUpdate();
                     }}
                   >
-                    <SelectOption value={'number'} primaryText={t`Number`} />
-                    <SelectOption value={'string'} primaryText={t`String`} />
+                    {/* TODO factorize this list */}
+                    <SelectOption value="expression" primaryText={t`Number`} />
+                    <SelectOption
+                      value="string"
+                      primaryText={t`String (text)`}
+                    />
+                    <SelectOption
+                      value="stringWithSelector"
+                      primaryText={t`String from a list of options (text)`}
+                    />
+                    <SelectOption
+                      value="key"
+                      primaryText={t`Keyboard Key (text)`}
+                    />
+                    <SelectOption
+                      value="mouse"
+                      primaryText={t`Mouse button (text)`}
+                    />
+                    <SelectOption value="color" primaryText={t`Color (text)`} />
+                    <SelectOption value="layer" primaryText={t`Layer (text)`} />
+                    <SelectOption
+                      value="sceneName"
+                      primaryText={t`Scene name (text)`}
+                    />
+                    <SelectOption
+                      value="yesorno"
+                      primaryText={t`Yes or No (boolean)`}
+                    />
+                    <SelectOption
+                      value="trueorfalse"
+                      primaryText={t`True or False (boolean)`}
+                    />
+                    <SelectOption
+                      value="objectPointName"
+                      primaryText={t`Object point (text)`}
+                    />
+                    <SelectOption
+                      value="objectAnimationName"
+                      primaryText={t`Object animation (text)`}
+                    />
+                    <SelectOption
+                      value="identifier"
+                      primaryText={t`Identifier (text)`}
+                    />
                   </SelectField>
                 </Line>
               )}
@@ -352,11 +358,8 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
                             );
 
                             return (
-                              (eventsFunction.getFunctionType() ===
-                                gd.EventsFunction.ExpressionAndCondition ||
-                                eventsFunction.getFunctionType() ===
-                                  gd.EventsFunction
-                                    .StringExpressionAndCondition) && (
+                              eventsFunction.getFunctionType() ===
+                                gd.EventsFunction.ExpressionAndCondition && (
                                 <SelectOption
                                   key={eventsFunction.getName()}
                                   value={eventsFunction.getName()}
@@ -377,7 +380,10 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
                     floatingLabelText={
                       <Trans>Full name displayed in editor</Trans>
                     }
-                    translatableHintText={getFullNameHintText(type)}
+                    translatableHintText={getFullNameHintText(
+                      type,
+                      eventsFunction.getExpressionType().getName()
+                    )}
                     value={eventsFunction.getFullName()}
                     onChange={text => {
                       eventsFunction.setFullName(text);
@@ -442,8 +448,7 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
                 <SemiControlledTextField
                   commitOnBlur
                   floatingLabelText={
-                    type === gd.EventsFunction.ExpressionAndCondition ||
-                    type === gd.EventsFunction.StringExpressionAndCondition ? (
+                    type === gd.EventsFunction.ExpressionAndCondition ? (
                       <Trans>
                         Description, displayed in editor (automatically prefixed
                         by "Compare" or "Return")
@@ -452,7 +457,10 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
                       <Trans>Description, displayed in editor</Trans>
                     )
                   }
-                  translatableHintText={getDescriptionHintText(type)}
+                  translatableHintText={getDescriptionHintText(
+                    type,
+                    eventsFunction.getExpressionType()
+                  )}
                   fullWidth
                   multiline
                   value={eventsFunction.getDescription()}
@@ -482,15 +490,12 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
                 />
               ) : type === gd.EventsFunction.Action ||
                 type === gd.EventsFunction.Condition ||
-                type === gd.EventsFunction.ExpressionAndCondition ||
-                type === gd.EventsFunction.StringExpressionAndCondition ? (
+                type === gd.EventsFunction.ExpressionAndCondition ? (
                 <SemiControlledTextField
                   commitOnBlur
                   floatingLabelText={
                     eventsBasedBehavior &&
-                    (type === gd.EventsFunction.ExpressionAndCondition ||
-                      type ===
-                        gd.EventsFunction.StringExpressionAndCondition) ? (
+                    type === gd.EventsFunction.ExpressionAndCondition ? (
                       <Trans>
                         Sentence in Events Sheet (automatically suffixed by "of
                         _PARAM0_")

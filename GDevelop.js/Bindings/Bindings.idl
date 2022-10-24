@@ -1313,12 +1313,10 @@ interface DependencyMetadata {
 interface ParameterMetadata {
     void ParameterMetadata();
 
-    [Const, Ref] DOMString GetType();
-    [Ref] ParameterMetadata SetType([Const] DOMString type_);
+    [Const, Ref] ValueTypeMetadata GetType();
+    [Ref] ParameterMetadata SetType([Const, Ref] ValueTypeMetadata type_);
     [Const, Ref] DOMString GetName();
     [Ref] ParameterMetadata SetName([Const] DOMString name_);
-    [Const, Ref] DOMString GetExtraInfo();
-    [Ref] ParameterMetadata SetExtraInfo([Const] DOMString extraInfo_);
     boolean IsOptional();
     [Ref] ParameterMetadata SetOptional(boolean optional_);
     [Const, Ref] DOMString GetDescription();
@@ -1329,6 +1327,25 @@ interface ParameterMetadata {
     [Ref] ParameterMetadata SetCodeOnly(boolean codeOnly_);
     [Const, Ref] DOMString GetDefaultValue();
     [Ref] ParameterMetadata SetDefaultValue([Const] DOMString defaultValue_);
+
+    void SerializeTo([Ref] SerializerElement element);
+    void UnserializeFrom([Const, Ref] SerializerElement element);
+};
+
+interface ValueTypeMetadata {
+    void ValueTypeMetadata();
+
+    [Const, Ref] DOMString GetName();
+    [Ref] ValueTypeMetadata SetName([Const] DOMString name_);
+    [Const, Ref] DOMString GetExtraInfo();
+    [Ref] ValueTypeMetadata SetExtraInfo([Const] DOMString extraInfo_);
+
+    boolean IsObject();
+    boolean IsBehavior();
+    boolean IsNumber();
+    boolean IsString();
+    boolean IsVariable();
+
     boolean STATIC_IsObject([Const] DOMString param);
     boolean STATIC_IsBehavior([Const] DOMString param);
     boolean STATIC_IsExpression([Const] DOMString type_, [Const] DOMString parameterType);
@@ -2255,9 +2272,7 @@ enum EventsFunction_FunctionType {
   "EventsFunction::Action",
   "EventsFunction::Condition",
   "EventsFunction::Expression",
-  "EventsFunction::StringExpression",
   "EventsFunction::ExpressionAndCondition",
-  "EventsFunction::StringExpressionAndCondition",
   "EventsFunction::ActionWithOperator"
 };
 
@@ -2277,12 +2292,12 @@ interface EventsFunction {
     [Const, Ref] DOMString GetGroup();
     [Ref] EventsFunction SetGetterName([Const] DOMString group);
     [Const, Ref] DOMString GetGetterName();
+    [Ref] EventsFunction SetExpressionType([Const, Ref] ValueTypeMetadata type);
+    [Const, Ref] ValueTypeMetadata GetExpressionType();
     [Ref] EventsFunction SetPrivate(boolean isPrivate);
     boolean IsPrivate();
     boolean IsAction();
     boolean IsExpression();
-    boolean IsNumberExpression();
-    boolean IsStringExpression();
     boolean IsCondition();
     [Ref] EventsFunction SetFunctionType(EventsFunction_FunctionType type);
     EventsFunction_FunctionType GetFunctionType();

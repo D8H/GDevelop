@@ -37,14 +37,14 @@ export const setupInstructionParameters = (
     const maybeBehaviorParameterMetadata = instructionMetadata.getParameter(
       maybeBehaviorParameterIndex
     );
-    if (
-      !gd.ParameterMetadata.isBehavior(maybeBehaviorParameterMetadata.getType())
-    ) {
+    if (!maybeBehaviorParameterMetadata.getType().isBehavior()) {
       // The parameter after the object is not a behavior, there is nothing to complete.
       return;
     }
 
-    const allowedBehaviorType = maybeBehaviorParameterMetadata.getExtraInfo();
+    const allowedBehaviorType = maybeBehaviorParameterMetadata
+      .getType()
+      .getExtraInfo();
     const behaviorNames = gd
       .getBehaviorsOfObject(
         globalObjectsContainer,

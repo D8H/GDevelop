@@ -130,27 +130,27 @@ class ResourceWorkerInEventsWorker : public ArbitraryEventsWorker {
                              size_t parameterIndex,
                              const gd::String& lastObjectName) {
           const String& parameterValue = parameterExpression.GetPlainString();
-          if (parameterMetadata.GetType() ==
+          if (parameterMetadata.GetType().GetName() ==
                   "police" ||  // Should be renamed fontResource
-              parameterMetadata.GetType() == "fontResource") {
+              parameterMetadata.GetType().GetName() == "fontResource") {
             gd::String updatedParameterValue = parameterValue;
             worker.ExposeFont(updatedParameterValue);
             instruction.SetParameter(parameterIndex, updatedParameterValue);
-          } else if (parameterMetadata.GetType() == "soundfile" ||
-                     parameterMetadata.GetType() ==
+          } else if (parameterMetadata.GetType().GetName() == "soundfile" ||
+                     parameterMetadata.GetType().GetName() ==
                          "musicfile") {  // Should be renamed audioResource
             gd::String updatedParameterValue = parameterValue;
             worker.ExposeAudio(updatedParameterValue);
             instruction.SetParameter(parameterIndex, updatedParameterValue);
-          } else if (parameterMetadata.GetType() == "bitmapFontResource") {
+          } else if (parameterMetadata.GetType().GetName() == "bitmapFontResource") {
             gd::String updatedParameterValue = parameterValue;
             worker.ExposeBitmapFont(updatedParameterValue);
             instruction.SetParameter(parameterIndex, updatedParameterValue);
-          } else if (parameterMetadata.GetType() == "imageResource") {
+          } else if (parameterMetadata.GetType().GetName() == "imageResource") {
             gd::String updatedParameterValue = parameterValue;
             worker.ExposeImage(updatedParameterValue);
             instruction.SetParameter(parameterIndex, updatedParameterValue);
-          } else if (parameterMetadata.GetType() == "jsonResource") {
+          } else if (parameterMetadata.GetType().GetName() == "jsonResource") {
             gd::String updatedParameterValue = parameterValue;
             worker.ExposeJson(updatedParameterValue);
             instruction.SetParameter(parameterIndex, updatedParameterValue);

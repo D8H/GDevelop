@@ -29,7 +29,7 @@ bool EventsParametersLister::DoVisitInstruction(gd::Instruction& instruction,
                   i < instrInfo.GetParametersCount();
        ++i)
     parameters[instruction.GetParameter(i).GetPlainString()] =
-        instrInfo.GetParameter(i).GetType();
+        instrInfo.GetParameter(i).GetType().GetName();
 
   return false;
 }

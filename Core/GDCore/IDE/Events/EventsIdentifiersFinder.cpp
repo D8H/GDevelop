@@ -97,8 +97,8 @@ class GD_CORE_API IdentifierFinderExpressionNodeWorker
       auto& parameterNode = node.parameters[parameterIndex];
       ++parameterIndex;
 
-      if (considerFunction && parameterMetadata.GetType() == "identifier"
-       && parameterMetadata.GetExtraInfo() == identifierType) {
+      if (considerFunction && parameterMetadata.GetType().GetName() == "identifier"
+       && parameterMetadata.GetType().GetExtraInfo() == identifierType) {
         // Store the value of the parameter
         results.insert(
             gd::ExpressionParser2NodePrinter::PrintNode(*parameterNode));
@@ -149,18 +149,16 @@ class GD_CORE_API IdentifierFinderEventWorker
                               platform, instruction.GetType());
       for (std::size_t pNb = 0; pNb < instrInfos.parameters.size(); ++pNb) {
         // The parameter has the searched type...
-      if (instrInfos.parameters[pNb].type == "identifier"
-       && instrInfos.parameters[pNb].supplementaryInformation == identifierType) {
+      if (instrInfos.parameters[pNb].GetType().GetName() == "identifier"
+       && instrInfos.parameters[pNb].GetType().GetExtraInfo() == identifierType) {
           //...remember the value of the parameter.
           if (objectName.empty() || lastObjectParameter == objectName) {
             results.insert(instruction.GetParameter(pNb).GetPlainString());
           }
         }
         // Search in expressions
-        else if (ParameterMetadata::IsExpression(
-                    "number", instrInfos.parameters[pNb].type) ||
-                ParameterMetadata::IsExpression(
-                    "string", instrInfos.parameters[pNb].type)) {
+        else if (instrInfos.parameters[pNb].GetType().IsNumber() ||
+                 instrInfos.parameters[pNb].GetType().IsString()) {
           auto node = instruction.GetParameter(pNb).GetRootNode();
 
           IdentifierFinderExpressionNodeWorker searcher(
@@ -173,8 +171,7 @@ class GD_CORE_API IdentifierFinderEventWorker
           node->Visit(searcher);
         }
         // Remember the value of the last "object" parameter.
-        else if (gd::ParameterMetadata::IsObject(
-                    instrInfos.parameters[pNb].type)) {
+        else if (instrInfos.parameters[pNb].GetType().IsObject()) {
           lastObjectParameter =
               instruction.GetParameter(pNb).GetPlainString();
         }

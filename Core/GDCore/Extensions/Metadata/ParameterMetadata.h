@@ -11,6 +11,8 @@
 #include <memory>
 
 #include "GDCore/String.h"
+#include "GDCore/Extensions/Metadata/ValueTypeMetadata.h"
+
 namespace gd {
 class Project;
 class Layout;
@@ -34,15 +36,21 @@ class GD_CORE_API ParameterMetadata {
 
   /**
    * \brief Return the type of the parameter.
-   * \see gd::ParameterMetadata::IsObject
+   * \see gd::ValueTypeMetadata::IsObject
    */
-  const gd::String &GetType() const { return type; }
+  const gd::ValueTypeMetadata &GetType() const { return valueTypeMetadata; }
+  
+  /**
+   * \brief Return the type of the parameter.
+   * \see gd::ValueTypeMetadata::IsObject
+   */
+  gd::ValueTypeMetadata &GetType() { return valueTypeMetadata; }
 
   /**
    * \brief Set the type of the parameter.
    */
-  ParameterMetadata &SetType(const gd::String &type_) {
-    type = type_;
+  ParameterMetadata &SetType(const gd::ValueTypeMetadata &type_) {
+    valueTypeMetadata = type_;
     return *this;
   }
 
@@ -64,23 +72,6 @@ class GD_CORE_API ParameterMetadata {
    */
   ParameterMetadata &SetName(const gd::String &name_) {
     name = name_;
-    return *this;
-  }
-
-  /**
-   * \brief Return an optional additional information, used for some parameters
-   * with special type (for example, it can contains the type of object accepted
-   * by the parameter).
-   */
-  const gd::String &GetExtraInfo() const { return supplementaryInformation; }
-
-  /**
-   * \brief Set an optional additional information, used for some parameters
-   * with special type (for example, it can contains the type of object accepted
-   * by the parameter).
-   */
-  ParameterMetadata &SetExtraInfo(const gd::String &supplementaryInformation_) {
-    supplementaryInformation = supplementaryInformation_;
     return *this;
   }
 
@@ -151,72 +142,6 @@ class GD_CORE_API ParameterMetadata {
     return *this;
   }
 
-  /**
-   * \brief Return true if the type of the parameter is representing one object
-   * (or more, i.e: an object group).
-   *
-   * \see gd::ParameterMetadata::GetType
-   */
-  static bool IsObject(const gd::String &parameterType) {
-    return parameterType == "object" || parameterType == "objectPtr" ||
-           parameterType == "objectList" ||
-           parameterType == "objectListOrEmptyIfJustDeclared" ||
-           parameterType == "objectListOrEmptyWithoutPicking";
-  }
-
-  /**
-   * \brief Return true if the type of the parameter is "behavior".
-   *
-   * \see gd::ParameterMetadata::GetType
-   */
-  static bool IsBehavior(const gd::String &parameterType) {
-    return parameterType == "behavior";
-  }
-
-  /**
-   * \brief Return true if the type of the parameter is an expression of the
-   * given type.
-   * \note If you had a new type of parameter, also add it in the IDE (
-   * see EventsFunctionParametersEditor, ParameterRenderingService
-   * and ExpressionAutocompletion) and in the EventsCodeGenerator.
-   */
-  static bool IsExpression(const gd::String &type,
-                           const gd::String &parameterType) {
-    if (type == "number") {
-      return parameterType == "expression" || parameterType == "camera" ||
-             parameterType == "forceMultiplier";
-    } else if (type == "string") {
-      return parameterType == "string" || parameterType == "layer" ||
-             parameterType == "color" || parameterType == "file" ||
-             parameterType == "joyaxis" ||
-             parameterType == "stringWithSelector" ||
-             parameterType == "sceneName" ||
-             parameterType == "layerEffectName" ||
-             parameterType == "layerEffectParameterName" ||
-             parameterType == "objectEffectName" ||
-             parameterType == "objectEffectParameterName" ||
-             parameterType == "objectPointName" ||
-             parameterType == "objectAnimationName" ||
-             parameterType == "functionParameterName" ||
-             parameterType == "externalLayoutName" ||
-             parameterType == "leaderboardId" ||
-             parameterType == "identifier";
-    } else if (type == "variable") {
-      return parameterType == "objectvar" || parameterType == "globalvar" ||
-             parameterType == "scenevar";
-    }
-    return false;
-  }
-
-  /**
-   * \brief Return the expression type from the parameter type.
-   * Declinations of "number" and "string" types (like "forceMultiplier" or
-   * "sceneName") are replaced by "number" and "string".
-   */
-  static const gd::String &GetExpressionValueType(const gd::String &parameterType);
-  static const gd::String numberType;
-  static const gd::String stringType;
-
   /** \name Serialization
    */
   ///@{
@@ -233,14 +158,13 @@ class GD_CORE_API ParameterMetadata {
 
   // TODO: Deprecated public fields. Any direct usage should be moved to
   // getter/setter.
-  gd::String type;                      ///< Parameter type
-  gd::String supplementaryInformation;  ///< Used if needed
   bool optional;                        ///< True if the parameter is optional
 
   gd::String description;  ///< Description shown in editor
   bool codeOnly;  ///< True if parameter is relative to code generation only,
                   ///< i.e. must not be shown in editor
  private:
+  gd::ValueTypeMetadata valueTypeMetadata; ///< Parameter type
   gd::String longDescription;  ///< Long description shown in the editor.
   gd::String defaultValue;     ///< Used as a default value in editor or if an
                                ///< optional parameter is empty.

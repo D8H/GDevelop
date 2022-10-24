@@ -35,7 +35,8 @@ vector<pair<gd::Expression*, gd::ParameterMetadata> >
     ForEachEvent::GetAllExpressionsWithMetadata() {
   vector<pair<gd::Expression*, gd::ParameterMetadata> >
       allExpressionsWithMetadata;
-  auto metadata = gd::ParameterMetadata().SetType("object");
+  auto metadata = gd::ParameterMetadata();
+  metadata.GetType().SetName("object");
   allExpressionsWithMetadata.push_back(
       std::make_pair(&objectsToPick, metadata));
 
@@ -61,7 +62,8 @@ vector<pair<const gd::Expression*, const gd::ParameterMetadata> >
     ForEachEvent::GetAllExpressionsWithMetadata() const {
   vector<pair<const gd::Expression*, const gd::ParameterMetadata> >
       allExpressionsWithMetadata;
-  auto metadata = gd::ParameterMetadata().SetType("object");
+  auto metadata = gd::ParameterMetadata();
+  metadata.GetType().SetName("object");
   allExpressionsWithMetadata.push_back(
       std::make_pair(&objectsToPick, metadata));
 

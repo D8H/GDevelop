@@ -132,7 +132,7 @@ class GD_CORE_API ExpressionVariableOwnerFinder : public ExpressionParser2NodeWo
             functionCall,
             parameterIndex);
     if (parameterMetadata == nullptr
-     || parameterMetadata->GetType() != "objectvar") {
+     || parameterMetadata->GetType().GetName() != "objectvar") {
       return;
     }
 
@@ -148,7 +148,7 @@ class GD_CORE_API ExpressionVariableOwnerFinder : public ExpressionParser2NodeWo
               functionCall,
               previousIndex);
       if (previousParameterMetadata != nullptr
-      && gd::ParameterMetadata::IsObject(previousParameterMetadata->GetType())) {
+      && previousParameterMetadata->GetType().IsObject()) {
         auto previousParameterNode = functionCall.parameters[previousIndex].get();
         IdentifierNode* objectNode = dynamic_cast<IdentifierNode*>(previousParameterNode);
         objectName = objectNode->identifierName;

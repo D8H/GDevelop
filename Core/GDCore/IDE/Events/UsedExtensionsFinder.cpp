@@ -50,17 +50,17 @@ bool UsedExtensionsFinder::DoVisitInstruction(gd::Instruction& instruction,
 
   size_t i = 0;
   for (auto expression : instruction.GetParameters()) {
-    const gd::String& parameterType =
+    const auto& parameterType =
         metadata.GetMetadata().GetParameter(i).GetType();
     i++;
 
-    if (gd::ParameterMetadata::IsExpression("string", parameterType)) {
+    if (parameterType.IsString()) {
       rootType = "string";
       expression.GetRootNode()->Visit(*this);
-    } else if (gd::ParameterMetadata::IsExpression("number", parameterType)) {
+    } else if (parameterType.IsNumber()) {
       rootType = "number";
       expression.GetRootNode()->Visit(*this);
-    } else if (gd::ParameterMetadata::IsExpression("variable", parameterType))
+    } else if (parameterType.IsVariable())
       usedExtensions.insert("BuiltinVariables");
   }
   return false;
@@ -113,7 +113,7 @@ void UsedExtensionsFinder::OnVisitVariableBracketAccessorNode(
 // Add extensions bound to Objects/Behaviors/Functions
 void UsedExtensionsFinder::OnVisitIdentifierNode(IdentifierNode& node) {
   auto type = gd::ExpressionTypeFinder::GetType(project.GetCurrentPlatform(), GetGlobalObjectsContainer(), GetObjectsContainer(), rootType, node);
-  if (gd::ParameterMetadata::IsObject(type)) {
+  if (gd::ValueTypeMetadata::IsObject(type)) {
     usedExtensions.insert(gd::MetadataProvider::GetExtensionAndObjectMetadata(
                               project.GetCurrentPlatform(), node.identifierName)
                               .GetExtension()

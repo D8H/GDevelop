@@ -30,7 +30,7 @@ export default class ObjectField extends React.Component<
       : undefined;
 
     this._allowedObjectType = parameterMetadata
-      ? parameterMetadata.getExtraInfo()
+      ? parameterMetadata.getType().getExtraInfo()
       : undefined;
   }
 

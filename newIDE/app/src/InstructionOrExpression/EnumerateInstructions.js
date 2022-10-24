@@ -500,13 +500,15 @@ export const getObjectParameterIndex = (
   instructionMetadata: gdInstructionMetadata
 ) => {
   const parametersCount = instructionMetadata.getParametersCount();
+  console.log("parametersCount: " + parametersCount);
   if (parametersCount >= 1) {
     const firstParameterType = instructionMetadata.getParameter(0).getType();
-    if (firstParameterType === 'object') {
+    console.log("firstParameterType: " + firstParameterType.getName());
+    if (firstParameterType.getName() === 'object') {
       // By convention, all object conditions/actions have the object as first parameter
       return 0;
     }
-    if (gd.ParameterMetadata.isObject(firstParameterType)) {
+    if (firstParameterType.isObject()) {
       // Some "free condition/actions" might be considered as "object" instructions, in which
       // case they are taking an object list as fist parameter - which will be identified
       // by gd.ParameterMetadata.isObject
@@ -514,14 +516,15 @@ export const getObjectParameterIndex = (
     }
 
     if (
-      firstParameterType === 'objectsContext' ||
-      firstParameterType === 'currentScene'
+      firstParameterType.getName() === 'objectsContext' ||
+      firstParameterType.getName() === 'currentScene'
     ) {
       if (parametersCount >= 2) {
         const secondParameterType = instructionMetadata
           .getParameter(1)
           .getType();
-        if (gd.ParameterMetadata.isObject(secondParameterType)) {
+          console.log("secondParameterType: " + secondParameterType.getName() + " : " + secondParameterType.isObject() + " : " + gd.ValueTypeMetadata.isObject(secondParameterType.getName()));
+        if (secondParameterType.isObject()) {
           // Some special action/conditions like "Create", "AjoutHasard" (pick random object) or
           // "AjoutObjConcern" (pick all objects) are "free condition/actions", but are manipulating
           // objects list, so their first parameter is an "objectsContext" or "currentScene",

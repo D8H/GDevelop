@@ -339,9 +339,8 @@ const InstructionParametersEditor = React.forwardRef<
                     )
                       return null;
 
-                    const parameterMetadataType = parameterMetadata.getType();
                     const ParameterComponent = ParameterRenderingService.getParameterComponent(
-                      parameterMetadataType
+                      parameterMetadata.getType().getName()
                     );
 
                     // Track the field count on screen, to affect the ref to the

@@ -627,22 +627,22 @@ export const makeTestProject = (gd /*: libGDevelop */) /*: TestProject */ => {
   );
 
   const parameter1 = new gd.ParameterMetadata();
-  parameter1.setType('objectList');
+  parameter1.getType().setName('objectList');
   parameter1.setName('MyObjectWithoutType');
   parameter1.setDescription('The first object to be used');
   const parameter2 = new gd.ParameterMetadata();
-  parameter2.setType('expression');
+  parameter2.getType().setName('expression');
   parameter2.setName('MyNumber');
   parameter2.setDescription('Some number');
   const parameter3 = new gd.ParameterMetadata();
-  parameter3.setType('string');
+  parameter3.getType().setName('string');
   parameter3.setName('MyString');
   parameter3.setDescription('Some string');
   const parameter4 = new gd.ParameterMetadata();
-  parameter4.setType('objectList');
+  parameter4.getType().setName('objectList');
   parameter4.setName('MySpriteObject');
   parameter4.setDescription('The second object to be used, a sprite');
-  parameter4.setExtraInfo('Sprite');
+  parameter4.getType().setExtraInfo('Sprite');
   testEventsFunction.getParameters().push_back(parameter1);
   testEventsFunction.getParameters().push_back(parameter2);
   testEventsFunction.getParameters().push_back(parameter3);
@@ -719,11 +719,11 @@ export const makeTestProject = (gd /*: libGDevelop */) /*: TestProject */ => {
 
   {
     const parameter1 = new gd.ParameterMetadata();
-    parameter1.setType('object');
+    parameter1.getType().setName('object');
     parameter1.setName('Object');
     parameter1.setDescription('Object');
     const parameter2 = new gd.ParameterMetadata();
-    parameter2.setType('behavior');
+    parameter2.getType().setName('behavior');
     parameter2.setName('Behavior');
     parameter2.setDescription('Behavior');
     testBehaviorEventsFunction.getParameters().push_back(parameter1);
@@ -786,34 +786,42 @@ export const makeTestProject = (gd /*: libGDevelop */) /*: TestProject */ => {
 
   // Set up some fake parameter metadata.
   const stringRelationalOperatorParameterMetadata = new gd.ParameterMetadata();
-  stringRelationalOperatorParameterMetadata.setType('relationalOperator');
+  stringRelationalOperatorParameterMetadata
+    .getType()
+    .setName('relationalOperator');
   stringRelationalOperatorParameterMetadata.setDescription(
     'A fake parameter (for strings)'
   );
-  stringRelationalOperatorParameterMetadata.setExtraInfo('string');
+  stringRelationalOperatorParameterMetadata.getType().setExtraInfo('string');
 
   const numberRelationalOperatorParameterMetadata = new gd.ParameterMetadata();
-  numberRelationalOperatorParameterMetadata.setType('relationalOperator');
+  numberRelationalOperatorParameterMetadata
+    .getType()
+    .setName('relationalOperator');
   numberRelationalOperatorParameterMetadata.setDescription(
     'A fake parameter (for number)'
   );
-  numberRelationalOperatorParameterMetadata.setExtraInfo('number');
+  numberRelationalOperatorParameterMetadata.getType().setExtraInfo('number');
 
   const colorRelationalOperatorParameterMetadata = new gd.ParameterMetadata();
-  colorRelationalOperatorParameterMetadata.setType('relationalOperator');
+  colorRelationalOperatorParameterMetadata
+    .getType()
+    .setName('relationalOperator');
   colorRelationalOperatorParameterMetadata.setDescription(
     'A fake parameter (for colors)'
   );
-  colorRelationalOperatorParameterMetadata.setExtraInfo('color');
+  colorRelationalOperatorParameterMetadata.getType().setExtraInfo('color');
 
   const unknownRelationalOperatorParameterMetadata = new gd.ParameterMetadata();
-  unknownRelationalOperatorParameterMetadata.setType('relationalOperator');
+  unknownRelationalOperatorParameterMetadata
+    .getType()
+    .setName('relationalOperator');
   unknownRelationalOperatorParameterMetadata.setDescription(
     'A fake parameter (unknown type)'
   );
-  unknownRelationalOperatorParameterMetadata.setExtraInfo(
-    'whatever-this-is-not-recognised'
-  );
+  unknownRelationalOperatorParameterMetadata
+    .getType()
+    .setExtraInfo('whatever-this-is-not-recognised');
 
   return {
     project,

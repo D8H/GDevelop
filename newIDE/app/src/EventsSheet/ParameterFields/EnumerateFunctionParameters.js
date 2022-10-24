@@ -10,8 +10,8 @@ export const enumerateParametersUsableInExpressions = (
     eventsFunction.getParametersForEvents(eventsFunctionsContainer),
     parameterMetadata =>
       parameterMetadata.isCodeOnly() ||
-      gd.ParameterMetadata.isObject(parameterMetadata.getType()) ||
-      gd.ParameterMetadata.isBehavior(parameterMetadata.getType())
+      parameterMetadata.getType().isObject() ||
+      parameterMetadata.getType().isBehavior()
         ? null
         : parameterMetadata
   ).filter(Boolean);

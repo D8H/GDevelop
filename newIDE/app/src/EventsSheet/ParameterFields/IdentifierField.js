@@ -43,7 +43,7 @@ export const IdentifierField = (props: Props) => {
         ? expressionMetadata.getParameter(parameterIndex)
         : null;
       const identifierName = parameterMetadata
-        ? parameterMetadata.getExtraInfo()
+        ? parameterMetadata.getType().getExtraInfo()
         : '';
 
       const allIdentifierExpressions =

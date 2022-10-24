@@ -160,7 +160,7 @@ const userFriendlyTypeName: { [string]: MessageDescriptor } = {
 const ParameterRenderingService = {
   components,
   getParameterComponent: (rawType: string) => {
-    const fieldType = gd.ParameterMetadata.isObject(rawType)
+    const fieldType = gd.ValueTypeMetadata.isObject(rawType)
       ? 'object'
       : rawType;
 
@@ -168,17 +168,15 @@ const ParameterRenderingService = {
     else return components.default;
   },
   renderInlineParameter: (props: ParameterInlineRendererProps): React.Node => {
-    const rawType = props.parameterMetadata.getType();
-    const fieldType = gd.ParameterMetadata.isObject(rawType)
-      ? 'object'
-      : rawType;
+    const type = props.parameterMetadata.getType();
+    const fieldType = type.isObject() ? 'object' : type.getName();
 
     const inlineRenderer =
       inlineRenderers[fieldType] || inlineRenderers.default;
     return inlineRenderer(props);
   },
   getUserFriendlyTypeName: (rawType: string): ?MessageDescriptor => {
-    const fieldType = gd.ParameterMetadata.isObject(rawType)
+    const fieldType = gd.ValueTypeMetadata.isObject(rawType)
       ? 'object'
       : rawType;
 

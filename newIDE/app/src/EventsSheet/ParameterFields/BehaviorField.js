@@ -36,7 +36,7 @@ export default class BehaviorField extends React.Component<
       : undefined;
 
     this._behaviorTypeAllowed = parameterMetadata
-      ? parameterMetadata.getExtraInfo()
+      ? parameterMetadata.getType().getExtraInfo()
       : undefined;
   }
 

@@ -99,7 +99,7 @@ const validateParameterName = (i18n: I18nType, newName: string) => {
 };
 
 const getExtraInfoArray = (parameter: gdParameterMetadata) => {
-  const extraInfoJson = parameter.getExtraInfo();
+  const extraInfoJson = parameter.getType().getExtraInfo();
   let array = [];
   try {
     if (extraInfoJson !== '') array = JSON.parse(extraInfoJson);
@@ -135,7 +135,7 @@ export default class EventsFunctionParametersEditor extends React.Component<
     );
 
     const newParameter = new gd.ParameterMetadata();
-    newParameter.setType('objectList');
+    newParameter.getType().setName('objectList');
     const newName = newNameGenerator('Parameter', name =>
       existingParameterNames.includes(name)
     );
@@ -234,7 +234,7 @@ export default class EventsFunctionParametersEditor extends React.Component<
 
   _setStringSelectorExtraInfo = (parameter: gdParameterMetadata) => {
     return (newExtraInfo: Array<string>) => {
-      parameter.setExtraInfo(JSON.stringify(newExtraInfo));
+      parameter.getType().setExtraInfo(JSON.stringify(newExtraInfo));
       this.forceUpdate();
     };
   };
@@ -430,9 +430,9 @@ export default class EventsFunctionParametersEditor extends React.Component<
                             {isParameterTypeShown(i) && (
                               <SelectField
                                 floatingLabelText={<Trans>Type</Trans>}
-                                value={parameter.getType()}
+                                value={parameter.getType().getName()}
                                 onChange={(e, i, value: string) => {
-                                  parameter.setType(value);
+                                  parameter.getType.setName(value);
                                   parameter.setOptional(false);
                                   parameter.setDefaultValue('');
                                   this.forceUpdate();
@@ -449,6 +449,7 @@ export default class EventsFunctionParametersEditor extends React.Component<
                                   value="behavior"
                                   primaryText={t`Behavior (for the previous object)`}
                                 />
+                                {/* TODO factorize this list */}
                                 <SelectOption
                                   value="expression"
                                   primaryText={t`Number`}
@@ -503,14 +504,12 @@ export default class EventsFunctionParametersEditor extends React.Component<
                                 />
                               </SelectField>
                             )}
-                            {gd.ParameterMetadata.isObject(
-                              parameter.getType()
-                            ) && (
+                            {parameter.getType().isObject() && (
                               <ObjectTypeSelector
                                 project={project}
-                                value={parameter.getExtraInfo()}
+                                value={parameter.getType().getExtraInfo()}
                                 onChange={(value: string) => {
-                                  parameter.setExtraInfo(value);
+                                  parameter.getType().setExtraInfo(value);
                                   this.forceUpdate();
                                   this.props.onParametersUpdated();
                                 }}
@@ -524,9 +523,9 @@ export default class EventsFunctionParametersEditor extends React.Component<
                                   parameters,
                                   i
                                 )}
-                                value={parameter.getExtraInfo()}
+                                value={parameter.getType().getExtraInfo()}
                                 onChange={(value: string) => {
-                                  parameter.setExtraInfo(value);
+                                  parameter.getType().setExtraInfo(value);
                                   this.forceUpdate();
                                   this.props.onParametersUpdated();
                                 }}
@@ -586,15 +585,15 @@ export default class EventsFunctionParametersEditor extends React.Component<
                               <SelectField
                                 floatingLabelText={<Trans>Scope</Trans>}
                                 value={getIdentifierScope(
-                                  parameter.getExtraInfo()
+                                  parameter.getType().getExtraInfo()
                                 )}
                                 onChange={(e, i, value) => {
                                   const identifierName = getIdentifierName(
-                                    parameter.getExtraInfo()
+                                    parameter.getType().getExtraInfo()
                                   );
-                                  parameter.setExtraInfo(
-                                    value + identifierName
-                                  );
+                                  parameter
+                                    .getType()
+                                    .setExtraInfo(value + identifierName);
                                   this.forceUpdate();
                                   this.props.onParametersUpdated();
                                 }}
@@ -618,13 +617,15 @@ export default class EventsFunctionParametersEditor extends React.Component<
                                 }
                                 floatingLabelFixed
                                 value={getIdentifierName(
-                                  parameter.getExtraInfo()
+                                  parameter.getType().getExtraInfo()
                                 )}
                                 onChange={value => {
                                   const scope = getIdentifierScope(
-                                    parameter.getExtraInfo()
+                                    parameter.getType().getExtraInfo()
                                   );
-                                  parameter.setExtraInfo(scope + value);
+                                  parameter
+                                    .getType()
+                                    .setExtraInfo(scope + value);
                                   this.forceUpdate();
                                   this.props.onParametersUpdated();
                                 }}

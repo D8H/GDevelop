@@ -201,13 +201,12 @@ ExpressionValidator::Type ExpressionValidator::ValidateFunction(const gd::Functi
 
     if (!parameterMetadata.IsOptional() || dynamic_cast<EmptyNode*>(parameter.get()) == nullptr) {
       auto currentParentType = parentType;
-      parentType = StringToType(parameterMetadata.GetType());
+      parentType = StringToType(parameterMetadata.GetType().GetName());
       parameter->Visit(*this);
       parentType = currentParentType;
       
-      const gd::String &expectedParameterType = parameterMetadata.GetType();
-      if (gd::ParameterMetadata::IsExpression(
-          ExpressionValidator::variableTypeString, expectedParameterType)) {
+      const auto& expectedParameterType = parameterMetadata.GetType();
+      if (expectedParameterType.IsVariable()) {
         if (dynamic_cast<IdentifierNode *>(parameter.get()) == nullptr
          && dynamic_cast<VariableNode *>(parameter.get()) == nullptr) {
           RaiseError(
@@ -218,7 +217,7 @@ ExpressionValidator::Type ExpressionValidator::ValidateFunction(const gd::Functi
                 parameter->location);
         }
       }
-      else if (gd::ParameterMetadata::IsObject(expectedParameterType)) {
+      else if (expectedParameterType.IsObject()) {
         if (dynamic_cast<IdentifierNode *>(parameter.get()) == nullptr) {
           RaiseError(
                   "malformed_object_parameter",
@@ -229,10 +228,8 @@ ExpressionValidator::Type ExpressionValidator::ValidateFunction(const gd::Functi
         }
       }
       // String and number are already checked in children.
-      else if (!gd::ParameterMetadata::IsExpression(
-               ExpressionValidator::numberTypeString, expectedParameterType)
-            && !gd::ParameterMetadata::IsExpression(
-              ExpressionValidator::stringTypeString, expectedParameterType)) {
+      else if (!expectedParameterType.IsNumber()
+            && !expectedParameterType.IsString()) {
         RaiseError(
                 "unknown_parameter_type",
                 _("This function is improperly set up. Reach out to the "
@@ -277,22 +274,22 @@ ExpressionValidator::Type ExpressionValidator::ValidateFunction(const gd::Functi
 
   ExpressionValidator::Type ExpressionValidator::StringToType(const gd::String &type) {
     if (type == ExpressionValidator::numberTypeString
-     || gd::ParameterMetadata::IsExpression(ExpressionValidator::numberTypeString, type)) {
+     || gd::ValueTypeMetadata::IsExpression(ExpressionValidator::numberTypeString, type)) {
       return Type::Number;
     }
     if (type == ExpressionValidator::stringTypeString
-     || gd::ParameterMetadata::IsExpression(ExpressionValidator::stringTypeString, type)) {
+     || gd::ValueTypeMetadata::IsExpression(ExpressionValidator::stringTypeString, type)) {
       return Type::String;
     }
     if (type == ExpressionValidator::numberOrStringTypeString) {
       return Type::NumberOrString;
     }
     if (type == ExpressionValidator::variableTypeString
-     || gd::ParameterMetadata::IsExpression(ExpressionValidator::variableTypeString, type)) {
+     || gd::ValueTypeMetadata::IsExpression(ExpressionValidator::variableTypeString, type)) {
       return Type::Variable;
     }
     if (type == ExpressionValidator::objectTypeString
-     || gd::ParameterMetadata::IsObject(type)) {
+     || gd::ValueTypeMetadata::IsObject(type)) {
       return Type::Object;
     }
     return Type::Unknown;

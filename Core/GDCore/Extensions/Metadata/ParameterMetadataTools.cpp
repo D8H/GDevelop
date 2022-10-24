@@ -24,10 +24,10 @@ void ParameterMetadataTools::ParametersToObjectsContainer(
     const auto& parameter = parameters[i];
     if (parameter.GetName().empty()) continue;
 
-    if (gd::ParameterMetadata::IsObject(parameter.GetType())) {
+    if (parameter.GetType().IsObject()) {
       outputObjectsContainer.InsertNewObject(
           project,
-          parameter.GetExtraInfo(),
+          parameter.GetType().GetExtraInfo(),
           parameter.GetName(),
           outputObjectsContainer.GetObjectsCount());
 
@@ -37,7 +37,7 @@ void ParameterMetadataTools::ParametersToObjectsContainer(
       // Search "lastObjectName" in the codebase for other place where this
       // convention is enforced.
       lastObjectName = parameter.GetName();
-    } else if (gd::ParameterMetadata::IsBehavior(parameter.GetType())) {
+    } else if (parameter.GetType().IsBehavior()) {
       if (!lastObjectName.empty()) {
         if (outputObjectsContainer.HasObjectNamed(lastObjectName)) {
           const gd::Object& object =
@@ -47,7 +47,7 @@ void ParameterMetadataTools::ParametersToObjectsContainer(
           if (!object.HasBehaviorNamed(behaviorName)) {
             outputObjectsContainer.GetObject(lastObjectName)
                 .AddNewBehavior(
-                    project, parameter.GetExtraInfo(), behaviorName);
+                    project, parameter.GetType().GetExtraInfo(), behaviorName);
           }
         }
       }
@@ -96,7 +96,7 @@ void ParameterMetadataTools::IterateOverParametersWithIndex(
     // the object in the list of parameters (if possible, just after).
     // Search "lastObjectName" in the codebase for other place where this
     // convention is enforced.
-    if (gd::ParameterMetadata::IsObject(parameterMetadata.GetType()))
+    if (parameterMetadata.GetType().IsObject())
       lastObjectName = parameterValueOrDefault.GetPlainString();
   }
 }
@@ -111,7 +111,7 @@ size_t ParameterMetadataTools::GetObjectParameterIndexFor(
   // convention is enforced.
   for (std::size_t pNb = parameterIndex; pNb < parametersMetadata.size();
        pNb--) {
-    if (gd::ParameterMetadata::IsObject(parametersMetadata[pNb].GetType())) {
+    if (parametersMetadata[pNb].GetType().IsObject()) {
       return pNb;
     }
   }

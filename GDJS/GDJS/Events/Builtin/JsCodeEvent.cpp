@@ -23,7 +23,8 @@ vector<pair<gd::Expression*, gd::ParameterMetadata> >
 JsCodeEvent::GetAllExpressionsWithMetadata() {
   vector<pair<gd::Expression*, gd::ParameterMetadata> >
       allExpressionsWithMetadata;
-  auto metadata = gd::ParameterMetadata().SetType("object");
+  auto metadata = gd::ParameterMetadata();
+  metadata.GetType().SetName("object");
   allExpressionsWithMetadata.push_back(
       std::make_pair(&parameterObjects, metadata));
 
@@ -34,7 +35,8 @@ vector<pair<const gd::Expression*, const gd::ParameterMetadata> >
 JsCodeEvent::GetAllExpressionsWithMetadata() const {
   vector<pair<const gd::Expression*, const gd::ParameterMetadata> >
       allExpressionsWithMetadata;
-  auto metadata = gd::ParameterMetadata().SetType("object");
+  auto metadata = gd::ParameterMetadata();
+  metadata.GetType().SetName("object");
   allExpressionsWithMetadata.push_back(
       std::make_pair(&parameterObjects, metadata));
 

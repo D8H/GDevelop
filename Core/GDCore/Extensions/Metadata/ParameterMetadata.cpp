@@ -13,8 +13,7 @@ namespace gd {
 ParameterMetadata::ParameterMetadata() : optional(false), codeOnly(false) {}
 
 void ParameterMetadata::SerializeTo(SerializerElement& element) const {
-  element.SetAttribute("type", type);
-  element.SetAttribute("supplementaryInformation", supplementaryInformation);
+  valueTypeMetadata.SerializeTo(element);
   element.SetAttribute("optional", optional);
   element.SetAttribute("description", description);
   element.SetAttribute("longDescription", longDescription);
@@ -24,9 +23,7 @@ void ParameterMetadata::SerializeTo(SerializerElement& element) const {
 }
 
 void ParameterMetadata::UnserializeFrom(const SerializerElement& element) {
-  type = element.GetStringAttribute("type");
-  supplementaryInformation =
-      element.GetStringAttribute("supplementaryInformation");
+  valueTypeMetadata.UnserializeFrom(element);
   optional = element.GetBoolAttribute("optional");
   description = element.GetStringAttribute("description");
   longDescription = element.GetStringAttribute("longDescription");
@@ -34,19 +31,5 @@ void ParameterMetadata::UnserializeFrom(const SerializerElement& element) {
   defaultValue = element.GetStringAttribute("defaultValue");
   name = element.GetStringAttribute("name");
 }
-
-  // TODO factorize in a file with an enum and helpers?
-  const gd::String ParameterMetadata::numberType = "number";
-  const gd::String ParameterMetadata::stringType = "string";
-
-  const gd::String &ParameterMetadata::GetExpressionValueType(const gd::String &parameterType) {
-    if (parameterType == "number" || gd::ParameterMetadata::IsExpression("number", parameterType)) {
-      return ParameterMetadata::numberType;
-    }
-    if (parameterType == "string" || gd::ParameterMetadata::IsExpression("string", parameterType)) {
-      return ParameterMetadata::stringType;
-    }
-    return parameterType;
-  }
 
 }  // namespace gd

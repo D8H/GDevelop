@@ -47,8 +47,8 @@ class GD_CORE_API ExpressionParser2 {
    * Parse the given expression with the specified type.
    *
    * \param type Type of the expression: "string", "number",
-   * type supported by gd::ParameterMetadata::IsObject, types supported by
-   * gd::ParameterMetadata::IsExpression or "unknown".
+   * type supported by gd::ValueTypeMetadata::IsObject, types supported by
+   * gd::ValueTypeMetadata::IsExpression or "unknown".
    * \param expression The expression to parse
    * \param objectName Specify the object name, only for the
    * case of "objectvar" type.

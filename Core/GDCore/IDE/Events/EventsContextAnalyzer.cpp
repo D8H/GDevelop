@@ -70,7 +70,7 @@ class GD_CORE_API ExpressionObjectsAnalyzer
   }
   void OnVisitIdentifierNode(IdentifierNode& node) override {
     auto type = gd::ExpressionTypeFinder::GetType(platform, globalObjectsContainer, objectsContainer, rootType, node);
-    if (gd::ParameterMetadata::IsObject(type)) {
+    if (gd::ValueTypeMetadata::IsObject(type)) {
       context.AddObjectName(node.identifierName);
     }
   }
@@ -142,19 +142,19 @@ void EventsContextAnalyzer::AnalyzeParameter(
     const gd::String& lastObjectName) {
   const auto& value = parameter.GetPlainString();
   const auto& type = metadata.GetType();
-  if (ParameterMetadata::IsObject(type)) {
+  if (type.IsObject()) {
     context.AddObjectName(value);
-  } else if (ParameterMetadata::IsExpression("number", type)) {
+  } else if (type.IsNumber()) {
     auto node = parameter.GetRootNode();
 
     ExpressionObjectsAnalyzer analyzer(platform, project, layout, "number", context);
     node->Visit(analyzer);
-  } else if (ParameterMetadata::IsExpression("string", type)) {
+  } else if (type.IsString()) {
     auto node = parameter.GetRootNode();
 
     ExpressionObjectsAnalyzer analyzer(platform, project, layout, "string", context);
     node->Visit(analyzer);
-  } else if (ParameterMetadata::IsBehavior(type)) {
+  } else if (type.IsBehavior()) {
     context.AddBehaviorName(lastObjectName, value);
   }
 }

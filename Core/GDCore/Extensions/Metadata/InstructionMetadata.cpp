@@ -55,15 +55,15 @@ InstructionMetadata& InstructionMetadata::AddParameter(
     const gd::String& supplementaryInformation,
     bool parameterIsOptional) {
   ParameterMetadata info;
-  info.type = type;
+  info.GetType().SetName(type);
   info.description = description;
   info.codeOnly = false;
   info.optional = parameterIsOptional;
-  info.supplementaryInformation =
+  info.GetType().SetExtraInfo(
       // For objects/behavior, the supplementary information
       // parameter is an object/behavior type...
-      ((gd::ParameterMetadata::IsObject(type) ||
-       gd::ParameterMetadata::IsBehavior(type))
+      ((gd::ValueTypeMetadata::IsObject(type) ||
+       gd::ValueTypeMetadata::IsBehavior(type))
        // Prefix with the namespace if it's not already there.
        && !(supplementaryInformation.rfind(extensionNamespace, 0) == 0))
           ? (supplementaryInformation.empty()
@@ -73,7 +73,7 @@ InstructionMetadata& InstructionMetadata::AddParameter(
                                                  // extension
                                                  // namespace.
              )
-          : supplementaryInformation;  // Otherwise don't change anything
+          : supplementaryInformation);  // Otherwise don't change anything
 
   // TODO: Assert against supplementaryInformation === "emsc" (when running with
   // Emscripten), and warn about a missing argument when calling addParameter.
@@ -85,9 +85,9 @@ InstructionMetadata& InstructionMetadata::AddParameter(
 InstructionMetadata& InstructionMetadata::AddCodeOnlyParameter(
     const gd::String& type, const gd::String& supplementaryInformation) {
   ParameterMetadata info;
-  info.type = type;
+  info.GetType().SetName(type);
   info.codeOnly = true;
-  info.supplementaryInformation = supplementaryInformation;
+  info.GetType().SetExtraInfo(supplementaryInformation);
 
   parameters.push_back(info);
   return *this;
@@ -173,9 +173,9 @@ InstructionMetadata::UseStandardRelationalOperatorParameters(
     }
   } else {
     AddParameter("relationalOperator", _("Sign of the test"), type);
-    // The type "string" is not forced because it's declined in several subtype
+    // The type is just forced because it's declined in several subtype
     // (see ParameterMetadata).
-    AddParameter(type == "number" ? "expression" : type, _("Value to compare"));
+    AddParameter(type, _("Value to compare"));
     size_t operatorParamIndex = parameters.size() - 2;
     size_t valueParamIndex = parameters.size() - 1;
 

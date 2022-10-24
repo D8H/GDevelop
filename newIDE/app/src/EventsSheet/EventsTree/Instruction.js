@@ -173,9 +173,9 @@ const Instruction = (props: Props) => {
           const parameterType = parameterMetadata.getType();
           let expressionIsValid = true;
           if (
-            gd.ParameterMetadata.isExpression('number', parameterType) ||
-            gd.ParameterMetadata.isExpression('string', parameterType) ||
-            gd.ParameterMetadata.isExpression('variable', parameterType)
+            parameterType.isNumber() ||
+            parameterType.isString() ||
+            parameterType.isVariable()
           ) {
             const expressionNode = instruction
               .getParameter(parameterIndex)
@@ -184,12 +184,12 @@ const Instruction = (props: Props) => {
               gd.JsPlatform.get(),
               globalObjectsContainer,
               objectsContainer,
-              parameterType
+              parameterType.getName()
             );
             expressionNode.visit(expressionValidator);
             expressionIsValid = expressionValidator.getErrors().size() === 0;
             expressionValidator.delete();
-          } else if (gd.ParameterMetadata.isObject(parameterType)) {
+          } else if (parameterType.isObject()) {
             const objectOrGroupName = instruction
               .getParameter(parameterIndex)
               .getPlainString();
@@ -200,13 +200,13 @@ const Instruction = (props: Props) => {
                   .getObjectGroups()
                   .has(objectOrGroupName) ||
                 objectsContainer.getObjectGroups().has(objectOrGroupName)) &&
-              (!parameterMetadata.getExtraInfo() ||
+              (!parameterType.getExtraInfo() ||
                 gd.getTypeOfObject(
                   globalObjectsContainer,
                   objectsContainer,
                   objectOrGroupName,
                   /*searchInGroups=*/ true
-                ) === parameterMetadata.getExtraInfo());
+                ) === parameterType.getExtraInfo());
           }
 
           return (
@@ -215,7 +215,7 @@ const Instruction = (props: Props) => {
               className={classNames({
                 [selectableArea]: true,
                 [instructionParameter]: true,
-                [parameterType]: true,
+                [parameterType.getName()]: true,
               })}
               onClick={domEvent => {
                 props.onParameterClick(domEvent, parameterIndex);

@@ -90,7 +90,7 @@ export default class InlineParameterEditor extends React.Component<
 
     const parameterMetadata = instructionMetadata.getParameter(parameterIndex);
     const ParameterComponent = ParameterRenderingService.getParameterComponent(
-      parameterMetadata.getType()
+      parameterMetadata.getType().getName()
     );
     this.setState(
       {

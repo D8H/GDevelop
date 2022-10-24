@@ -322,36 +322,26 @@ export const declareInstructionOrExpressionMetadata = (
   | gdMultipleInstructionMetadata => {
   const functionType = eventsFunction.getFunctionType();
   if (functionType === gd.EventsFunction.Expression) {
-    return extension.addExpression(
-      eventsFunction.getName(),
-      eventsFunction.getFullName() || eventsFunction.getName(),
-      eventsFunction.getDescription() || eventsFunction.getFullName(),
-      eventsFunction.getGroup() || '',
-      getExtensionIconUrl(extension)
-    );
-  } else if (functionType === gd.EventsFunction.StringExpression) {
-    return extension.addStrExpression(
-      eventsFunction.getName(),
-      eventsFunction.getFullName() || eventsFunction.getName(),
-      eventsFunction.getDescription() || eventsFunction.getFullName(),
-      eventsFunction.getGroup() || '',
-      getExtensionIconUrl(extension)
-    );
+    if (eventsFunction.getExpressionType().isNumber()) {
+      return extension.addExpression(
+        eventsFunction.getName(),
+        eventsFunction.getFullName() || eventsFunction.getName(),
+        eventsFunction.getDescription() || eventsFunction.getFullName(),
+        eventsFunction.getGroup() || '',
+        getExtensionIconUrl(extension)
+      );
+    } else {
+      return extension.addStrExpression(
+        eventsFunction.getName(),
+        eventsFunction.getFullName() || eventsFunction.getName(),
+        eventsFunction.getDescription() || eventsFunction.getFullName(),
+        eventsFunction.getGroup() || '',
+        getExtensionIconUrl(extension)
+      );
+    }
   } else if (functionType === gd.EventsFunction.ExpressionAndCondition) {
     return extension.addExpressionAndCondition(
-      'number',
-      eventsFunction.getName(),
-      eventsFunction.getFullName() || eventsFunction.getName(),
-      removeTrailingDot(eventsFunction.getDescription()) ||
-        eventsFunction.getFullName(),
-      // An operator and an operand are inserted before user parameters.
-      shiftSentenceParamIndexes(eventsFunction.getSentence(), 2),
-      eventsFunction.getGroup() || '',
-      getExtensionIconUrl(extension)
-    );
-  } else if (functionType === gd.EventsFunction.StringExpressionAndCondition) {
-    return extension.addExpressionAndCondition(
-      'string',
+      eventsFunction.getExpressionType().isNumber() ? 'number' : 'string',
       eventsFunction.getName(),
       eventsFunction.getFullName() || eventsFunction.getName(),
       removeTrailingDot(eventsFunction.getDescription()) ||
@@ -387,12 +377,7 @@ export const declareInstructionOrExpressionMetadata = (
     if (getterFunction) {
       action
         .getCodeExtraInformation()
-        .setManipulatedType(
-          getterFunction.getFunctionType() ===
-            gd.EventsFunction.StringExpressionAndCondition
-            ? 'string'
-            : 'number'
-        )
+        .setManipulatedType(getterFunction.getExpressionType().getName())
         // TODO Use an helper method
         .setGetter(
           getFreeFunctionCodeName(eventsFunctionsExtension, getterFunction)
@@ -465,40 +450,30 @@ export const declareBehaviorInstructionOrExpressionMetadata = (
   | gdMultipleInstructionMetadata => {
   const functionType = eventsFunction.getFunctionType();
   if (functionType === gd.EventsFunction.Expression) {
-    return behaviorMetadata.addExpression(
-      eventsFunction.getName(),
-      eventsFunction.getFullName() || eventsFunction.getName(),
-      eventsFunction.getDescription() || eventsFunction.getFullName(),
-      eventsFunction.getGroup() ||
-        eventsBasedBehavior.getFullName() ||
-        eventsBasedBehavior.getName(),
-      getExtensionIconUrl(extension)
-    );
-  } else if (functionType === gd.EventsFunction.StringExpression) {
-    return behaviorMetadata.addStrExpression(
-      eventsFunction.getName(),
-      eventsFunction.getFullName() || eventsFunction.getName(),
-      eventsFunction.getDescription() || eventsFunction.getFullName(),
-      eventsFunction.getGroup() ||
-        eventsBasedBehavior.getFullName() ||
-        eventsBasedBehavior.getName(),
-      getExtensionIconUrl(extension)
-    );
+    if (eventsFunction.getExpressionType().isNumber()) {
+      return behaviorMetadata.addExpression(
+        eventsFunction.getName(),
+        eventsFunction.getFullName() || eventsFunction.getName(),
+        eventsFunction.getDescription() || eventsFunction.getFullName(),
+        eventsFunction.getGroup() ||
+          eventsBasedBehavior.getFullName() ||
+          eventsBasedBehavior.getName(),
+        getExtensionIconUrl(extension)
+      );
+    } else {
+      return behaviorMetadata.addStrExpression(
+        eventsFunction.getName(),
+        eventsFunction.getFullName() || eventsFunction.getName(),
+        eventsFunction.getDescription() || eventsFunction.getFullName(),
+        eventsFunction.getGroup() ||
+          eventsBasedBehavior.getFullName() ||
+          eventsBasedBehavior.getName(),
+        getExtensionIconUrl(extension)
+      );
+    }
   } else if (functionType === gd.EventsFunction.ExpressionAndCondition) {
     return behaviorMetadata.addExpressionAndCondition(
-      'number',
-      eventsFunction.getName(),
-      eventsFunction.getFullName() || eventsFunction.getName(),
-      removeTrailingDot(eventsFunction.getDescription()) ||
-        eventsFunction.getFullName(),
-      // An operator and an operand are inserted before user parameters.
-      shiftSentenceParamIndexes(eventsFunction.getSentence(), 2),
-      eventsFunction.getGroup() || '',
-      getExtensionIconUrl(extension)
-    );
-  } else if (functionType === gd.EventsFunction.StringExpressionAndCondition) {
-    return behaviorMetadata.addExpressionAndCondition(
-      'string',
+      eventsFunction.getExpressionType().isNumber() ? 'number' : 'string',
       eventsFunction.getName(),
       eventsFunction.getFullName() || eventsFunction.getName(),
       removeTrailingDot(eventsFunction.getDescription()) ||
@@ -537,12 +512,7 @@ export const declareBehaviorInstructionOrExpressionMetadata = (
     if (getterFunction) {
       action
         .getCodeExtraInformation()
-        .setManipulatedType(
-          getterFunction.getFunctionType() ===
-            gd.EventsFunction.StringExpressionAndCondition
-            ? 'string'
-            : 'number'
-        )
+        .setManipulatedType(getterFunction.getExpressionType().getName())
         .setGetter(getterFunction.getName());
     }
     return action;
@@ -594,40 +564,30 @@ export const declareObjectInstructionOrExpressionMetadata = (
   | gdMultipleInstructionMetadata => {
   const functionType = eventsFunction.getFunctionType();
   if (functionType === gd.EventsFunction.Expression) {
-    return objectMetadata.addExpression(
-      eventsFunction.getName(),
-      eventsFunction.getFullName() || eventsFunction.getName(),
-      eventsFunction.getDescription() || eventsFunction.getFullName(),
-      eventsFunction.getGroup() ||
-        eventsBasedObject.getFullName() ||
-        eventsBasedObject.getName(),
-      getExtensionIconUrl(extension)
-    );
-  } else if (functionType === gd.EventsFunction.StringExpression) {
-    return objectMetadata.addStrExpression(
-      eventsFunction.getName(),
-      eventsFunction.getFullName() || eventsFunction.getName(),
-      eventsFunction.getDescription() || eventsFunction.getFullName(),
-      eventsFunction.getGroup() ||
-        eventsBasedObject.getFullName() ||
-        eventsBasedObject.getName(),
-      getExtensionIconUrl(extension)
-    );
+    if (eventsFunction.getExpressionType().isNumber()) {
+      return objectMetadata.addExpression(
+        eventsFunction.getName(),
+        eventsFunction.getFullName() || eventsFunction.getName(),
+        eventsFunction.getDescription() || eventsFunction.getFullName(),
+        eventsFunction.getGroup() ||
+          eventsBasedObject.getFullName() ||
+          eventsBasedObject.getName(),
+        getExtensionIconUrl(extension)
+      );
+    } else {
+      return objectMetadata.addStrExpression(
+        eventsFunction.getName(),
+        eventsFunction.getFullName() || eventsFunction.getName(),
+        eventsFunction.getDescription() || eventsFunction.getFullName(),
+        eventsFunction.getGroup() ||
+          eventsBasedObject.getFullName() ||
+          eventsBasedObject.getName(),
+        getExtensionIconUrl(extension)
+      );
+    }
   } else if (functionType === gd.EventsFunction.ExpressionAndCondition) {
     return objectMetadata.addExpressionAndCondition(
-      'number',
-      eventsFunction.getName(),
-      eventsFunction.getFullName() || eventsFunction.getName(),
-      removeTrailingDot(eventsFunction.getDescription()) ||
-        eventsFunction.getFullName(),
-      // An operator and an operand are inserted before user parameters.
-      shiftSentenceParamIndexes(eventsFunction.getSentence(), 2),
-      eventsFunction.getGroup() || '',
-      getExtensionIconUrl(extension)
-    );
-  } else if (functionType === gd.EventsFunction.StringExpressionAndCondition) {
-    return objectMetadata.addExpressionAndCondition(
-      'string',
+      eventsFunction.getExpressionType().isNumber() ? 'number' : 'string',
       eventsFunction.getName(),
       eventsFunction.getFullName() || eventsFunction.getName(),
       removeTrailingDot(eventsFunction.getDescription()) ||
@@ -666,12 +626,7 @@ export const declareObjectInstructionOrExpressionMetadata = (
     if (getterFunction) {
       action
         .getCodeExtraInformation()
-        .setManipulatedType(
-          getterFunction.getFunctionType() ===
-            gd.EventsFunction.StringExpressionAndCondition
-            ? 'string'
-            : 'number'
-        )
+        .setManipulatedType(getterFunction.getExpressionType().getName())
         .setGetter(getterFunction.getName());
     }
     return action;
@@ -740,6 +695,7 @@ export const declareBehaviorPropertiesInstructionAndExpressions = (
     // was done to ease extension declarations when dealing with object).
     instructionOrExpression
       .getParameter(instructionOrExpression.getParametersCount() - 1)
+      .getType()
       .setExtraInfo(eventsBasedBehavior.getObjectType());
 
     // By convention, second parameter is always the behavior:
@@ -1151,9 +1107,9 @@ export const declareEventsFunctionParameters = (
   const addParameter = (parameter: gdParameterMetadata) => {
     if (!parameter.isCodeOnly()) {
       instructionOrExpression.addParameter(
-        parameter.getType(),
+        parameter.getType().getName(),
         parameter.getDescription(),
-        parameter.getExtraInfo(),
+        parameter.getType().getExtraInfo(),
         parameter.isOptional()
       );
       instructionOrExpression.setParameterLongDescription(
@@ -1162,8 +1118,8 @@ export const declareEventsFunctionParameters = (
       instructionOrExpression.setDefaultValue(parameter.getDefaultValue());
     } else {
       instructionOrExpression.addCodeOnlyParameter(
-        parameter.getType(),
-        parameter.getExtraInfo()
+        parameter.getType().getName(),
+        parameter.getType().getExtraInfo()
       );
     }
   };
@@ -1190,19 +1146,11 @@ export const declareEventsFunctionParameters = (
 
   if (functionType === gd.EventsFunction.ExpressionAndCondition) {
     ((instructionOrExpression: any): gdMultipleInstructionMetadata).useStandardParameters(
-      'number'
-    );
-  } else if (functionType === gd.EventsFunction.StringExpressionAndCondition) {
-    ((instructionOrExpression: any): gdMultipleInstructionMetadata).useStandardParameters(
-      'string'
+      eventsFunction ? eventsFunction.getExpressionType().getName() : 'string'
     );
   } else if (functionType === gd.EventsFunction.ActionWithOperator) {
     ((instructionOrExpression: any): gdInstructionMetadata).useStandardOperatorParameters(
-      getterFunction &&
-        getterFunction.getFunctionType() ===
-          gd.EventsFunction.StringExpressionAndCondition
-        ? 'string'
-        : 'number'
+      getterFunction ? getterFunction.getExpressionType().getName() : 'string'
     );
   }
 

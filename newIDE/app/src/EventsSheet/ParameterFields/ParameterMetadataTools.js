@@ -71,7 +71,10 @@ export const getLastObjectParameterObjectType = (
     return '';
   }
 
-  return parameters.at(objectParameterIndex).getExtraInfo();
+  return parameters
+    .at(objectParameterIndex)
+    .getType()
+    .getExtraInfo();
 };
 
 /**
@@ -142,10 +145,12 @@ export const getParameterChoices = (
   }
 
   try {
-    return JSON.parse(parameterMetadata.getExtraInfo()).map(choice => ({
-      kind: 'Text',
-      completion: `"${choice}"`,
-    }));
+    return JSON.parse(parameterMetadata.getType().getExtraInfo()).map(
+      choice => ({
+        kind: 'Text',
+        completion: `"${choice}"`,
+      })
+    );
   } catch (exception) {
     console.error(
       'The parameter seems misconfigured, as an array of choices could not be extracted - verify that your properly wrote a list of choices in JSON format. Full exception is:',

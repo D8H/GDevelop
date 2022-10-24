@@ -62,7 +62,7 @@ const ExpressionParametersEditor = ({
       {mapFor(0, expressionMetadata.getParametersCount(), i => {
         const parameterMetadata = expressionMetadata.getParameter(i);
         const ParameterComponent = parameterRenderingService.getParameterComponent(
-          parameterMetadata.getType()
+          parameterMetadata.getType().getName()
         );
 
         if (parameterMetadata.isCodeOnly()) return null;

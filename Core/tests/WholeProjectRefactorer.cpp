@@ -67,6 +67,12 @@ const gd::String &GetEventFirstActionType(const gd::BaseEvent &event) {
   return actions.Get(0).GetType();
 }
 
+gd::ParameterMetadata CreateParameter(const gd::String& name, const gd::String& type, const gd::String& extraInfo = "") {
+  auto parameter = gd::ParameterMetadata().SetName(name);
+  parameter.GetType().SetName(type).SetExtraInfo(extraInfo);
+  return parameter;
+}
+
 enum TestEvent {
   FreeFunctionAction,
   FreeFunctionWithExpression,
@@ -747,60 +753,35 @@ SetupProjectWithEventsFunctionExtension(gd::Project &project) {
     auto &behaviorAction = behaviorEventsFunctions.InsertNewEventsFunction(
         "MyBehaviorEventsFunction", 0);
     behaviorAction.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Object")
-            .SetType("object")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedObject"));
+      CreateParameter("Object", "object", "MyEventsExtension::MyEventsBasedObject"));
     behaviorAction.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Behavior")
-            .SetType("behavior")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedBehavior"));
+        CreateParameter("Behavior", "behavior", "MyEventsExtension::MyEventsBasedBehavior"));
     behaviorAction.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("OtherObject")
-            .SetType("object")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedObject"));
+        CreateParameter("OtherObject", "object", "MyEventsExtension::MyEventsBasedObject"));
     behaviorAction.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("OtherBehavior")
-            .SetType("behavior")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedBehavior"));
+        CreateParameter("OtherBehavior", "behavior", "MyEventsExtension::MyEventsBasedBehavior"));
 
     auto &behaviorExpression =
         behaviorEventsFunctions
             .InsertNewEventsFunction("MyBehaviorEventsFunctionExpression", 1)
             .SetFunctionType(gd::EventsFunction::Expression);
     behaviorExpression.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Object")
-            .SetType("object")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedObject"));
+        CreateParameter("Object", "object", "MyEventsExtension::MyEventsBasedObject"));
     behaviorExpression.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Behavior")
-            .SetType("behavior")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedBehavior"));
+        CreateParameter("Behavior", "behavior", "MyEventsExtension::MyEventsBasedBehavior"));
 
     auto &behaviorExpressionAndCondition =
         behaviorEventsFunctions
             .InsertNewEventsFunction("MyBehaviorEventsFunctionExpressionAndCondition", 2)
             .SetFunctionType(gd::EventsFunction::ExpressionAndCondition);
     behaviorExpressionAndCondition.GetParameters().push_back(
-        gd::ParameterMetadata().SetName("Object").SetType("object"));
+        CreateParameter("Object", "object"));
     behaviorExpressionAndCondition.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Behavior")
-            .SetType("behavior")
-            .SetExtraInfo("MyExtension::MyEventsBasedBehavior"));
+        CreateParameter("Behavior", "behavior", "MyExtension::MyEventsBasedBehavior"));
     behaviorExpressionAndCondition.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Value1")
-            .SetType("expression"));
+        CreateParameter("Value1", "expression"));
     behaviorExpressionAndCondition.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Value2")
-            .SetType("expression"));
+        CreateParameter("Value2", "expression"));
 
     behaviorEventsFunctions
         .InsertNewEventsFunction("MyBehaviorEventsFunctionActionWithOperator", 2)
@@ -825,45 +806,29 @@ SetupProjectWithEventsFunctionExtension(gd::Project &project) {
     auto &objectAction = objectEventsFunctions.InsertNewEventsFunction(
         "MyObjectEventsFunction", 0);
     objectAction.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Object")
-            .SetType("object")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedObject"));
+        CreateParameter("Object", "object", "MyEventsExtension::MyEventsBasedObject"));
     objectAction.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("OtherObject")
-            .SetType("object")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedObject"));
+        CreateParameter("OtherObject", "object", "MyEventsExtension::MyEventsBasedObject"));
     objectAction.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("OtherBehavior")
-            .SetType("behavior")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedBehavior"));
+        CreateParameter("OtherBehavior", "behavior", "MyEventsExtension::MyEventsBasedBehavior"));
 
     auto &objectExpression =
         objectEventsFunctions
             .InsertNewEventsFunction("MyObjectEventsFunctionExpression", 1)
             .SetFunctionType(gd::EventsFunction::Expression);
     objectExpression.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Object")
-            .SetType("object")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedObject"));
+        CreateParameter("Object", "object", "MyEventsExtension::MyEventsBasedObject"));
 
     auto &objectExpressionAndCondition =
         objectEventsFunctions
             .InsertNewEventsFunction("MyObjectEventsFunctionExpressionAndCondition", 2)
             .SetFunctionType(gd::EventsFunction::ExpressionAndCondition);
     objectExpressionAndCondition.GetParameters().push_back(
-        gd::ParameterMetadata().SetName("Object").SetType("object"));
+        CreateParameter("Object", "object"));
     objectExpressionAndCondition.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Value1")
-            .SetType("expression"));
+        CreateParameter("Value1", "expression"));
     objectExpressionAndCondition.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Value2")
-            .SetType("expression"));
+        CreateParameter("Value2", "expression"));
 
     objectEventsFunctions
         .InsertNewEventsFunction("MyObjectEventsFunctionActionWithOperator", 2)
@@ -889,10 +854,7 @@ SetupProjectWithEventsFunctionExtension(gd::Project &project) {
     auto &objectAction = objectEventsFunctions.InsertNewEventsFunction(
         "MyObjectEventsFunction", 0);
     objectAction.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Object")
-            .SetType("object")
-            .SetExtraInfo("MyEventsExtension::MyOtherEventsBasedObject"));
+        CreateParameter("Object", "object", "MyEventsExtension::MyOtherEventsBasedObject"));
 
     // Add a child-object with the same names the one from the scene
     // to be able to use the same events list.
@@ -908,39 +870,25 @@ SetupProjectWithEventsFunctionExtension(gd::Project &project) {
   {
     auto &action =
         eventsExtension.InsertNewEventsFunction("MyEventsFunction", 0);
-    action.GetParameters().push_back(gd::ParameterMetadata()
-                                         .SetName("currentScene")
-                                         .SetType("")
+    action.GetParameters().push_back(CreateParameter("currentScene", "")
                                          .SetCodeOnly(true));
     action.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Object")
-            .SetType("object")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedObject"));
+        CreateParameter("Object", "object", "MyEventsExtension::MyEventsBasedObject"));
     action.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Behavior")
-            .SetType("behavior")
-            .SetExtraInfo("MyEventsExtension::MyEventsBasedBehavior"));
+        CreateParameter("Behavior", "behavior", "MyEventsExtension::MyEventsBasedBehavior"));
 
     auto &expression =
         eventsExtension.InsertNewEventsFunction("MyEventsFunctionExpression", 1)
             .SetFunctionType(gd::EventsFunction::Expression);
-    expression.GetParameters().push_back(gd::ParameterMetadata()
-                                             .SetName("currentScene")
-                                             .SetType("")
+    expression.GetParameters().push_back(CreateParameter("currentScene", "")
                                              .SetCodeOnly(true));
 
     auto &freeExpressionAndCondition = eventsExtension.InsertNewEventsFunction("MyEventsFunctionExpressionAndCondition", 2)
         .SetFunctionType(gd::EventsFunction::ExpressionAndCondition);
     freeExpressionAndCondition.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Value1")
-            .SetType("expression"));
+        CreateParameter("Value1", "expression"));
     freeExpressionAndCondition.GetParameters().push_back(
-        gd::ParameterMetadata()
-            .SetName("Value2")
-            .SetType("expression"));
+        CreateParameter("Value2", "expression"));
 
     eventsExtension.InsertNewEventsFunction("MyEventsFunctionActionWithOperator", 2)
         .SetFunctionType(gd::EventsFunction::ActionWithOperator)
@@ -1511,9 +1459,9 @@ TEST_CASE("WholeProjectRefactorer", "[common]") {
     auto &myEventsFunction =
         project.GetEventsFunctionsExtension("MyEventsExtension")
             .GetEventsFunction("MyEventsFunction");
-    REQUIRE(myEventsFunction.GetParameters().at(1).GetExtraInfo() ==
+    REQUIRE(myEventsFunction.GetParameters().at(1).GetType().GetExtraInfo() ==
             "MyRenamedExtension::MyEventsBasedObject");
-    REQUIRE(myEventsFunction.GetParameters().at(2).GetExtraInfo() ==
+    REQUIRE(myEventsFunction.GetParameters().at(2).GetType().GetExtraInfo() ==
             "MyRenamedExtension::MyEventsBasedBehavior");
 
     // Behavior function
@@ -1524,9 +1472,9 @@ TEST_CASE("WholeProjectRefactorer", "[common]") {
               .Get("MyEventsBasedBehavior")
               .GetEventsFunctions()
               .GetEventsFunction("MyBehaviorEventsFunction");
-      REQUIRE(myBehaviorEventsFunction.GetParameters().at(2).GetExtraInfo() ==
+      REQUIRE(myBehaviorEventsFunction.GetParameters().at(2).GetType().GetExtraInfo() ==
               "MyRenamedExtension::MyEventsBasedObject");
-      REQUIRE(myBehaviorEventsFunction.GetParameters().at(3).GetExtraInfo() ==
+      REQUIRE(myBehaviorEventsFunction.GetParameters().at(3).GetType().GetExtraInfo() ==
               "MyRenamedExtension::MyEventsBasedBehavior");
     }
 
@@ -1538,9 +1486,9 @@ TEST_CASE("WholeProjectRefactorer", "[common]") {
               .Get("MyEventsBasedObject")
               .GetEventsFunctions()
               .GetEventsFunction("MyObjectEventsFunction");
-      REQUIRE(myBehaviorEventsFunction.GetParameters().at(1).GetExtraInfo() ==
+      REQUIRE(myBehaviorEventsFunction.GetParameters().at(1).GetType().GetExtraInfo() ==
               "MyRenamedExtension::MyEventsBasedObject");
-      REQUIRE(myBehaviorEventsFunction.GetParameters().at(2).GetExtraInfo() ==
+      REQUIRE(myBehaviorEventsFunction.GetParameters().at(2).GetType().GetExtraInfo() ==
               "MyRenamedExtension::MyEventsBasedBehavior");
     }
   }
@@ -1776,7 +1724,7 @@ TEST_CASE("WholeProjectRefactorer", "[common]") {
     auto &myEventsFunction =
         project.GetEventsFunctionsExtension("MyEventsExtension")
             .GetEventsFunction("MyEventsFunction");
-    REQUIRE(myEventsFunction.GetParameters().at(2).GetExtraInfo() ==
+    REQUIRE(myEventsFunction.GetParameters().at(2).GetType().GetExtraInfo() ==
             "MyEventsExtension::MyRenamedEventsBasedBehavior");
 
     // Behavior function
@@ -1787,7 +1735,7 @@ TEST_CASE("WholeProjectRefactorer", "[common]") {
               .Get("MyEventsBasedBehavior")
               .GetEventsFunctions()
               .GetEventsFunction("MyBehaviorEventsFunction");
-      REQUIRE(myBehaviorEventsFunction.GetParameters().at(3).GetExtraInfo() ==
+      REQUIRE(myBehaviorEventsFunction.GetParameters().at(3).GetType().GetExtraInfo() ==
               "MyEventsExtension::MyRenamedEventsBasedBehavior");
     }
 
@@ -1799,7 +1747,7 @@ TEST_CASE("WholeProjectRefactorer", "[common]") {
               .Get("MyEventsBasedObject")
               .GetEventsFunctions()
               .GetEventsFunction("MyObjectEventsFunction");
-      REQUIRE(myBehaviorEventsFunction.GetParameters().at(2).GetExtraInfo() ==
+      REQUIRE(myBehaviorEventsFunction.GetParameters().at(2).GetType().GetExtraInfo() ==
               "MyEventsExtension::MyRenamedEventsBasedBehavior");
     }
   }
@@ -1878,7 +1826,7 @@ TEST_CASE("WholeProjectRefactorer", "[common]") {
     auto &myEventsFunction =
         project.GetEventsFunctionsExtension("MyEventsExtension")
             .GetEventsFunction("MyEventsFunction");
-    REQUIRE(myEventsFunction.GetParameters().at(1).GetExtraInfo() ==
+    REQUIRE(myEventsFunction.GetParameters().at(1).GetType().GetExtraInfo() ==
             "MyEventsExtension::MyRenamedEventsBasedObject");
 
     // Behavior function
@@ -1889,7 +1837,7 @@ TEST_CASE("WholeProjectRefactorer", "[common]") {
               .Get("MyEventsBasedBehavior")
               .GetEventsFunctions()
               .GetEventsFunction("MyBehaviorEventsFunction");
-      REQUIRE(myBehaviorEventsFunction.GetParameters().at(2).GetExtraInfo() ==
+      REQUIRE(myBehaviorEventsFunction.GetParameters().at(2).GetType().GetExtraInfo() ==
               "MyEventsExtension::MyRenamedEventsBasedObject");
     }
 
@@ -1901,7 +1849,7 @@ TEST_CASE("WholeProjectRefactorer", "[common]") {
               .Get("MyEventsBasedObject")
               .GetEventsFunctions()
               .GetEventsFunction("MyObjectEventsFunction");
-      REQUIRE(myBehaviorEventsFunction.GetParameters().at(1).GetExtraInfo() ==
+      REQUIRE(myBehaviorEventsFunction.GetParameters().at(1).GetType().GetExtraInfo() ==
               "MyEventsExtension::MyRenamedEventsBasedObject");
     }
   }

@@ -391,7 +391,7 @@ class GD_CORE_API ExpressionCompletionFinder
         return;
       }
 
-      const gd::String& type = parameterMetadata->GetType();
+      const gd::String& type = parameterMetadata->GetType().GetName();
       if (type == "string") {
         // No completions for an arbitrary string.
         return;
@@ -434,14 +434,14 @@ class GD_CORE_API ExpressionCompletionFinder
   }
   void OnVisitIdentifierNode(IdentifierNode& node) override {
     auto type = gd::ExpressionTypeFinder::GetType(platform, globalObjectsContainer, objectsContainer, rootType, node);
-    if (gd::ParameterMetadata::IsObject(type)) {
+    if (gd::ValueTypeMetadata::IsObject(type)) {
       // Only show completions of objects if an object is required
       completions.push_back(ExpressionCompletionDescription::ForObject(
           type,
           node.identifierName,
           node.location.GetStartPosition(),
           node.location.GetEndPosition()));
-    } else if (gd::ParameterMetadata::IsExpression("variable", type)) {
+    } else if (gd::ValueTypeMetadata::IsExpression("variable", type)) {
       auto objectName = gd::ExpressionVariableOwnerFinder::GetObjectName(
           platform,
           globalObjectsContainer,

@@ -216,7 +216,7 @@ class GD_CORE_API InstructionMetadata {
    * \see AddParameter
    */
   InstructionMetadata &SetParameterExtraInfo(const gd::String &extraInfo) {
-    if (!parameters.empty()) parameters.back().SetExtraInfo(extraInfo);
+    if (!parameters.empty()) parameters.back().GetType().SetExtraInfo(extraInfo);
     return *this;
   }
 
@@ -231,7 +231,7 @@ class GD_CORE_API InstructionMetadata {
 
   /**
    * \brief Add the default parameters for an instruction comparing the
-   * specified type ("string", "number") with the default relational operators.
+   * specified type ("string", "number", "boolean") with the default relational operators.
    * 
    * \note The type "string" can be declined in several subtypes.
    * \see ParameterMetadata

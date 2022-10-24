@@ -75,7 +75,7 @@ class GD_CORE_API ExpressionTypeFinder : public ExpressionParser2NodeWorker {
         child(nullptr) {};
 
   const gd::String &GetType() {
-    return gd::ParameterMetadata::GetExpressionValueType(type);
+    return gd::ValueTypeMetadata::GetExpressionValueType(type);
   };
 
   void OnVisitSubExpressionNode(SubExpressionNode& node) override {
@@ -145,11 +145,11 @@ class GD_CORE_API ExpressionTypeFinder : public ExpressionParser2NodeWorker {
               objectsContainer,
               node,
               *child);
-      if (parameterMetadata == nullptr || parameterMetadata->GetType().empty()) {
+      if (parameterMetadata == nullptr || !parameterMetadata->GetType().IsDefined()) {
         type = ExpressionTypeFinder::unknownType;
       }
       else {
-        type = parameterMetadata->GetType();
+        type = parameterMetadata->GetType().GetName();
       }
     }
   }

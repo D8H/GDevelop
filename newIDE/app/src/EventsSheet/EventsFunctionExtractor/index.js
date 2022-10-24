@@ -83,16 +83,18 @@ export const setupFunctionFromEvents = ({
   parameters.clear();
   [...parameterGroupNames, ...parameterObjectNames].forEach(objectName => {
     const newParameter = new gd.ParameterMetadata();
-    newParameter.setType('objectList');
+    newParameter.getType().setName('objectList');
     newParameter.setName(objectName);
-    newParameter.setExtraInfo(
-      gd.getTypeOfObject(
-        globalObjectsContainer,
-        objectsContainer,
-        objectName,
-        true
-      )
-    );
+    newParameter
+      .getType()
+      .setExtraInfo(
+        gd.getTypeOfObject(
+          globalObjectsContainer,
+          objectsContainer,
+          objectName,
+          true
+        )
+      );
     parameters.push_back(newParameter);
 
     const behaviorNames: Array<string> = eventsContext
@@ -102,16 +104,18 @@ export const setupFunctionFromEvents = ({
 
     behaviorNames.forEach(behaviorName => {
       const newParameter = new gd.ParameterMetadata();
-      newParameter.setType('behavior');
+      newParameter.getType().setName('behavior');
       newParameter.setName(behaviorName);
-      newParameter.setExtraInfo(
-        gd.getTypeOfBehavior(
-          globalObjectsContainer,
-          objectsContainer,
-          behaviorName,
-          false
-        )
-      );
+      newParameter
+        .getType()
+        .setExtraInfo(
+          gd.getTypeOfBehavior(
+            globalObjectsContainer,
+            objectsContainer,
+            behaviorName,
+            false
+          )
+        );
       parameters.push_back(newParameter);
     });
   });

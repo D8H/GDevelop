@@ -43,7 +43,7 @@ gd::String EventsCodeGenerator::GenerateRelationalOperatorCall(
   std::size_t relationalOperatorIndex = instrInfos.parameters.size();
   for (std::size_t i = startFromArgument; i < instrInfos.parameters.size();
        ++i) {
-    if (instrInfos.parameters[i].type == "relationalOperator")
+    if (instrInfos.parameters[i].GetType().GetName() == "relationalOperator")
       relationalOperatorIndex = i;
   }
   // Ensure that there is at least one parameter after the relational operator
@@ -95,7 +95,7 @@ gd::String EventsCodeGenerator::GenerateOperatorCall(
   std::size_t operatorIndex = instrInfos.parameters.size();
   for (std::size_t i = startFromArgument; i < instrInfos.parameters.size();
        ++i) {
-    if (instrInfos.parameters[i].type == "operator") operatorIndex = i;
+    if (instrInfos.parameters[i].GetType().GetName() == "operator") operatorIndex = i;
   }
 
   // Ensure that there is at least one parameter after the operator
@@ -164,7 +164,7 @@ gd::String EventsCodeGenerator::GenerateCompoundOperatorCall(
   std::size_t operatorIndex = instrInfos.parameters.size();
   for (std::size_t i = startFromArgument; i < instrInfos.parameters.size();
        ++i) {
-    if (instrInfos.parameters[i].type == "operator") operatorIndex = i;
+    if (instrInfos.parameters[i].GetType().GetName() == "operator") operatorIndex = i;
   }
 
   // Ensure that there is at least one parameter after the operator
@@ -215,7 +215,7 @@ gd::String EventsCodeGenerator::GenerateMutatorCall(
   std::size_t operatorIndex = instrInfos.parameters.size();
   for (std::size_t i = startFromArgument; i < instrInfos.parameters.size();
        ++i) {
-    if (instrInfos.parameters[i].type == "operator") operatorIndex = i;
+    if (instrInfos.parameters[i].GetType().GetName() == "operator") operatorIndex = i;
   }
 
   // Ensure that there is at least one parameter after the operator
@@ -293,7 +293,7 @@ gd::String EventsCodeGenerator::GenerateConditionCode(
 
   // Verify that there are no mismatchs between object type in parameters.
   for (std::size_t pNb = 0; pNb < instrInfos.parameters.size(); ++pNb) {
-    if (ParameterMetadata::IsObject(instrInfos.parameters[pNb].type)) {
+    if (instrInfos.parameters[pNb].GetType().IsObject()) {
       gd::String objectInParameter =
           condition.GetParameter(pNb).GetPlainString();
 
@@ -303,11 +303,11 @@ gd::String EventsCodeGenerator::GenerateConditionCode(
           !GetGlobalObjectsAndGroups().GetObjectGroups().Has(
               objectInParameter)) {
         return "/* Unknown object - skipped. */";
-      } else if (!instrInfos.parameters[pNb].supplementaryInformation.empty() &&
+      } else if (!instrInfos.parameters[pNb].GetType().GetExtraInfo().empty() &&
                  gd::GetTypeOfObject(GetGlobalObjectsAndGroups(),
                                      GetObjectsAndGroups(),
                                      objectInParameter) !=
-                     instrInfos.parameters[pNb].supplementaryInformation) {
+                     instrInfos.parameters[pNb].GetType().GetExtraInfo()) {
         return "/* Mismatched object type - skipped. */";
       }
     }
@@ -485,7 +485,7 @@ gd::String EventsCodeGenerator::GenerateActionCode(
 
   // Verify that there are no mismatchs between object type in parameters.
   for (std::size_t pNb = 0; pNb < instrInfos.parameters.size(); ++pNb) {
-    if (ParameterMetadata::IsObject(instrInfos.parameters[pNb].type)) {
+    if (instrInfos.parameters[pNb].GetType().IsObject()) {
       gd::String objectInParameter = action.GetParameter(pNb).GetPlainString();
       if (!GetObjectsAndGroups().HasObjectNamed(objectInParameter) &&
           !GetGlobalObjectsAndGroups().HasObjectNamed(objectInParameter) &&
@@ -493,11 +493,11 @@ gd::String EventsCodeGenerator::GenerateActionCode(
           !GetGlobalObjectsAndGroups().GetObjectGroups().Has(
               objectInParameter)) {
         return "/* Unknown object - skipped. */";
-      } else if (!instrInfos.parameters[pNb].supplementaryInformation.empty() &&
+      } else if (!instrInfos.parameters[pNb].GetType().GetExtraInfo().empty() &&
                  gd::GetTypeOfObject(GetGlobalObjectsAndGroups(),
                                      GetObjectsAndGroups(),
                                      objectInParameter) !=
-                     instrInfos.parameters[pNb].supplementaryInformation) {
+                     instrInfos.parameters[pNb].GetType().GetExtraInfo()) {
         return "/* Mismatched object type - skipped. */";
       }
     }
@@ -679,21 +679,22 @@ gd::String EventsCodeGenerator::GenerateParameterCodes(
         supplementaryParametersTypes) {
   gd::String argOutput;
 
-  if (ParameterMetadata::IsExpression("number", metadata.type)) {
+  auto& parameterType = metadata.GetType();
+  if (parameterType.IsNumber()) {
     argOutput = gd::ExpressionCodeGenerator::GenerateExpressionCode(
         *this, context, "number", parameter, lastObjectName);
-  } else if (ParameterMetadata::IsExpression("string", metadata.type)) {
+  } else if (parameterType.IsString()) {
     argOutput = gd::ExpressionCodeGenerator::GenerateExpressionCode(
         *this, context, "string", parameter, lastObjectName);
-  } else if (ParameterMetadata::IsExpression("variable", metadata.type)) {
+  } else if (parameterType.IsVariable()) {
     argOutput = gd::ExpressionCodeGenerator::GenerateExpressionCode(
-        *this, context, metadata.type, parameter, lastObjectName);
-  } else if (ParameterMetadata::IsObject(metadata.type)) {
+        *this, context, parameterType.GetName(), parameter, lastObjectName);
+  } else if (parameterType.IsObject()) {
     // It would be possible to run a gd::ExpressionCodeGenerator if later
     // objects can have nested objects, or function returning objects.
     argOutput =
-        GenerateObject(parameter.GetPlainString(), metadata.type, context);
-  } else if (metadata.type == "relationalOperator") {
+        GenerateObject(parameter.GetPlainString(), parameterType.GetName(), context);
+  } else if (parameterType.GetName() == "relationalOperator") {
     auto parameterString = parameter.GetPlainString();
     argOutput += parameterString == "=" ? "==" : parameterString;
     if (argOutput != "==" && argOutput != "<" && argOutput != ">" &&
@@ -703,7 +704,7 @@ gd::String EventsCodeGenerator::GenerateParameterCodes(
     }
 
     argOutput = "\"" + argOutput + "\"";
-  } else if (metadata.type == "operator") {
+  } else if (parameterType.GetName() == "operator") {
     argOutput += parameter.GetPlainString();
     if (argOutput != "=" && argOutput != "+" && argOutput != "-" &&
         argOutput != "/" && argOutput != "*") {
@@ -712,28 +713,28 @@ gd::String EventsCodeGenerator::GenerateParameterCodes(
     }
 
     argOutput = "\"" + argOutput + "\"";
-  } else if (ParameterMetadata::IsBehavior(metadata.type)) {
+  } else if (parameterType.IsBehavior()) {
     argOutput = GenerateGetBehaviorNameCode(parameter.GetPlainString());
-  } else if (metadata.type == "key") {
+  } else if (parameterType.GetName() == "key") {
     argOutput = "\"" + ConvertToString(parameter.GetPlainString()) + "\"";
-  } else if (metadata.type == "audioResource" ||
-             metadata.type == "bitmapFontResource" ||
-             metadata.type == "fontResource" ||
-             metadata.type == "imageResource" ||
-             metadata.type == "jsonResource" ||
-             metadata.type == "videoResource" ||
+  } else if (parameterType.GetName() == "audioResource" ||
+             parameterType.GetName() == "bitmapFontResource" ||
+             parameterType.GetName() == "fontResource" ||
+             parameterType.GetName() == "imageResource" ||
+             parameterType.GetName() == "jsonResource" ||
+             parameterType.GetName() == "videoResource" ||
              // Deprecated, old parameter names:
-             metadata.type == "password" || metadata.type == "musicfile" ||
-             metadata.type == "soundfile" || metadata.type == "police") {
+             parameterType.GetName() == "password" || parameterType.GetName() == "musicfile" ||
+             parameterType.GetName() == "soundfile" || parameterType.GetName() == "police") {
     argOutput = "\"" + ConvertToString(parameter.GetPlainString()) + "\"";
-  } else if (metadata.type == "mouse") {
+  } else if (parameterType.GetName() == "mouse") {
     argOutput = "\"" + ConvertToString(parameter.GetPlainString()) + "\"";
-  } else if (metadata.type == "yesorno") {
+  } else if (parameterType.GetName() == "yesorno") {
     auto parameterString = parameter.GetPlainString();
     argOutput += (parameterString == "yes" || parameterString == "oui")
                      ? GenerateTrue()
                      : GenerateFalse();
-  } else if (metadata.type == "trueorfalse") {
+  } else if (parameterType.GetName() == "trueorfalse") {
     auto parameterString = parameter.GetPlainString();
     // This is duplicated in AdvancedExtension.cpp for GDJS
     argOutput += (parameterString == "True" || parameterString == "Vrai")
@@ -741,21 +742,21 @@ gd::String EventsCodeGenerator::GenerateParameterCodes(
                      : GenerateFalse();
   }
   // Code only parameter type
-  else if (metadata.type == "inlineCode") {
-    argOutput += metadata.supplementaryInformation;
+  else if (parameterType.GetName() == "inlineCode") {
+    argOutput += parameterType.GetExtraInfo();
   } else {
     // Try supplementary types if provided
     if (supplementaryParametersTypes) {
       for (std::size_t i = 0; i < supplementaryParametersTypes->size(); ++i) {
-        if ((*supplementaryParametersTypes)[i].first == metadata.type)
+        if ((*supplementaryParametersTypes)[i].first == parameterType.GetName())
           argOutput += (*supplementaryParametersTypes)[i].second;
       }
     }
 
     // Type unknown
     if (argOutput.empty()) {
-      if (!metadata.type.empty())
-        cout << "Warning: Unknown type of parameter \"" << metadata.type
+      if (metadata.GetType().IsDefined())
+        cout << "Warning: Unknown type of parameter \"" << metadata.GetType().GetName()
              << "\"." << std::endl;
       argOutput += "\"" + ConvertToString(parameter.GetPlainString()) + "\"";
     }
@@ -1030,7 +1031,7 @@ gd::String EventsCodeGenerator::GenerateFreeCondition(
   for (std::size_t i = 0; i < instrInfos.parameters.size();
        ++i)  // Some conditions already have a "conditionInverted" parameter
   {
-    if (instrInfos.parameters[i].type == "conditionInverted")
+    if (instrInfos.parameters[i].GetType().GetName() == "conditionInverted")
       conditionAlreadyTakeCareOfInversion = true;
   }
   if (!conditionAlreadyTakeCareOfInversion && conditionInverted)
@@ -1051,7 +1052,7 @@ gd::String EventsCodeGenerator::GenerateObjectCondition(
   // Prepare call
   // Add a static_cast if necessary
   gd::String objectFunctionCallNamePart =
-      (!instrInfos.parameters[0].supplementaryInformation.empty())
+      (!instrInfos.parameters[0].GetType().GetExtraInfo().empty())
           ? "static_cast<" + objInfo.className + "*>(" +
                 GetObjectListName(objectName, context) + "[i])->" +
                 instrInfos.codeExtraInformation.functionCallName

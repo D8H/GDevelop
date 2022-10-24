@@ -287,14 +287,16 @@ void WholeProjectRefactorer::EnsureBehaviorEventsFunctionsProperParameters(
     }
 
     parameters[0]
-        .SetType("object")
         .SetName(behaviorObjectParameterName)
         .SetDescription("Object")
+        .GetType()
+        .SetName("object")
         .SetExtraInfo(eventsBasedBehavior.GetObjectType());
     parameters[1]
-        .SetType("behavior")
         .SetName("Behavior")
         .SetDescription("Behavior")
+        .GetType()
+        .SetName("behavior")
         .SetExtraInfo(GetBehaviorFullType(eventsFunctionsExtension.GetName(),
                                           eventsBasedBehavior.GetName()));
   }
@@ -312,9 +314,10 @@ void WholeProjectRefactorer::EnsureObjectEventsFunctionsProperParameters(
     }
 
     parameters[0]
-        .SetType("object")
         .SetName(parentObjectParameterName)
         .SetDescription("Object")
+        .GetType()
+        .SetName("object")
         .SetExtraInfo(GetObjectFullType(eventsFunctionsExtension.GetName(),
                                         eventsBasedObject.GetName()));
   }
@@ -1329,9 +1332,9 @@ void WholeProjectRefactorer::DoRenameBehavior(
   auto renameBehaviorTypeInParameters =
       [&oldBehaviorType, &newBehaviorType](gd::EventsFunction& eventsFunction) {
         for (auto& parameter : eventsFunction.GetParameters()) {
-          if (gd::ParameterMetadata::IsBehavior(parameter.GetType()) &&
-              parameter.GetExtraInfo() == oldBehaviorType) {
-            parameter.SetExtraInfo(newBehaviorType);
+          if (parameter.GetType().IsBehavior() &&
+              parameter.GetType().GetExtraInfo() == oldBehaviorType) {
+            parameter.GetType().SetExtraInfo(newBehaviorType);
           }
         }
       };
@@ -1421,9 +1424,9 @@ void WholeProjectRefactorer::DoRenameObject(
   auto renameObjectTypeInParameters =
       [&oldObjectType, &newObjectType](gd::EventsFunction& eventsFunction) {
         for (auto& parameter : eventsFunction.GetParameters()) {
-          if (gd::ParameterMetadata::IsObject(parameter.GetType()) &&
-              parameter.GetExtraInfo() == oldObjectType) {
-            parameter.SetExtraInfo(newObjectType);
+          if (parameter.GetType().IsObject() &&
+              parameter.GetType().GetExtraInfo() == oldObjectType) {
+            parameter.GetType().SetExtraInfo(newObjectType);
           }
         }
       };

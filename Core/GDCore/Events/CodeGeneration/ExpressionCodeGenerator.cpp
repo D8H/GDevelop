@@ -141,10 +141,10 @@ void ExpressionCodeGenerator::OnVisitIdentifierNode(IdentifierNode& node) {
                                             codeGenerator.GetObjectsAndGroups(),
                                             rootType,
                                             node);
-  if (gd::ParameterMetadata::IsObject(type)) {
+  if (gd::ValueTypeMetadata::IsObject(type)) {
     output +=
         codeGenerator.GenerateObject(node.identifierName, type, context);
-  } else if (gd::ParameterMetadata::IsExpression("variable", type)) {
+  } else if (gd::ValueTypeMetadata::IsExpression("variable", type)) {
       EventsCodeGenerator::VariableScope scope =
           type == "globalvar"
               ? gd::EventsCodeGenerator::PROJECT_VARIABLE
@@ -362,11 +362,11 @@ gd::String ExpressionCodeGenerator::GenerateParametersCodes(
                                               codeGenerator.GetObjectsAndGroups(),
                                               rootObjectName,
                                               *parameters[nonCodeOnlyParameterIndex].get());
-        ExpressionCodeGenerator generator(parameterMetadata.GetType(), objectName, codeGenerator, context);
+        ExpressionCodeGenerator generator(parameterMetadata.GetType().GetName(), objectName, codeGenerator, context);
         parameters[nonCodeOnlyParameterIndex]->Visit(generator);
         parametersCode += generator.GetOutput();
       } else if (parameterMetadata.IsOptional()) {
-        ExpressionCodeGenerator generator(parameterMetadata.GetType(), "", codeGenerator, context);
+        ExpressionCodeGenerator generator(parameterMetadata.GetType().GetName(), "", codeGenerator, context);
         // Optional parameters default value were not parsed at the time of the
         // expression parsing. Parse them now.
         ExpressionParser2 parser;
@@ -378,13 +378,13 @@ gd::String ExpressionCodeGenerator::GenerateParametersCodes(
         parametersCode +=
             "/* Error during generation, parameter not existing in the nodes "
             "*/ " +
-            GenerateDefaultValue(parameterMetadata.GetType());
+            GenerateDefaultValue(parameterMetadata.GetType().GetName());
       }
 
       nonCodeOnlyParameterIndex++;
     } else {
       parametersCode +=
-          codeGenerator.GenerateParameterCodes(parameterMetadata.GetExtraInfo(),
+          codeGenerator.GenerateParameterCodes(parameterMetadata.GetType().GetExtraInfo(),
                                                parameterMetadata,
                                                context,
                                                "",
@@ -414,13 +414,13 @@ std::vector<gd::Expression> ExpressionCodeGenerator::PrintParameters(
 
 gd::String ExpressionCodeGenerator::GenerateDefaultValue(
     const gd::String& type) {
-  if (gd::ParameterMetadata::IsExpression("variable", type)) {
+  if (gd::ValueTypeMetadata::IsExpression("variable", type)) {
     return codeGenerator.GenerateBadVariable();
   }
-  if (gd::ParameterMetadata::IsObject(type)) {
+  if (gd::ValueTypeMetadata::IsObject(type)) {
     return codeGenerator.GenerateBadObject();
   }
-  if (gd::ParameterMetadata::IsExpression("string", type)) {
+  if (gd::ValueTypeMetadata::IsExpression("string", type)) {
     return "\"\"";
   }
 
