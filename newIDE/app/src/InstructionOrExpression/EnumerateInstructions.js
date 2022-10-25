@@ -500,10 +500,8 @@ export const getObjectParameterIndex = (
   instructionMetadata: gdInstructionMetadata
 ) => {
   const parametersCount = instructionMetadata.getParametersCount();
-  console.log("parametersCount: " + parametersCount);
   if (parametersCount >= 1) {
     const firstParameterType = instructionMetadata.getParameter(0).getType();
-    console.log("firstParameterType: " + firstParameterType.getName());
     if (firstParameterType.getName() === 'object') {
       // By convention, all object conditions/actions have the object as first parameter
       return 0;
@@ -523,7 +521,6 @@ export const getObjectParameterIndex = (
         const secondParameterType = instructionMetadata
           .getParameter(1)
           .getType();
-          console.log("secondParameterType: " + secondParameterType.getName() + " : " + secondParameterType.isObject() + " : " + gd.ValueTypeMetadata.isObject(secondParameterType.getName()));
         if (secondParameterType.isObject()) {
           // Some special action/conditions like "Create", "AjoutHasard" (pick random object) or
           // "AjoutObjConcern" (pick all objects) are "free condition/actions", but are manipulating
