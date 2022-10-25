@@ -141,10 +141,10 @@ void ExpressionCodeGenerator::OnVisitIdentifierNode(IdentifierNode& node) {
                                             codeGenerator.GetObjectsAndGroups(),
                                             rootType,
                                             node);
-  if (gd::ValueTypeMetadata::IsObject(type)) {
+  if (gd::ValueTypeMetadata::TypeIsObject(type)) {
     output +=
         codeGenerator.GenerateObject(node.identifierName, type, context);
-  } else if (gd::ValueTypeMetadata::IsExpression("variable", type)) {
+  } else if (gd::ValueTypeMetadata::TypeIsExpression("variable", type)) {
       EventsCodeGenerator::VariableScope scope =
           type == "globalvar"
               ? gd::EventsCodeGenerator::PROJECT_VARIABLE
@@ -414,13 +414,13 @@ std::vector<gd::Expression> ExpressionCodeGenerator::PrintParameters(
 
 gd::String ExpressionCodeGenerator::GenerateDefaultValue(
     const gd::String& type) {
-  if (gd::ValueTypeMetadata::IsExpression("variable", type)) {
+  if (gd::ValueTypeMetadata::TypeIsExpression("variable", type)) {
     return codeGenerator.GenerateBadVariable();
   }
-  if (gd::ValueTypeMetadata::IsObject(type)) {
+  if (gd::ValueTypeMetadata::TypeIsObject(type)) {
     return codeGenerator.GenerateBadObject();
   }
-  if (gd::ValueTypeMetadata::IsExpression("string", type)) {
+  if (gd::ValueTypeMetadata::TypeIsExpression("string", type)) {
     return "\"\"";
   }
 

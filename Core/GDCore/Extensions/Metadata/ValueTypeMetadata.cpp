@@ -14,13 +14,17 @@ ValueTypeMetadata::ValueTypeMetadata() {}
 
 void ValueTypeMetadata::SerializeTo(SerializerElement& element) const {
   element.SetAttribute("type", name);
-  element.SetAttribute("supplementaryInformation", supplementaryInformation);
+  if (!supplementaryInformation.empty()) {
+    element.SetAttribute("supplementaryInformation", supplementaryInformation);
+  }
 }
 
 void ValueTypeMetadata::UnserializeFrom(const SerializerElement& element) {
   name = element.GetStringAttribute("type");
-  supplementaryInformation =
-      element.GetStringAttribute("supplementaryInformation");
+  if (element.HasAttribute("supplementaryInformation")) {
+    supplementaryInformation =
+        element.GetStringAttribute("supplementaryInformation");
+  }
 }
 
   // TODO factorize in a file with an enum and helpers?
@@ -28,10 +32,10 @@ void ValueTypeMetadata::UnserializeFrom(const SerializerElement& element) {
   const gd::String ValueTypeMetadata::stringType = "string";
 
   const gd::String &ValueTypeMetadata::GetExpressionValueType(const gd::String &parameterType) {
-    if (parameterType == "number" || gd::ValueTypeMetadata::IsExpression("number", parameterType)) {
+    if (parameterType == "number" || gd::ValueTypeMetadata::TypeIsExpression("number", parameterType)) {
       return ValueTypeMetadata::numberType;
     }
-    if (parameterType == "string" || gd::ValueTypeMetadata::IsExpression("string", parameterType)) {
+    if (parameterType == "string" || gd::ValueTypeMetadata::TypeIsExpression("string", parameterType)) {
       return ValueTypeMetadata::stringType;
     }
     return parameterType;

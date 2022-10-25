@@ -434,14 +434,14 @@ class GD_CORE_API ExpressionCompletionFinder
   }
   void OnVisitIdentifierNode(IdentifierNode& node) override {
     auto type = gd::ExpressionTypeFinder::GetType(platform, globalObjectsContainer, objectsContainer, rootType, node);
-    if (gd::ValueTypeMetadata::IsObject(type)) {
+    if (gd::ValueTypeMetadata::TypeIsObject(type)) {
       // Only show completions of objects if an object is required
       completions.push_back(ExpressionCompletionDescription::ForObject(
           type,
           node.identifierName,
           node.location.GetStartPosition(),
           node.location.GetEndPosition()));
-    } else if (gd::ValueTypeMetadata::IsExpression("variable", type)) {
+    } else if (gd::ValueTypeMetadata::TypeIsExpression("variable", type)) {
       auto objectName = gd::ExpressionVariableOwnerFinder::GetObjectName(
           platform,
           globalObjectsContainer,

@@ -113,7 +113,7 @@ void UsedExtensionsFinder::OnVisitVariableBracketAccessorNode(
 // Add extensions bound to Objects/Behaviors/Functions
 void UsedExtensionsFinder::OnVisitIdentifierNode(IdentifierNode& node) {
   auto type = gd::ExpressionTypeFinder::GetType(project.GetCurrentPlatform(), GetGlobalObjectsContainer(), GetObjectsContainer(), rootType, node);
-  if (gd::ValueTypeMetadata::IsObject(type)) {
+  if (gd::ValueTypeMetadata::TypeIsObject(type)) {
     usedExtensions.insert(gd::MetadataProvider::GetExtensionAndObjectMetadata(
                               project.GetCurrentPlatform(), node.identifierName)
                               .GetExtension()

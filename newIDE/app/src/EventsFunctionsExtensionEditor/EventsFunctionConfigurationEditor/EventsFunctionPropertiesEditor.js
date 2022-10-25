@@ -119,7 +119,7 @@ const getFullNameHintText = (
   if (type === gd.EventsFunction.Condition) {
     return t`Example: Is flashing`;
   } else if (type === gd.EventsFunction.Expression) {
-    return gd.ValueTypeMetadata.isExpression('number', expressionType)
+    return gd.ValueTypeMetadata.typeIsExpression('number', expressionType)
       ? t`Example: Remaining life`
       : t`Example: Equipped shield name`;
   }

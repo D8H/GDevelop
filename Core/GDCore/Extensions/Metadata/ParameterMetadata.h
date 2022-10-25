@@ -36,13 +36,13 @@ class GD_CORE_API ParameterMetadata {
 
   /**
    * \brief Return the type of the parameter.
-   * \see gd::ValueTypeMetadata::IsObject
+   * \see gd::ValueTypeMetadata::TypeIsObject
    */
   const gd::ValueTypeMetadata &GetType() const { return valueTypeMetadata; }
   
   /**
    * \brief Return the type of the parameter.
-   * \see gd::ValueTypeMetadata::IsObject
+   * \see gd::ValueTypeMetadata::TypeIsObject
    */
   gd::ValueTypeMetadata &GetType() { return valueTypeMetadata; }
 

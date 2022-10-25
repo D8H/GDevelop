@@ -12,7 +12,9 @@
 
 namespace gd {
 
-EventsFunction::EventsFunction() : functionType(Action) {}
+EventsFunction::EventsFunction() : functionType(Action) {
+  expressionType.SetName("expression");
+}
 
 const std::vector<gd::ParameterMetadata>& EventsFunction::GetParametersForEvents(
     const gd::EventsFunctionsContainer& functionsContainer) const {
@@ -120,11 +122,13 @@ void EventsFunction::UnserializeFrom(gd::Project& project,
       // Compatibility code for version 5.1.147 and older.
       // There is no longer distinction between number and string in the function
       // type directly. The expression type is now used for this.
-      expressionType.SetName(functionTypeStr == "StringExpression" ? "string" : "number");
+      expressionType.SetName(functionTypeStr == "StringExpression" ? "string" : "expression");
     }
   }
-  else if (functionTypeStr == "ExpressionAndCondition")
+  else if (functionTypeStr == "ExpressionAndCondition") {
     functionType = ExpressionAndCondition;
+    expressionType.UnserializeFrom(element.GetChild("expressionType"));
+  }
   else if (functionTypeStr == "ActionWithOperator")
     functionType = ActionWithOperator;
   else

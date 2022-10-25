@@ -1346,9 +1346,9 @@ interface ValueTypeMetadata {
     boolean IsString();
     boolean IsVariable();
 
-    boolean STATIC_IsObject([Const] DOMString param);
-    boolean STATIC_IsBehavior([Const] DOMString param);
-    boolean STATIC_IsExpression([Const] DOMString type_, [Const] DOMString parameterType);
+    boolean STATIC_TypeIsObject([Const] DOMString param);
+    boolean STATIC_TypeIsBehavior([Const] DOMString param);
+    boolean STATIC_TypeIsExpression([Const] DOMString type_, [Const] DOMString parameterType);
 
     void SerializeTo([Ref] SerializerElement element);
     void UnserializeFrom([Const, Ref] SerializerElement element);

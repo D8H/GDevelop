@@ -256,7 +256,7 @@ const getAutocompletionsForObject = function(
 
   // If we expect an object, don't add a dot. Otherwise (number, string...),
   // add a dot to prepare for an object function.
-  const addDot = !gd.ValueTypeMetadata.isObject(type);
+  const addDot = !gd.ValueTypeMetadata.typeIsObject(type);
 
   return [
     ...filteredObjectsList.map(({ object }) => ({

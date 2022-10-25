@@ -74,15 +74,14 @@ class GD_CORE_API ValueTypeMetadata {
    * (or more, i.e: an object group).
    */
   bool IsObject() const {
-    std::cout << "IsObject is called!" << std::endl;
-    return gd::ValueTypeMetadata::IsObject(name);
+    return gd::ValueTypeMetadata::TypeIsObject(name);
   }
 
   /**
    * \brief Return true if the type of the parameter is "behavior".
    */
   bool IsBehavior() const {
-    return gd::ValueTypeMetadata::IsBehavior(name);
+    return gd::ValueTypeMetadata::TypeIsBehavior(name);
   }
 
   /**
@@ -93,7 +92,7 @@ class GD_CORE_API ValueTypeMetadata {
    * and ExpressionAutocompletion) and in the EventsCodeGenerator.
    */
   bool IsNumber() const {
-    return gd::ValueTypeMetadata::IsExpression("number", name);
+    return gd::ValueTypeMetadata::TypeIsExpression("number", name);
   }
 
   /**
@@ -104,7 +103,7 @@ class GD_CORE_API ValueTypeMetadata {
    * and ExpressionAutocompletion) and in the EventsCodeGenerator.
    */
   bool IsString() const {
-    return gd::ValueTypeMetadata::IsExpression("string", name);
+    return gd::ValueTypeMetadata::TypeIsExpression("string", name);
   }
 
   /**
@@ -115,15 +114,14 @@ class GD_CORE_API ValueTypeMetadata {
    * and ExpressionAutocompletion) and in the EventsCodeGenerator.
    */
   bool IsVariable() const {
-    return gd::ValueTypeMetadata::IsExpression("variable", name);
+    return gd::ValueTypeMetadata::TypeIsExpression("variable", name);
   }
 
   /**
    * \brief Return true if the type of the parameter is representing one object
    * (or more, i.e: an object group).
    */
-  static bool IsObject(const gd::String &parameterType) {
-    std::cout << "IsObject static is called" << std::endl;
+  static bool TypeIsObject(const gd::String &parameterType) {
     return parameterType == "object" || parameterType == "objectPtr" ||
            parameterType == "objectList" ||
            parameterType == "objectListOrEmptyIfJustDeclared" ||
@@ -133,7 +131,7 @@ class GD_CORE_API ValueTypeMetadata {
   /**
    * \brief Return true if the type of the parameter is "behavior".
    */
-  static bool IsBehavior(const gd::String &parameterType) {
+  static bool TypeIsBehavior(const gd::String &parameterType) {
     return parameterType == "behavior";
   }
 
@@ -144,7 +142,7 @@ class GD_CORE_API ValueTypeMetadata {
    * see EventsFunctionParametersEditor, ParameterRenderingService
    * and ExpressionAutocompletion) and in the EventsCodeGenerator.
    */
-  static bool IsExpression(const gd::String &type,
+  static bool TypeIsExpression(const gd::String &type,
                            const gd::String &parameterType) {
     if (type == "number") {
       return parameterType == "number" || parameterType == "expression" ||

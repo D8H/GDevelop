@@ -274,22 +274,22 @@ ExpressionValidator::Type ExpressionValidator::ValidateFunction(const gd::Functi
 
   ExpressionValidator::Type ExpressionValidator::StringToType(const gd::String &type) {
     if (type == ExpressionValidator::numberTypeString
-     || gd::ValueTypeMetadata::IsExpression(ExpressionValidator::numberTypeString, type)) {
+     || gd::ValueTypeMetadata::TypeIsExpression(ExpressionValidator::numberTypeString, type)) {
       return Type::Number;
     }
     if (type == ExpressionValidator::stringTypeString
-     || gd::ValueTypeMetadata::IsExpression(ExpressionValidator::stringTypeString, type)) {
+     || gd::ValueTypeMetadata::TypeIsExpression(ExpressionValidator::stringTypeString, type)) {
       return Type::String;
     }
     if (type == ExpressionValidator::numberOrStringTypeString) {
       return Type::NumberOrString;
     }
     if (type == ExpressionValidator::variableTypeString
-     || gd::ValueTypeMetadata::IsExpression(ExpressionValidator::variableTypeString, type)) {
+     || gd::ValueTypeMetadata::TypeIsExpression(ExpressionValidator::variableTypeString, type)) {
       return Type::Variable;
     }
     if (type == ExpressionValidator::objectTypeString
-     || gd::ValueTypeMetadata::IsObject(type)) {
+     || gd::ValueTypeMetadata::TypeIsObject(type)) {
       return Type::Object;
     }
     return Type::Unknown;

@@ -70,7 +70,7 @@ class GD_CORE_API ExpressionObjectsAnalyzer
   }
   void OnVisitIdentifierNode(IdentifierNode& node) override {
     auto type = gd::ExpressionTypeFinder::GetType(platform, globalObjectsContainer, objectsContainer, rootType, node);
-    if (gd::ValueTypeMetadata::IsObject(type)) {
+    if (gd::ValueTypeMetadata::TypeIsObject(type)) {
       context.AddObjectName(node.identifierName);
     }
   }

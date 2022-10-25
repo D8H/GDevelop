@@ -95,7 +95,7 @@ class GD_CORE_API ExpressionObjectRenamer : public ExpressionParser2NodeWorker {
   }
   void OnVisitIdentifierNode(IdentifierNode& node) override {
     auto type = gd::ExpressionTypeFinder::GetType(platform, globalObjectsContainer, objectsContainer, rootType, node);
-    if (gd::ValueTypeMetadata::IsObject(type) &&
+    if (gd::ValueTypeMetadata::TypeIsObject(type) &&
         node.identifierName == objectName) {
       hasDoneRenaming = true;
       node.identifierName = objectNewName;
@@ -194,7 +194,7 @@ class GD_CORE_API ExpressionObjectFinder : public ExpressionParser2NodeWorker {
   }
   void OnVisitIdentifierNode(IdentifierNode& node) override {
     auto type = gd::ExpressionTypeFinder::GetType(platform, globalObjectsContainer, objectsContainer, rootType, node);
-    if (gd::ValueTypeMetadata::IsObject(type) &&
+    if (gd::ValueTypeMetadata::TypeIsObject(type) &&
         node.identifierName == objectName) {
       hasObject = true;
     }
