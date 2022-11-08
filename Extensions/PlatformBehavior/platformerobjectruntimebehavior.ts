@@ -1592,6 +1592,17 @@ namespace gdjs {
         this._currentFallSpeed !== 0
       );
     }
+
+    followCurrentPlatformIfAny(): boolean {
+      let hasMoved = false;
+      if (this.isOnFloor()) {
+        const timeDelta = this.owner.getElapsedTime() / 1000;
+        const hasMovedX = this._onFloor.followCurrentPlatformOnX(timeDelta);
+        const hasMovedY = this._onFloor.followCurrentPlatformOnY(timeDelta);
+        hasMoved = hasMovedX || hasMovedY;
+      }
+      return hasMoved;
+    }
   }
 
   /**
@@ -1666,6 +1677,11 @@ namespace gdjs {
     }
 
     beforeUpdatingObstacles(timeDelta: float) {
+      this.followCurrentPlatformOnY(timeDelta);
+    }
+
+    followCurrentPlatformOnY(timeDelta: float): boolean {
+      let hasMoved = false;
       const object = this._behavior.owner;
       //Stick the object to the floor if its height has changed.
       if (this._oldHeight !== object.getHeight()) {
@@ -1674,6 +1690,7 @@ namespace gdjs {
             object.getHeight() +
             (object.getY() - object.getDrawableY())
         );
+        hasMoved = true;
       }
       // Directly follow the floor movement on the Y axis by moving the character.
       // For the X axis, we follow the floor movement using `_requestedDeltaX`
@@ -1701,7 +1718,9 @@ namespace gdjs {
           Math.abs(this._behavior._maxFallingSpeed * timeDelta)
       ) {
         object.setY(object.getY() + deltaY);
+        hasMoved = true;
       }
+      return hasMoved;
     }
 
     checkTransitionBeforeX() {
@@ -1742,6 +1761,19 @@ namespace gdjs {
       behavior._requestedDeltaX +=
         this._floorPlatform!.owner.getX() - this._floorLastX;
       // See `beforeUpdatingObstacles` for the logic for the Y axis.
+    }
+    
+    followCurrentPlatformOnX(timeDelta: float): boolean {
+      let hasMoved = false;
+      const object = this._behavior.owner;
+      
+      // Shift the object according to the floor movement.
+      const deltaX = this._floorPlatform!.owner.getX() - this._floorLastX;
+      if (deltaX !== 0) {
+        object.setX(object.getX() + deltaX);
+        hasMoved = true;
+      }
+      return hasMoved;
     }
 
     checkTransitionBeforeY(timeDelta: float) {

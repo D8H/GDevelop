@@ -160,6 +160,8 @@ class PlatformBehaviorJsExtension : public gd::PlatformExtension {
           "isUsingControl");
       autActions["PlatformBehavior::IgnoreDefaultControls"].SetFunctionName(
           "ignoreDefaultControls");
+      autActions["PlatformBehavior::FollowCurrentPlatform"].SetFunctionName(
+          "followCurrentPlatformIfAny");
     }
     {
       std::map<gd::String, gd::InstructionMetadata>& autActions =
