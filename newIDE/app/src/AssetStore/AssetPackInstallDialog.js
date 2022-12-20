@@ -146,6 +146,8 @@ const AssetPackInstallDialog = ({
                   project,
                   objectsContainer: targetObjectsContainer,
                   environment,
+                  requiredExtensionInstallation,
+                  shouldUpdateExtension,
                 })
               : await installPublicAsset({
                   assetShortHeader,
@@ -153,6 +155,8 @@ const AssetPackInstallDialog = ({
                   project,
                   objectsContainer: targetObjectsContainer,
                   environment,
+                  requiredExtensionInstallation,
+                  shouldUpdateExtension,
                 });
 
             if (!installOutput) {

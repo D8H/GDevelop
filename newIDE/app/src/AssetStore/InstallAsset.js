@@ -231,8 +231,8 @@ export const getRequiredExtensionsFromAsset = (
 
 export const filterMissingExtensions = (
   gd: libGDevelop,
-  requiredExtensions: Array<RequiredExtension>
-): Array<RequiredExtension> => {
+  requiredExtensions: Array<ExtensionShortHeader>
+): Array<ExtensionShortHeader> => {
   const loadedExtensionNames = mapVector(
     gd.asPlatform(gd.JsPlatform.get()).getAllPlatformExtensions(),
     extension => {
@@ -240,33 +240,20 @@ export const filterMissingExtensions = (
     }
   );
 
-  return requiredExtensions.filter(({ extensionName }) => {
-    return !loadedExtensionNames.includes(extensionName);
+  return requiredExtensions.filter(extension => {
+    return !loadedExtensionNames.includes(extension.name);
   });
 };
 
 export const downloadExtensions = async (
-  extensionNames: Array<string>
+  extensions: Array<ExtensionShortHeader>
 ): Promise<Array<SerializedExtension>> => {
-  if (!extensionNames.length) return Promise.resolve([]);
-
-  const extensionsRegistry = await getExtensionsRegistry();
+  if (!extensions.length) return Promise.resolve([]);
 
   const serializedExtensions = await Promise.all(
-    uniq(extensionNames).map(extensionName => {
-      const extensionShortHeader = extensionsRegistry.extensionShortHeaders.find(
-        extensionShortHeader => {
-          return extensionShortHeader.name === extensionName;
-        }
-      );
-      if (!extensionShortHeader) {
-        throw new Error(
-          'Unable to find extension ' + extensionName + ' in the registry.'
-        );
-      }
-
-      return getExtension(extensionShortHeader);
-    })
+    uniq(extensions).map(extensionShortHeader =>
+      getExtension(extensionShortHeader)
+    )
   );
 
   return serializedExtensions;
@@ -310,24 +297,71 @@ export const addSerializedExtensionsToProject = (
   );
 };
 
+export type RequiredExtensionInstallation = {|
+  requiredExtensions: Array<ExtensionShortHeader>,
+  missingExtensions: Array<ExtensionShortHeader>,
+  outOfDateExtensions: Array<ExtensionShortHeader>,
+|};
+
+type CheckExtensionArgs = {|
+  asset: Asset,
+  project: gdProject,
+|};
+
+export const checkRequiredExtensionUpdate = async ({
+  asset,
+  project,
+}: CheckExtensionArgs): Promise<RequiredExtensionInstallation> => {
+  const extensionsRegistry = await getExtensionsRegistry();
+
+  const requiredExtensions = getRequiredExtensionsFromAsset(asset).map(
+    requiredExtension => {
+      const extensionShortHeader = extensionsRegistry.extensionShortHeaders.find(
+        extensionShortHeader => {
+          return extensionShortHeader.name === requiredExtension.extensionName;
+        }
+      );
+      if (!extensionShortHeader) {
+        throw new Error(
+          'Unable to find extension ' +
+            requiredExtension.extensionName +
+            ' in the registry.'
+        );
+      }
+
+      return extensionShortHeader;
+    }
+  );
+
+  const outOfDateExtensions = requiredExtensions
+    .map(
+      requiredExtensionShortHeader =>
+        project.hasEventsFunctionsExtensionNamed(
+          requiredExtensionShortHeader.name
+        ) &&
+        project
+          .getEventsFunctionsExtension(requiredExtensionShortHeader.name)
+          .getVersion() !== requiredExtensionShortHeader.version
+    )
+    .filter(Boolean);
+
+  const missingExtensions = filterMissingExtensions(gd, requiredExtensions);
+
+  return { requiredExtensions, missingExtensions, outOfDateExtensions };
+};
+
+export type InstallAssetOutput = {|
+  createdObjects: Array<gdObject>,
+|};
+
 type InstallAssetArgs = {|
   asset: Asset,
   eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
   project: gdProject,
   objectsContainer: gdObjectsContainer,
   environment: Environment,
-|};
-
-export type InstallAssetShortHeaderArgs = {|
-  assetShortHeader: AssetShortHeader,
-  eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
-  project: gdProject,
-  objectsContainer: gdObjectsContainer,
-  environment: Environment,
-|};
-
-export type InstallAssetOutput = {|
-  createdObjects: Array<gdObject>,
+  requiredExtensionInstallation: RequiredExtensionInstallation,
+  shouldUpdateExtension: boolean,
 |};
 
 export const installAsset = async ({
@@ -336,12 +370,20 @@ export const installAsset = async ({
   project,
   objectsContainer,
   environment,
+  requiredExtensionInstallation,
+  shouldUpdateExtension,
 }: InstallAssetArgs): Promise<InstallAssetOutput> => {
-  const requiredExtensions = getRequiredExtensionsFromAsset(asset);
-  const missingExtensions = filterMissingExtensions(gd, requiredExtensions);
-  const serializedExtensions = await downloadExtensions(
-    missingExtensions.map(({ extensionName }) => extensionName)
-  );
+  const {
+    requiredExtensions,
+    missingExtensions,
+    outOfDateExtensions,
+  } = requiredExtensionInstallation;
+
+  const neededExtensions = shouldUpdateExtension
+    ? [...missingExtensions, ...outOfDateExtensions]
+    : missingExtensions;
+
+  const serializedExtensions = await downloadExtensions(neededExtensions);
   await addSerializedExtensionsToProject(
     eventsFunctionsExtensionsState,
     project,
@@ -355,7 +397,7 @@ export const installAsset = async ({
   if (stillMissingExtensions.length) {
     throw new Error(
       'These extensions could not be installed: ' +
-        missingExtensions.map(({ extensionName }) => extensionName).join(', ')
+        missingExtensions.map(extension => extension.name).join(', ')
     );
   }
 
@@ -367,12 +409,24 @@ export const installAsset = async ({
   return output;
 };
 
+export type InstallAssetShortHeaderArgs = {|
+  assetShortHeader: AssetShortHeader,
+  eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
+  project: gdProject,
+  objectsContainer: gdObjectsContainer,
+  environment: Environment,
+  requiredExtensionInstallation: RequiredExtensionInstallation,
+  shouldUpdateExtension: boolean,
+|};
+
 export const installPublicAsset = async ({
   assetShortHeader,
   eventsFunctionsExtensionsState,
   project,
   objectsContainer,
   environment,
+  requiredExtensionInstallation,
+  shouldUpdateExtension,
 }: InstallAssetShortHeaderArgs): Promise<InstallAssetOutput> => {
   const asset = await getPublicAsset(assetShortHeader, { environment });
   return installAsset({
@@ -381,5 +435,7 @@ export const installPublicAsset = async ({
     project,
     objectsContainer,
     environment,
+    requiredExtensionInstallation,
+    shouldUpdateExtension,
   });
 };
