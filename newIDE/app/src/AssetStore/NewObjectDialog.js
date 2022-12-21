@@ -30,12 +30,15 @@ import {
   installPublicAsset,
   checkRequiredExtensionUpdate,
 } from './InstallAsset';
-import { getPublicAsset } from '../Utils/GDevelopServices/Asset';
+import {
+  getPublicAsset,
+  isPrivateAsset,
+} from '../Utils/GDevelopServices/Asset';
+import { type ExtensionShortHeader } from '../Utils/GDevelopServices/Extension';
 import EventsFunctionsExtensionsContext from '../EventsFunctionsExtensionsLoader/EventsFunctionsExtensionsContext';
 import { showErrorBox } from '../UI/Messages/MessageBox';
 import Window from '../Utils/Window';
 import PrivateAssetsAuthorizationContext from './PrivateAssets/PrivateAssetsAuthorizationContext';
-import { isPrivateAsset } from '../Utils/GDevelopServices/Asset';
 import useAlertDialog from '../UI/Alert/useAlertDialog';
 import { translateExtensionCategory } from '../Utils/Extension/ExtensionCategories';
 import { useResponsiveWindowWidth } from '../UI/Reponsive/ResponsiveWindowMeasurer';
@@ -73,6 +76,24 @@ const ObjectListItem = ({
       onClick={onClick}
     />
   );
+};
+
+export const useExtensionUpdateAlertDialog = () => {
+  const { showConfirmation } = useAlertDialog();
+  return async (
+    outOfDateExtensions: Array<ExtensionShortHeader>
+  ): Promise<boolean> => {
+    return await showConfirmation({
+      title: t`Extension update`,
+      message: t`Before installing this asset, it's strongly recommended to update these extensions${'\n\n - ' +
+        outOfDateExtensions
+          .map(extension => extension.fullName)
+          .join('\n\n - ') +
+        '\n\n'}Do you want to update it now ?`,
+      confirmButtonLabel: t`Update the extension`,
+      dismissButtonLabel: t`Skip the update`,
+    });
+  };
 };
 
 type Props = {|
@@ -169,7 +190,9 @@ export default function NewObjectDialog({
   const { installPrivateAsset, fetchPrivateAsset } = React.useContext(
     PrivateAssetsAuthorizationContext
   );
-  const { showAlert, showConfirmation } = useAlertDialog();
+  const { showAlert } = useAlertDialog();
+
+  const showExtensionUpdateConfirmation = useExtensionUpdateAlertDialog();
 
   const onInstallAsset = React.useCallback(
     () => {
@@ -208,11 +231,9 @@ export default function NewObjectDialog({
           );
           const shouldUpdateExtension =
             requiredExtensionInstallation.outOfDateExtensions.length > 0 &&
-            (await showConfirmation({
-              title: t`Extension update`,
-              message: t`An extension update is it's strongly recommended before installing this asset. Do you want update it now ?`,
-              confirmButtonLabel: t`Update the extension`,
-            }));
+            (await showExtensionUpdateConfirmation(
+              requiredExtensionInstallation.outOfDateExtensions
+            ));
           const installOutput = isPrivate
             ? await installPrivateAsset({
                 assetShortHeader: openedAssetShortHeader,
@@ -266,16 +287,17 @@ export default function NewObjectDialog({
     },
     [
       openedAssetShortHeader,
-      eventsFunctionsExtensionsState,
-      project,
-      objectsContainer,
+      fetchPrivateAsset,
       environment,
+      project,
+      showExtensionUpdateConfirmation,
       installPrivateAsset,
+      eventsFunctionsExtensionsState,
+      objectsContainer,
       openedAssetPack,
       resourceManagementProps,
       canInstallPrivateAsset,
       showAlert,
-      showConfirmation,
       onObjectAddedFromAsset,
     ]
   );

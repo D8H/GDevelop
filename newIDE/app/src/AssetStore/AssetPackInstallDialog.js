@@ -32,7 +32,7 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import { mapFor } from '../Utils/MapFor';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import AlertMessage from '../UI/AlertMessage';
-import useAlertDialog from '../UI/Alert/useAlertDialog';
+import { useExtensionUpdateAlertDialog } from './NewObjectDialog';
 import { type InstallAssetOutput } from './InstallAsset';
 
 type Props = {|
@@ -91,7 +91,7 @@ const AssetPackInstallDialog = ({
     PrivateAssetsAuthorizationContext
   );
 
-  const { showConfirmation } = useAlertDialog();
+  const showExtensionUpdateConfirmation = useExtensionUpdateAlertDialog();
 
   const { environment } = React.useContext(AssetStoreContext);
 
@@ -167,11 +167,9 @@ const AssetPackInstallDialog = ({
         );
         const shouldUpdateExtension =
           requiredExtensionInstallation.outOfDateExtensions.length > 0 &&
-          (await showConfirmation({
-            title: t`Extension update`,
-            message: t`An extension update is it's strongly recommended before installing this asset. Do you want update it now ?`,
-            confirmButtonLabel: t`Update the extension`,
-          }));
+          (await showExtensionUpdateConfirmation(
+            requiredExtensionInstallation.outOfDateExtensions
+          ));
 
         // Use a pool to avoid installing an unbounded amount of assets at the same time.
         const { results, errors } = await PromisePool.withConcurrency(6)
@@ -234,7 +232,7 @@ const AssetPackInstallDialog = ({
     },
     [
       project,
-      showConfirmation,
+      showExtensionUpdateConfirmation,
       resourceManagementProps,
       onAssetsAdded,
       fetchPrivateAsset,

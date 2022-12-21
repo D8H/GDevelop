@@ -316,12 +316,10 @@ export const checkRequiredExtensionUpdate = async ({
 }: CheckExtensionArgs): Promise<RequiredExtensionInstallation> => {
   const requiredExtensionNames: Array<string> = [];
   assets.forEach(asset => {
-    const requiredExtensionsFromAsset = getRequiredExtensionsFromAsset(asset);
-    requiredExtensionsFromAsset.forEach(requiredExtension => {
+    getRequiredExtensionsFromAsset(asset).forEach(requiredExtension => {
       if (
-        requiredExtensionsFromAsset.find(
-          extension =>
-            extension.extensionName === requiredExtension.extensionName
+        !requiredExtensionNames.some(
+          extensionName => extensionName === requiredExtension.extensionName
         )
       ) {
         requiredExtensionNames.push(requiredExtension.extensionName);
