@@ -29,8 +29,8 @@ import AssetPackInstallDialog from './AssetPackInstallDialog';
 import {
   installPublicAsset,
   checkRequiredExtensionUpdate,
-  getPublicAsset,
 } from './InstallAsset';
+import { getPublicAsset } from '../Utils/GDevelopServices/Asset';
 import EventsFunctionsExtensionsContext from '../EventsFunctionsExtensionsLoader/EventsFunctionsExtensionsContext';
 import { showErrorBox } from '../UI/Messages/MessageBox';
 import Window from '../Utils/Window';
@@ -189,18 +189,20 @@ export default function NewObjectDialog({
               return;
             }
           }
-          const asset = isPrivate ? await fetchPrivateAsset(openedAssetShortHeader, {
-            environment,
-          }) : await getPublicAsset(openedAssetShortHeader, { environment });
+          const asset = isPrivate
+            ? await fetchPrivateAsset(openedAssetShortHeader, {
+                environment,
+              })
+            : await getPublicAsset(openedAssetShortHeader, { environment });
           if (!asset) {
             throw new Error(
               'Unable to install the asset because it could not be fetched.'
             );
           }
-          
+
           const requiredExtensionInstallation = await checkRequiredExtensionUpdate(
             {
-              asset,
+              assets: [asset],
               project,
             }
           );

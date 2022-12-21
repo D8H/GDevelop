@@ -17,10 +17,12 @@ import {
   getExtensionsRegistry,
   getExtension,
   type SerializedExtension,
+  type ExtensionShortHeader,
 } from '../Utils/GDevelopServices/Extension';
 import { type EventsFunctionsExtensionsState } from '../EventsFunctionsExtensionsLoader/EventsFunctionsExtensionsContext';
 import { mapVector } from '../Utils/MapFor';
 import { toNewGdMapStringString } from '../Utils/MapStringString';
+
 const gd: libGDevelop = global.gd;
 
 const toPascalCase = (str: string) => {
@@ -304,27 +306,50 @@ export type RequiredExtensionInstallation = {|
 |};
 
 type CheckExtensionArgs = {|
-  asset: Asset,
+  assets: Array<Asset>,
   project: gdProject,
 |};
 
 export const checkRequiredExtensionUpdate = async ({
-  asset,
+  assets,
   project,
 }: CheckExtensionArgs): Promise<RequiredExtensionInstallation> => {
+  const requiredExtensionNames: Array<string> = [];
+  assets.forEach(asset => {
+    const requiredExtensionsFromAsset = getRequiredExtensionsFromAsset(asset);
+    requiredExtensionsFromAsset.forEach(requiredExtension => {
+      if (
+        requiredExtensionsFromAsset.find(
+          extension =>
+            extension.extensionName === requiredExtension.extensionName
+        )
+      ) {
+        requiredExtensionNames.push(requiredExtension.extensionName);
+      }
+    });
+  });
+
+  if (requiredExtensionNames.length === 0) {
+    return {
+      requiredExtensions: [],
+      missingExtensions: [],
+      outOfDateExtensions: [],
+    };
+  }
+
   const extensionsRegistry = await getExtensionsRegistry();
 
-  const requiredExtensions = getRequiredExtensionsFromAsset(asset).map(
-    requiredExtension => {
+  const requiredExtensions = requiredExtensionNames.map(
+    requiredExtensionName => {
       const extensionShortHeader = extensionsRegistry.extensionShortHeaders.find(
         extensionShortHeader => {
-          return extensionShortHeader.name === requiredExtension.extensionName;
+          return extensionShortHeader.name === requiredExtensionName;
         }
       );
       if (!extensionShortHeader) {
         throw new Error(
           'Unable to find extension ' +
-            requiredExtension.extensionName +
+            requiredExtensionName +
             ' in the registry.'
         );
       }
@@ -333,17 +358,15 @@ export const checkRequiredExtensionUpdate = async ({
     }
   );
 
-  const outOfDateExtensions = requiredExtensions
-    .map(
-      requiredExtensionShortHeader =>
-        project.hasEventsFunctionsExtensionNamed(
-          requiredExtensionShortHeader.name
-        ) &&
-        project
-          .getEventsFunctionsExtension(requiredExtensionShortHeader.name)
-          .getVersion() !== requiredExtensionShortHeader.version
-    )
-    .filter(Boolean);
+  const outOfDateExtensions = requiredExtensions.filter(
+    requiredExtensionShortHeader =>
+      project.hasEventsFunctionsExtensionNamed(
+        requiredExtensionShortHeader.name
+      ) &&
+      project
+        .getEventsFunctionsExtension(requiredExtensionShortHeader.name)
+        .getVersion() !== requiredExtensionShortHeader.version
+  );
 
   const missingExtensions = filterMissingExtensions(gd, requiredExtensions);
 
