@@ -55,6 +55,12 @@ gd::ExpressionMetadata& ExpressionMetadata::AddParameter(
                                            // namespace.
              )
           : supplementaryInformation);  // Otherwise don't change anything
+  if (type == "trueorfalse") {
+    info.SetDefaultValue("False");
+  }
+  else if (type == "yesorno") {
+    info.SetDefaultValue("no");
+  }
 
   // TODO: Assert against supplementaryInformation === "emsc" (when running with
   // Emscripten), and warn about a missing argument when calling addParameter.
