@@ -115,6 +115,14 @@ export class SafeExtractor {
 }
 
 export default class Clipboard {
+  static copy(text: string) {
+    if (electronClipboard) {
+      electronClipboard.writeText(text);
+    } else {
+      internalClipboard = text;
+    }
+  }
+
   static set(kind: ClipboardKind, object: any) {
     const text = JSON.stringify({
       '000kind': mangleClipboardKind(kind), /// 000 to ensure the key is written first.

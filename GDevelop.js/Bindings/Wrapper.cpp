@@ -77,6 +77,7 @@
 #include <GDCore/Project/VariablesContainer.h>
 #include <GDCore/Serialization/Serializer.h>
 #include <GDCore/Serialization/SerializerElement.h>
+#include <GDCore/IDE/ObjectAssetSerializer.h>
 #include <GDJS/Events/Builtin/JsCodeEvent.h>
 #include <GDJS/Events/CodeGeneration/BehaviorCodeGenerator.h>
 #include <GDJS/Events/CodeGeneration/ObjectCodeGenerator.h>
@@ -514,6 +515,7 @@ typedef ExtensionAndMetadata<ExpressionMetadata> ExtensionAndExpressionMetadata;
 #define STATIC_ValidateName ValidateName
 #define STATIC_ToJSON ToJSON
 #define STATIC_FromJSON(x) FromJSON(x)
+#define STATIC_SerializeTo SerializeTo
 #define STATIC_IsObject IsObject
 #define STATIC_IsBehavior IsBehavior
 #define STATIC_IsExpression IsExpression

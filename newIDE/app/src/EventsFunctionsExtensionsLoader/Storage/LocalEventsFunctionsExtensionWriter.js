@@ -1,5 +1,8 @@
 // @flow
-import { serializeToJSObject } from '../../Utils/Serializer';
+import {
+  serializeToJSObject,
+  serializeToObjectAsset,
+} from '../../Utils/Serializer';
 import optionalRequire from '../../Utils/OptionalRequire';
 const fs = optionalRequire('fs-extra');
 const path = optionalRequire('path');
@@ -84,19 +87,12 @@ export default class LocalEventsFunctionsExtensionWriter {
       });
   };
 
-  static writeCustomObject = (
-    customObject: gdObject,
+  static writeObjectAsset = (
+    project: gdProject,
+    exportedObject: gdObject,
     filepath: string
   ): Promise<void> => {
-    const exportedObject = customObject.clone().get();
-    exportedObject.setTags('');
-    exportedObject.getVariables().clear();
-    exportedObject.getEffects().clear();
-    exportedObject
-      .getAllBehaviorNames()
-      .toJSArray()
-      .forEach(name => exportedObject.removeBehavior(name));
-    const serializedObject = serializeToJSObject(exportedObject);
+    const serializedObject = serializeToObjectAsset(project, exportedObject);
     return writeJSONFile(serializedObject, filepath).catch(err => {
       console.error('Unable to write the object:', err);
       throw err;

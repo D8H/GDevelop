@@ -1156,6 +1156,10 @@ interface Serializer {
     [Value] SerializerElement STATIC_FromJSON([Const] DOMString json);
 };
 
+interface ObjectAssetSerializer {
+    void STATIC_SerializeTo([Const, Ref] Project project, [Const, Ref] gdObject obj, [Ref] SerializerElement element);
+};
+
 interface InstructionsList {
     void InstructionsList();
 

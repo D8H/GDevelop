@@ -35,6 +35,8 @@ export const Default = () => (
     value={fakeEventsFunctionsExtensionsContext}
   >
     <ObjectExporterDialog
+      project={testProject.project}
+      layout={testProject.testLayout}
       object={testProject.customObject}
       onClose={() => action('Close the dialog')}
     />

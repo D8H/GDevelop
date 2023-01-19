@@ -13,9 +13,12 @@ import EventsFunctionsExtensionsContext, {
   type EventsFunctionsExtensionsState,
 } from '../EventsFunctionsExtensionsLoader/EventsFunctionsExtensionsContext';
 import Window from '../Utils/Window';
+import Clipboard from '../Utils/Clipboard';
+import { serializeToObjectAsset } from '../Utils/Serializer';
 
-const exportCustomObject = async (
+const exportObjectAsset = async (
   eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
+  project: gdProject,
   customObject: gdObject
 ) => {
   const eventsFunctionsExtensionWriter = eventsFunctionsExtensionsState.getEventsFunctionsExtensionWriter();
@@ -31,10 +34,19 @@ const exportCustomObject = async (
 
   if (!pathOrUrl) return;
 
-  await eventsFunctionsExtensionWriter.writeCustomObject(
+  await eventsFunctionsExtensionWriter.writeObjectAsset(
+    project,
     customObject,
     pathOrUrl
   );
+};
+
+const exportLayoutObjectAssets = async (
+  eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
+  project: gdProject,
+  layout: gdLayout
+) => {
+  // TODO Export all objects as .asset.json files.
 };
 
 const openGitHubIssue = () => {
@@ -44,6 +56,8 @@ const openGitHubIssue = () => {
 };
 
 type Props = {|
+  project: gdProject,
+  layout: gdLayout,
   object: gdObject,
   onClose: () => void,
 |};
@@ -92,13 +106,27 @@ const ObjectExporterDialog = (props: Props) => {
             icon={<CloudUpload />}
             primary
             label={<Trans>Export to a file</Trans>}
-            onClick={() => {
-              exportCustomObject(eventsFunctionsExtensionsState, props.object);
-            }}
+            onClick={() =>
+              exportObjectAsset(
+                eventsFunctionsExtensionsState,
+                props.project,
+                props.object
+              )
+            }
           />
           <FlatButton
             label={<Trans>Submit objects to the community</Trans>}
             onClick={openGitHubIssue}
+          />
+          <FlatButton
+            label={<Trans>Export all scene objects</Trans>}
+            onClick={() =>
+              exportLayoutObjectAssets(
+                eventsFunctionsExtensionsState,
+                props.project,
+                props.layout
+              )
+            }
           />
         </ResponsiveLineStackLayout>
       </Column>
