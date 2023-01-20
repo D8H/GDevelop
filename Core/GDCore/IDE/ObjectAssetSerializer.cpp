@@ -56,8 +56,8 @@ void ObjectAssetSerializer::SerializeTo(const gd::Project &project,
   element.SetIntAttribute("animationsCount", 1);
   element.SetIntAttribute("maxFramesCount", 1);
   // TODO Find the right object dimensions.
-  element.SetAttribute("width", "");
-  element.SetAttribute("height", "");
+  element.SetIntAttribute("width", 0);
+  element.SetIntAttribute("height", 0);
   SerializerElement &authorsElement = element.AddChild("authors");
   authorsElement.ConsiderAsArrayOf("author");
   SerializerElement &tagsElement = element.AddChild("tags");
