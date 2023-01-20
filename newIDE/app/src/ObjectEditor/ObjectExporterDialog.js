@@ -13,8 +13,6 @@ import EventsFunctionsExtensionsContext, {
   type EventsFunctionsExtensionsState,
 } from '../EventsFunctionsExtensionsLoader/EventsFunctionsExtensionsContext';
 import Window from '../Utils/Window';
-import Clipboard from '../Utils/Clipboard';
-import { serializeToObjectAsset } from '../Utils/Serializer';
 
 const exportObjectAsset = async (
   eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
@@ -28,7 +26,7 @@ const exportObjectAsset = async (
       "The object can't be exported because it's not supported by the web-app."
     );
   }
-  const pathOrUrl = await eventsFunctionsExtensionWriter.chooseCustomObjectFile(
+  const pathOrUrl = await eventsFunctionsExtensionWriter.chooseObjectAssetFile(
     customObject.getName()
   );
 
@@ -46,7 +44,24 @@ const exportLayoutObjectAssets = async (
   project: gdProject,
   layout: gdLayout
 ) => {
-  // TODO Export all objects as .asset.json files.
+  const eventsFunctionsExtensionWriter = eventsFunctionsExtensionsState.getEventsFunctionsExtensionWriter();
+  if (!eventsFunctionsExtensionWriter) {
+    // This won't happen in practice because this view can't be reached from the web-app.
+    throw new Error(
+      "Objects can't be exported because it's not supported by the web-app."
+    );
+  }
+  const pathOrUrl = await eventsFunctionsExtensionWriter.chooseAssetsFolder(
+    layout.getName()
+  );
+
+  if (!pathOrUrl) return;
+
+  await eventsFunctionsExtensionWriter.writeLayoutObjectAssets(
+    project,
+    layout,
+    pathOrUrl
+  );
 };
 
 const openGitHubIssue = () => {

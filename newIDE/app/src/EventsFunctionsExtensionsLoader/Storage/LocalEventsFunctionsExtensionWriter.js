@@ -3,6 +3,7 @@ import {
   serializeToJSObject,
   serializeToObjectAsset,
 } from '../../Utils/Serializer';
+import { mapFor } from '../../Utils/MapFor';
 import optionalRequire from '../../Utils/OptionalRequire';
 const fs = optionalRequire('fs-extra');
 const path = optionalRequire('path');
@@ -29,6 +30,12 @@ const writeJSONFile = (object: Object, filepath: string): Promise<void> => {
   } catch (stringifyException) {
     return Promise.reject(stringifyException);
   }
+};
+
+const addSpacesToPascalCase = (pascalCaseName: string): string => {
+  let name = pascalCaseName.replace(/([A-Z]+[a-z]|\d+)/g, ' $1');
+  name = name.substring(1);
+  return name;
 };
 
 export default class LocalEventsFunctionsExtensionWriter {
@@ -66,7 +73,7 @@ export default class LocalEventsFunctionsExtensionWriter {
     });
   };
 
-  static chooseCustomObjectFile = (objectName?: string): Promise<?string> => {
+  static chooseObjectAssetFile = (objectName?: string): Promise<?string> => {
     if (!dialog) return Promise.reject('Not supported');
     const browserWindow = remote.getCurrentWindow();
 
@@ -76,15 +83,32 @@ export default class LocalEventsFunctionsExtensionWriter {
         filters: [
           {
             name: 'GDevelop 5 object configuration',
-            extensions: ['gdo'],
+            extensions: ['asset.json'],
           },
         ],
-        defaultPath: objectName || 'Object',
+        defaultPath:
+          (objectName && addSpacesToPascalCase(objectName)) || 'Object',
       })
       .then(({ filePath }) => {
         if (!filePath) return null;
         return filePath;
       });
+  };
+
+  static chooseAssetsFolder = (layoutName?: string): Promise<?string> => {
+    if (!dialog) return Promise.reject('Not supported');
+    const browserWindow = remote.getCurrentWindow();
+
+    return dialog
+      .showOpenDialog(browserWindow, {
+        title: 'Export all object of the scene into a folder',
+        properties: ['openDirectory', 'createDirectory'],
+        filters: [],
+        defaultPath: '',
+      })
+      .then(({ filePaths }) =>
+        filePaths && filePaths.length > 0 ? filePaths[0] : null
+      );
   };
 
   static writeObjectAsset = (
@@ -97,5 +121,32 @@ export default class LocalEventsFunctionsExtensionWriter {
       console.error('Unable to write the object:', err);
       throw err;
     });
+  };
+
+  static writeLayoutObjectAssets = (
+    project: gdProject,
+    layout: gdLayout,
+    directoryPath: string
+  ): Promise<any> => {
+    return Promise.all(
+      mapFor(0, layout.getObjectsCount(), i => {
+        const exportedObject = layout.getObjectAt(i);
+
+        const serializedObject = serializeToObjectAsset(
+          project,
+          exportedObject
+        );
+        return writeJSONFile(
+          serializedObject,
+          path.join(
+            directoryPath,
+            addSpacesToPascalCase(exportedObject.getName()) + '.asset.json'
+          )
+        ).catch(err => {
+          console.error('Unable to write the object:', err);
+          throw err;
+        });
+      })
+    );
   };
 }

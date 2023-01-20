@@ -5,17 +5,9 @@
  */
 #ifndef GDCORE_OBJECT_ASSET_SERIALIZER_H
 #define GDCORE_OBJECT_ASSET_SERIALIZER_H
-#include "GDCore/Vector2.h"
-#include <map>
-#include <memory>
 #include <vector>
 
-#include "GDCore/Project/Behavior.h"
-#include "GDCore/Project/ObjectConfiguration.h"
-#include "GDCore/Project/EffectsContainer.h"
-#include "GDCore/Project/VariablesContainer.h"
 #include "GDCore/String.h"
-#include "GDCore/Tools/MakeUnique.h"
 
 namespace gd {
 class Object;
@@ -27,28 +19,31 @@ class ArbitraryResourceWorker;
 class InitialInstance;
 class SerializerElement;
 class EffectsContainer;
-}  // namespace gd
+} // namespace gd
 
 namespace gd {
 
 /**
- * \brief Represent an object of a platform
- * 
+ * \brief Serialize objects into an asset for the store.
+ *
  * \ingroup IDE
  */
 class GD_CORE_API ObjectAssetSerializer {
- public:
+public:
   /**
    * \brief Serialize the object into an asset.
    */
-  static void SerializeTo(const gd::Project &project, const gd::Object &object, SerializerElement& element);
+  static void SerializeTo(const gd::Project &project, const gd::Object &object,
+                          SerializerElement &element);
 
   ~ObjectAssetSerializer(){};
 
- private:
+private:
   ObjectAssetSerializer(){};
+
+  static const std::vector<gd::String> resourceTypes;
 };
 
-}  // namespace gd
+} // namespace gd
 
-#endif  // GDCORE_OBJECT_ASSET_SERIALIZER_H
+#endif // GDCORE_OBJECT_ASSET_SERIALIZER_H

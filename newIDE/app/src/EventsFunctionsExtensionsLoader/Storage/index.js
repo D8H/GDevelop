@@ -13,10 +13,16 @@ export type EventsFunctionsExtensionWriter = {
     extension: gdEventsFunctionsExtension,
     filepath: string
   ) => Promise<void>,
-  chooseCustomObjectFile: (objectName?: string) => Promise<?string>,
+  chooseObjectAssetFile: (objectName?: string) => Promise<?string>,
+  chooseAssetsFolder: (layoutName?: string) => Promise<?string>,
   writeObjectAsset: (
     project: gdProject,
     extension: gdObject,
     filepath: string
+  ) => Promise<void>,
+  writeLayoutObjectAssets: (
+    project: gdProject,
+    layout: gdLayout,
+    directoryPath: string
   ) => Promise<void>,
 };
