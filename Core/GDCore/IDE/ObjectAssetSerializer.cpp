@@ -78,6 +78,9 @@ void ObjectAssetSerializer::SerializeTo(const gd::Project &project,
   auto &resourcesManager = project.GetResourcesManager();
   for (auto &&resourceType : resourceTypes) {
     for (auto &&resourceName : resourcesInUse.GetAll(resourceType)) {
+      if (resourceName.length() == 0) {
+        continue;
+      }
       auto &resource = resourcesManager.GetResource(resourceName);
       SerializerElement &resourceElement =
           resourcesElement.AddChild("resource");
