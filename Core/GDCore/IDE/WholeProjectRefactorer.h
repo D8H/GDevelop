@@ -21,10 +21,14 @@ class EventsBasedBehavior;
 class EventsBasedObject;
 class ArbitraryEventsWorker;
 class ArbitraryObjectsWorker;
+class ArbitraryFunctionsWorker;
 class ArbitraryEventsWorkerWithContext;
+class ArbitraryEventBasedBehaviorsWorker;
+class ArbitrarySharedDataWorker;
 class Behavior;
 class BehaviorMetadata;
 class UnfilledRequiredBehaviorPropertyProblem;
+class ProjectExposer;
 }  // namespace gd
 
 namespace gd {
@@ -39,54 +43,6 @@ namespace gd {
  */
 class GD_CORE_API WholeProjectRefactorer {
  public:
-  /**
-   * \brief Call the specified worker on all events of the project (layout,
-   * external events, events functions...)
-   *
-   * This should be the preferred way to traverse all the events of a project.
-   */
-  static void ExposeProjectEvents(gd::Project& project,
-                                  gd::ArbitraryEventsWorker& worker);
-
-  /**
-   * \brief Call the specified worker on all events of the project (layout,
-   * external events, events functions...)
-   *
-   * This should be the preferred way to traverse all the events of a project.
-   */
-  static void ExposeProjectEvents(gd::Project& project,
-                                  gd::ArbitraryEventsWorkerWithContext& worker);
-
-  /**
-   * \brief Call the specified worker on all events of the events based behavior
-   *
-   * This should be the preferred way to traverse all the events of an events
-   * based behavior.
-   */
-  static void ExposeEventsBasedBehaviorEvents(
-      gd::Project& project,
-      const gd::EventsBasedBehavior& eventsBasedBehavior,
-      gd::ArbitraryEventsWorkerWithContext& worker);
-
-  /**
-   * \brief Call the specified worker on all events of the events based object
-   *
-   * This should be the preferred way to traverse all the events of an events
-   * based object.
-   */
-  static void ExposeEventsBasedObjectEvents(
-      gd::Project& project,
-      const gd::EventsBasedObject& eventsBasedObject,
-      gd::ArbitraryEventsWorkerWithContext& worker);
-
-  /**
-   * \brief Call the specified worker on all ObjectContainers of the project
-   * (global, layouts...)
-   *
-   * This should be the preferred way to traverse all the objects of a project.
-   */
-  static void ExposeProjectObjects(gd::Project& project,
-                                   gd::ArbitraryObjectsWorker& worker);
 
   /**
    * \brief Refactor the project **before** an events function extension is
@@ -101,6 +57,16 @@ class GD_CORE_API WholeProjectRefactorer {
       const gd::EventsFunctionsExtension& eventsFunctionsExtension,
       const gd::String& oldName,
       const gd::String& newName);
+
+  /**
+   * \brief Refactor behavior events after the extension was placed in a new
+   * extension.
+   */
+  static void UpdateExtensionNameInEventsBasedBehavior(
+      gd::Project& project,
+      const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+      gd::EventsBasedBehavior& eventsBasedBehavior,
+      const gd::String& sourceExtensionName);
 
   /**
    * \brief Refactor the project **before** an events function is renamed.
@@ -439,15 +405,33 @@ class GD_CORE_API WholeProjectRefactorer {
   static void DoRenameEventsFunction(gd::Project& project,
                                      const gd::EventsFunction& eventsFunction,
                                      const gd::String& oldFullType,
-                                     const gd::String& newFullType);
+                                     const gd::String& newFullType,
+                                     const gd::ProjectExposer& projectExposer);
 
   static void DoRenameBehavior(gd::Project& project,
                                const gd::String& oldBehaviorType,
-                               const gd::String& newBehaviorType);
+                               const gd::String& newBehaviorType,
+                               const gd::ProjectExposer& projectExposer);
 
   static void DoRenameObject(gd::Project& project,
                              const gd::String& oldObjectType,
-                             const gd::String& newObjectType);
+                             const gd::String& newObjectType,
+                             const gd::ProjectExposer& projectExposer);
+
+  /**
+   * \brief Refactor the project **before** an events function extension is
+   * renamed.
+   *
+   * \warning Do the renaming of the specified extension after calling this.
+   * This is because the extension is expected to have its old name for the
+   * refactoring.
+   */
+  static void RenameEventsFunctionsExtension(
+      gd::Project& project,
+      const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+      const gd::String& oldName,
+      const gd::String& newName,
+      const gd::ProjectExposer& projectExposer);
 
   static void FindDependentBehaviorNames(
       const gd::Project& project,
