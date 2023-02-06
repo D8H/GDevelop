@@ -27,11 +27,12 @@ namespace gdjs {
     _untransformedHitBoxes: gdjs.Polygon[] = [];
     /** The dimension of this object is calculated from its children AABBs. */
     _unrotatedAABB: AABB = { min: [0, 0], max: [0, 0] };
-    _scaleX: number = 1;
-    _scaleY: number = 1;
+    _scaleX: float = 1;
+    _scaleY: float = 1;
     _flippedX: boolean = false;
     _flippedY: boolean = false;
     opacity: float = 255;
+    _customCenter: FloatPoint | null = null;
 
     /**
      * @param parent The container the object belongs to
@@ -222,10 +223,11 @@ namespace gdjs {
       // The default camera center depends on the object dimensions so checking
       // the AABB center is not enough.
       if (
+        !this._customCenter && (
         this._unrotatedAABB.min[0] !== oldUnrotatedMinX ||
         this._unrotatedAABB.min[1] !== oldUnrotatedMinY ||
         this._unrotatedAABB.max[0] !== oldUnrotatedMaxX ||
-        this._unrotatedAABB.max[1] !== oldUnrotatedMaxY
+        this._unrotatedAABB.max[1] !== oldUnrotatedMaxY)
       ) {
         this._instanceContainer.onObjectUnscaledCenterChanged(
           (oldUnrotatedMinX + oldUnrotatedMaxX) / 2,
@@ -363,6 +365,9 @@ namespace gdjs {
      * @returns the center X from the local origin (0;0).
      */
     getUnscaledCenterX(): float {
+      if (this._customCenter) {
+        return this._customCenter[0];
+      }
       if (this._isUntransformedHitBoxesDirty) {
         this._updateUntransformedHitBoxes();
       }
@@ -373,10 +378,53 @@ namespace gdjs {
      * @returns the center Y from the local origin (0;0).
      */
     getUnscaledCenterY(): float {
+      if (this._customCenter) {
+        return this._customCenter[1];
+      }
       if (this._isUntransformedHitBoxesDirty) {
         this._updateUntransformedHitBoxes();
       }
       return (this._unrotatedAABB.min[1] + this._unrotatedAABB.max[1]) / 2;
+    }
+
+    /**
+     * The center of rotation is defined relatively to the origin (the object
+     * position).
+     * This avoids the center to move when children push the bounds.
+     *
+     * When no custom center is defined, it will move
+     * to stay at the center of the children bounds.
+     *
+     * @param x coordinate of the custom center
+     * @param y coordinate of the custom center
+     */
+    setRotationCenter(x: float, y: float) {
+      // const hadCustomCenter = this._customCenter;
+      // const oldCustomCenterX = this.getUnscaledCenterX();
+      // const oldCustomCenterY = this.getUnscaledCenterY();
+      // console.log("setRotationCenter: " + oldCustomCenterX + " " + oldCustomCenterY
+      //    + " --> " + this.getUnscaledCenterX() + " " + this.getUnscaledCenterY());
+      
+      if (!this._customCenter) {
+        this._customCenter = [0, 0];
+      }
+      this._customCenter[0] = x;
+      this._customCenter[1] = y;
+
+      // if (hadCustomCenter) {
+      //   this._instanceContainer.onObjectUnscaledCenterChanged(
+      //     oldCustomCenterX,
+      //     oldCustomCenterY
+      //   );
+      // }
+    }
+    
+    getCenterX(): float {
+      return (this.getUnscaledCenterX() - this._unrotatedAABB.min[0]) * this.getScaleX();
+    }
+
+    getCenterY(): float {
+      return (this.getUnscaledCenterY() - this._unrotatedAABB.min[1]) * this.getScaleY();
     }
 
     getWidth(): float {
