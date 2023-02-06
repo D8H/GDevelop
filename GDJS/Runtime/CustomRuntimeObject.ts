@@ -249,8 +249,8 @@ namespace gdjs {
      * (x and y position of the point in parent coordinates).
      */
     applyObjectTransformation(x: float, y: float, result: number[]) {
-      let cx = this.getCenterX();
-      let cy = this.getCenterY();
+      let cx = this.getUnscaledCenterX() - this._unrotatedAABB.min[0];
+      let cy = this.getUnscaledCenterY() - this._unrotatedAABB.min[1];
 
       // Flipping
       if (this._flippedX) {
@@ -277,8 +277,8 @@ namespace gdjs {
       x = cx + cosValue * xToCenterXDelta - sinValue * yToCenterYDelta;
       y = cy + sinValue * xToCenterXDelta + cosValue * yToCenterYDelta;
       result.length = 2;
-      result[0] = x + this.x;
-      result[1] = y + this.y;
+      result[0] = x + this.x + this._unrotatedAABB.min[0] * absScaleX;
+      result[1] = y + this.y + this._unrotatedAABB.min[1] * absScaleY;
     }
 
     /**
@@ -399,24 +399,23 @@ namespace gdjs {
      * @param y coordinate of the custom center
      */
     setRotationCenter(x: float, y: float) {
-      // const hadCustomCenter = this._customCenter;
-      // const oldCustomCenterX = this.getUnscaledCenterX();
-      // const oldCustomCenterY = this.getUnscaledCenterY();
-      // console.log("setRotationCenter: " + oldCustomCenterX + " " + oldCustomCenterY
-      //    + " --> " + this.getUnscaledCenterX() + " " + this.getUnscaledCenterY());
+      console.log("setRotationCenter: " + x + " " + y);
+      const hadCustomCenter = true;//this._customCenter;
       
       if (!this._customCenter) {
         this._customCenter = [0, 0];
       }
+      const oldCustomCenterX = this._customCenter[0];
+      const oldCustomCenterY = this._customCenter[1];
       this._customCenter[0] = x;
       this._customCenter[1] = y;
 
-      // if (hadCustomCenter) {
-      //   this._instanceContainer.onObjectUnscaledCenterChanged(
-      //     oldCustomCenterX,
-      //     oldCustomCenterY
-      //   );
-      // }
+      if (hadCustomCenter) {
+        this._instanceContainer.onObjectUnscaledCenterChanged(
+          oldCustomCenterX,
+          oldCustomCenterY
+        );
+      }
     }
     
     getCenterX(): float {
