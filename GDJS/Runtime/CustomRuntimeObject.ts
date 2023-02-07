@@ -404,10 +404,16 @@ namespace gdjs {
     }
     
     getCenterX(): float {
+      if (this._isUntransformedHitBoxesDirty) {
+        this._updateUntransformedHitBoxes();
+      }
       return (this.getUnscaledCenterX() - this._unrotatedAABB.min[0]) * this.getScaleX();
     }
 
     getCenterY(): float {
+      if (this._isUntransformedHitBoxesDirty) {
+        this._updateUntransformedHitBoxes();
+      }
       return (this.getUnscaledCenterY() - this._unrotatedAABB.min[1]) * this.getScaleY();
     }
 

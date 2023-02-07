@@ -88,6 +88,8 @@ namespace gdjs {
         this._cachedHeight = 0;
       }
       this._spriteDirty = false;
+      console.log("S anchor: " + this._sprite.anchor.x + " " + this._sprite.anchor.y);
+      console.log("S position: " + this._sprite.position.x + " " + this._sprite.position.y);
     }
 
     /**
