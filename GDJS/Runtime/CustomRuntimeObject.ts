@@ -33,6 +33,9 @@ namespace gdjs {
     _flippedY: boolean = false;
     opacity: float = 255;
     _customCenter: FloatPoint | null = null;
+    _localTransformation: gdjs.AffineTransformation = new gdjs.AffineTransformation();
+    _localInverseTransformation: gdjs.AffineTransformation = new gdjs.AffineTransformation();
+    _isLocalTransformationDirty: boolean = true;
 
     /**
      * @param parent The container the object belongs to
@@ -150,8 +153,9 @@ namespace gdjs {
         this._updateUntransformedHitBoxes();
       }
 
-      //Update the current hitboxes with the frame custom hit boxes
-      //and apply transformations.
+      // Update the current hitboxes with the frame custom hit boxes
+      // and apply transformations.
+      const localTransformation = this.getLocalTransformation();
       for (let i = 0; i < this._untransformedHitBoxes.length; ++i) {
         if (i >= this.hitBoxes.length) {
           this.hitBoxes.push(new gdjs.Polygon());
@@ -164,9 +168,8 @@ namespace gdjs {
           if (j >= this.hitBoxes[i].vertices.length) {
             this.hitBoxes[i].vertices.push([0, 0]);
           }
-          this.applyObjectTransformation(
-            this._untransformedHitBoxes[i].vertices[j][0],
-            this._untransformedHitBoxes[i].vertices[j][1],
+          localTransformation.transform(
+            this._untransformedHitBoxes[i].vertices[j],
             this.hitBoxes[i].vertices[j]
           );
         }
@@ -248,37 +251,53 @@ namespace gdjs {
      * @param result Array that will be updated with the result
      * (x and y position of the point in parent coordinates).
      */
-    applyObjectTransformation(x: float, y: float, result: number[]) {
-      let cx = this.getUnscaledCenterX() - this._unrotatedAABB.min[0];
-      let cy = this.getUnscaledCenterY() - this._unrotatedAABB.min[1];
+    applyObjectTransformation(x: float, y: float, destination: FloatPoint) {
+      this.getLocalTransformation().transform([x, y], destination);
+    }
 
-      // Flipping
-      if (this._flippedX) {
-        x = x + (cx - x) * 2;
+    /**
+     * Return the affine transformation that represents
+     * flipping, scale, rotation and translation of the object.
+     * @returns the affine transformation.
+     */
+    getLocalTransformation(): gdjs.AffineTransformation {
+      if (this._isLocalTransformationDirty) {
+        this._updateLocalTransformation();
       }
-      if (this._flippedY) {
-        y = y + (cy - y) * 2;
-      }
+      return this._localTransformation;
+    }
 
-      // Scale
+    getLocalInverseTransformation(): gdjs.AffineTransformation {
+      if (this._isLocalTransformationDirty) {
+        this._updateLocalTransformation();
+      }
+      return this._localInverseTransformation;
+    }
+
+    _updateLocalTransformation() {
+      const centerX = this.getUnscaledCenterX();
+      const centerY = this.getUnscaledCenterY();
       const absScaleX = Math.abs(this._scaleX);
       const absScaleY = Math.abs(this._scaleY);
-      x *= absScaleX;
-      y *= absScaleY;
-      cx *= absScaleX;
-      cy *= absScaleY;
+      const angleInRadians = (this.angle * Math.PI) / 180;
 
-      // Rotation
-      const angleInRadians = (this.angle / 180) * Math.PI;
-      const cosValue = Math.cos(angleInRadians);
-      const sinValue = Math.sin(angleInRadians);
-      const xToCenterXDelta = x - cx;
-      const yToCenterYDelta = y - cy;
-      x = cx + cosValue * xToCenterXDelta - sinValue * yToCenterYDelta;
-      y = cy + sinValue * xToCenterXDelta + cosValue * yToCenterYDelta;
-      result.length = 2;
-      result[0] = x + this.x + this._unrotatedAABB.min[0] * absScaleX;
-      result[1] = y + this.y + this._unrotatedAABB.min[1] * absScaleY;
+      this._localTransformation.setToTranslation(this.x, this.y);
+      this._localTransformation.scale(absScaleX, absScaleY);
+      this._localTransformation.rotateAround(
+        angleInRadians,
+        centerX,
+        centerY
+      );
+      if (this._flippedX) {
+        this._localTransformation.flipX(centerX);
+      }
+      if (this._flippedY) {
+        this._localTransformation.flipY(centerY);
+      }
+
+      this._localInverseTransformation.copyFrom(this._localTransformation);
+      this._localInverseTransformation.invert();
+      this._isLocalTransformationDirty = false;
     }
 
     /**
@@ -292,39 +311,8 @@ namespace gdjs {
      * @param result Array that will be updated with the result
      * (x and y position of the point in object coordinates).
      */
-    applyObjectInverseTransformation(x: float, y: float, result: number[]) {
-      x -= this.getCenterXInScene();
-      y -= this.getCenterYInScene();
-
-      const absScaleX = Math.abs(this._scaleX);
-      const absScaleY = Math.abs(this._scaleY);
-
-      // Rotation
-      const angleInRadians = (this.angle / 180) * Math.PI;
-      const cosValue = Math.cos(-angleInRadians);
-      const sinValue = Math.sin(-angleInRadians);
-      const oldX = x;
-      x = cosValue * x - sinValue * y;
-      y = sinValue * oldX + cosValue * y;
-
-      // Scale
-      x /= absScaleX;
-      y /= absScaleY;
-
-      // Flipping
-      if (this._flippedX) {
-        x = -x;
-      }
-      if (this._flippedY) {
-        y = -y;
-      }
-
-      const positionToCenterX =
-      this.getUnscaledCenterX() + this._unrotatedAABB.min[0];
-      const positionToCenterY =
-      this.getUnscaledCenterY() + this._unrotatedAABB.min[1];
-      result[0] = x + positionToCenterX;
-      result[1] = y + positionToCenterY;
+    applyObjectInverseTransformation(x: float, y: float, destination: FloatPoint) {
+      this.getLocalInverseTransformation().transform([x, y], destination);
     }
 
     getDrawableX(): float {
@@ -399,9 +387,6 @@ namespace gdjs {
      * @param y coordinate of the custom center
      */
     setRotationCenter(x: float, y: float) {
-      console.log("setRotationCenter: " + x + " " + y);
-      const hadCustomCenter = true;//this._customCenter;
-      
       if (!this._customCenter) {
         this._customCenter = [0, 0];
       }
@@ -410,12 +395,12 @@ namespace gdjs {
       this._customCenter[0] = x;
       this._customCenter[1] = y;
 
-      if (hadCustomCenter) {
-        this._instanceContainer.onObjectUnscaledCenterChanged(
-          oldCustomCenterX,
-          oldCustomCenterY
-        );
-      }
+      this._isLocalTransformationDirty = true;
+      this.invalidateHitboxes();
+      this._instanceContainer.onObjectUnscaledCenterChanged(
+        oldCustomCenterX,
+        oldCustomCenterY
+      );
     }
     
     getCenterX(): float {
@@ -464,6 +449,7 @@ namespace gdjs {
         return;
       }
       this.x = x;
+      this._isLocalTransformationDirty = true;
       this.invalidateHitboxes();
       this.getRenderer().updateX();
     }
@@ -473,6 +459,7 @@ namespace gdjs {
         return;
       }
       this.y = y;
+      this._isLocalTransformationDirty = true;
       this.invalidateHitboxes();
       this.getRenderer().updateY();
     }
@@ -482,6 +469,7 @@ namespace gdjs {
         return;
       }
       this.angle = angle;
+      this._isLocalTransformationDirty = true;
       this.invalidateHitboxes();
       this.getRenderer().updateAngle();
     }
@@ -503,6 +491,7 @@ namespace gdjs {
       }
       this._scaleX = newScale * (this._flippedX ? -1 : 1);
       this._scaleY = newScale * (this._flippedY ? -1 : 1);
+      this._isLocalTransformationDirty = true;
       this.invalidateHitboxes();
       this.getRenderer().update();
     }
@@ -520,6 +509,7 @@ namespace gdjs {
         return;
       }
       this._scaleX = newScale * (this._flippedX ? -1 : 1);
+      this._isLocalTransformationDirty = true;
       this.invalidateHitboxes();
       this.getRenderer().update();
     }

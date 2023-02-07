@@ -67,11 +67,11 @@ namespace gdjs {
       this._pixiContainer.pivot.x = this._object.getUnscaledCenterX();
       this._pixiContainer.pivot.y = this._object.getUnscaledCenterY();
       this._pixiContainer.position.x =
-        this._object.getDrawableX() +
-        this._pixiContainer.pivot.x * Math.abs(this._object._scaleX);
+        this._object.getX() +
+        (this._object.getUnscaledCenterX()) * Math.abs(this._object._scaleX);
       this._pixiContainer.position.y =
-        this._object.getDrawableY() +
-        this._pixiContainer.pivot.y * Math.abs(this._object._scaleY);
+        this._object.getY() +
+        (this._object.getUnscaledCenterY()) * Math.abs(this._object._scaleY);
       this._pixiContainer.rotation = gdjs.toRad(this._object.angle);
       this._pixiContainer.scale.x = this._object._scaleX;
       this._pixiContainer.scale.y = this._object._scaleY;
