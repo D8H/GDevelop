@@ -43,6 +43,13 @@ namespace gdjs {
       this._debuggerRenderer = new gdjs.DebuggerRenderer(this);
     }
 
+    addLayer(layerData: LayerData) {
+      this._layers.put(
+        layerData.name,
+        new gdjs.RuntimeCustomObjectLayer(layerData, this)
+      );
+    }
+
     createObject(objectName: string): gdjs.RuntimeObject | null {
       const result = super.createObject(objectName);
       this._customObject.onChildrenLocationChanged();
@@ -301,8 +308,7 @@ namespace gdjs {
     onObjectUnscaledCenterChanged(oldOriginX: float, oldOriginY: float): void {
       for (const name in this._layers.items) {
         if (this._layers.items.hasOwnProperty(name)) {
-          /** @type gdjs.Layer */
-          const theLayer: gdjs.Layer = this._layers.items[name];
+          const theLayer: gdjs.RuntimeLayer = this._layers.items[name];
           theLayer.onGameResolutionResized(oldOriginX, oldOriginY);
         }
       }

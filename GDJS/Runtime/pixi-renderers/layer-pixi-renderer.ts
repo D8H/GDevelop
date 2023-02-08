@@ -13,7 +13,7 @@ namespace gdjs {
   export class LayerPixiRenderer {
     _pixiContainer: PIXI.Container;
 
-    _layer: gdjs.Layer;
+    _layer: gdjs.RuntimeLayer;
     _renderTexture: PIXI.RenderTexture | null = null;
     _lightingSprite: PIXI.Sprite | null = null;
     _runtimeSceneRenderer: gdjs.RuntimeInstanceContainerRenderer;
@@ -35,7 +35,7 @@ namespace gdjs {
      * @param runtimeInstanceContainerRenderer The scene renderer
      */
     constructor(
-      layer: gdjs.Layer,
+      layer: gdjs.RuntimeLayer,
       runtimeInstanceContainerRenderer: gdjs.RuntimeInstanceContainerRenderer,
       pixiRenderer: PIXI.Renderer | null
     ) {
@@ -122,14 +122,6 @@ namespace gdjs {
         this._pixiContainer.position.y = Math.ceil(
           this._pixiContainer.position.y
         );
-      }
-      if (this._layer.getRuntimeScene().getLayer('') !== this._layer) {
-        // TODO clean implementation
-        this._pixiContainer.rotation = 0;
-        this._pixiContainer.scale.x = 1;
-        this._pixiContainer.scale.y = 1;
-        this._pixiContainer.position.x = 0;
-        this._pixiContainer.position.y = 0;
       }
     }
 
