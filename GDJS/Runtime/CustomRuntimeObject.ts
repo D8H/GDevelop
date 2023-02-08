@@ -226,11 +226,11 @@ namespace gdjs {
       // The default camera center depends on the object dimensions so checking
       // the AABB center is not enough.
       if (
-        !this._customCenter && (
-        this._unrotatedAABB.min[0] !== oldUnrotatedMinX ||
-        this._unrotatedAABB.min[1] !== oldUnrotatedMinY ||
-        this._unrotatedAABB.max[0] !== oldUnrotatedMaxX ||
-        this._unrotatedAABB.max[1] !== oldUnrotatedMaxY)
+        !this._customCenter &&
+        (this._unrotatedAABB.min[0] !== oldUnrotatedMinX ||
+          this._unrotatedAABB.min[1] !== oldUnrotatedMinY ||
+          this._unrotatedAABB.max[0] !== oldUnrotatedMaxX ||
+          this._unrotatedAABB.max[1] !== oldUnrotatedMaxY)
       ) {
         this._instanceContainer.onObjectUnscaledCenterChanged(
           (oldUnrotatedMinX + oldUnrotatedMaxX) / 2,
@@ -283,11 +283,7 @@ namespace gdjs {
 
       this._localTransformation.setToTranslation(this.x, this.y);
       this._localTransformation.scale(absScaleX, absScaleY);
-      this._localTransformation.rotateAround(
-        angleInRadians,
-        centerX,
-        centerY
-      );
+      this._localTransformation.rotateAround(angleInRadians, centerX, centerY);
       if (this._flippedX) {
         this._localTransformation.flipX(centerX);
       }
@@ -311,7 +307,11 @@ namespace gdjs {
      * @param result Array that will be updated with the result
      * (x and y position of the point in object coordinates).
      */
-    applyObjectInverseTransformation(x: float, y: float, destination: FloatPoint) {
+    applyObjectInverseTransformation(
+      x: float,
+      y: float,
+      destination: FloatPoint
+    ) {
       this.getLocalInverseTransformation().transform([x, y], destination);
     }
 
@@ -402,19 +402,25 @@ namespace gdjs {
         oldCustomCenterY
       );
     }
-    
+
     getCenterX(): float {
       if (this._isUntransformedHitBoxesDirty) {
         this._updateUntransformedHitBoxes();
       }
-      return (this.getUnscaledCenterX() - this._unrotatedAABB.min[0]) * this.getScaleX();
+      return (
+        (this.getUnscaledCenterX() - this._unrotatedAABB.min[0]) *
+        this.getScaleX()
+      );
     }
 
     getCenterY(): float {
       if (this._isUntransformedHitBoxesDirty) {
         this._updateUntransformedHitBoxes();
       }
-      return (this.getUnscaledCenterY() - this._unrotatedAABB.min[1]) * this.getScaleY();
+      return (
+        (this.getUnscaledCenterY() - this._unrotatedAABB.min[1]) *
+        this.getScaleY()
+      );
     }
 
     getWidth(): float {

@@ -1187,21 +1187,25 @@ export const declareObjectInternalInstructions = (
   // Objects are identified by their name alone.
   const objectType = eventsBasedObject.getName();
 
-    objectMetadata.addScopedAction(
-      "SetRotationCenter",
-      i18n._("Center of rotation"),
-      i18n._("Change the center of rotation of an object relatively to the object origin."),
-      i18n._("Change the center of rotation of _PARAM0_: _PARAM1_; _PARAM2_"),
-      i18n._("Angle"),
-      "res/actions/position24_black.png",
-      "res/actions/position_black.png")
-   .addParameter("object", i18n._("Object"), objectType)
-   .addParameter("number", i18n._("X position"))
-   .addParameter("number", i18n._("Y position"))
-   .markAsAdvanced()
-   .setPrivate()
-   .setFunctionName('setRotationCenter');
-}
+  objectMetadata
+    .addScopedAction(
+      'SetRotationCenter',
+      i18n._('Center of rotation'),
+      i18n._(
+        'Change the center of rotation of an object relatively to the object origin.'
+      ),
+      i18n._('Change the center of rotation of _PARAM0_: _PARAM1_; _PARAM2_'),
+      i18n._('Angle'),
+      'res/actions/position24_black.png',
+      'res/actions/position_black.png'
+    )
+    .addParameter('object', i18n._('Object'), objectType)
+    .addParameter('number', i18n._('X position'))
+    .addParameter('number', i18n._('Y position'))
+    .markAsAdvanced()
+    .setPrivate()
+    .setFunctionName('setRotationCenter');
+};
 
 /**
  * Add to the instruction (action/condition) or expression the parameters

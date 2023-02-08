@@ -123,6 +123,14 @@ namespace gdjs {
           this._pixiContainer.position.y
         );
       }
+      if (this._layer.getRuntimeScene().getLayer('') !== this._layer) {
+        // TODO clean implementation
+        this._pixiContainer.rotation = 0;
+        this._pixiContainer.scale.x = 1;
+        this._pixiContainer.scale.y = 1;
+        this._pixiContainer.position.x = 0;
+        this._pixiContainer.position.y = 0;
+      }
     }
 
     updateVisibility(visible: boolean): void {

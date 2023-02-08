@@ -67,29 +67,14 @@ namespace gdjs {
       if (this._object._isUntransformedHitBoxesDirty) {
         this._object._updateUntransformedHitBoxes();
       }
-      this._pixiContainer.pivot.x = (this._object._unrotatedAABB.max[0] - this._object._unrotatedAABB.min[0]) / 2;
-      this._pixiContainer.pivot.y = (this._object._unrotatedAABB.max[1] - this._object._unrotatedAABB.min[1]) / 2;
+      this._pixiContainer.pivot.x = this._object.getUnscaledCenterX();
+      this._pixiContainer.pivot.y = this._object.getUnscaledCenterY();
       this._pixiContainer.position.x =
         this._object.getX() +
-        (this._object.getUnscaledCenterX()) * Math.abs(this._object._scaleX);
+        this._pixiContainer.pivot.x * Math.abs(this._object._scaleX);
       this._pixiContainer.position.y =
         this._object.getY() +
-        (this._object.getUnscaledCenterY()) * Math.abs(this._object._scaleY);
-
-        // this._pixiContainer.pivot.x = 80;
-        // this._pixiContainer.pivot.y = 80;
-        // this._pixiContainer.position.x = 0;
-        // this._pixiContainer.position.y = 0;
-
-        // this._pixiContainer.pivot.x = 80;
-        // this._pixiContainer.pivot.y = 80;
-        // this._pixiContainer.position.x = 20;
-        // this._pixiContainer.position.y = 20;
-
-      // this._pixiContainer.pivot.x = 80;
-      // this._pixiContainer.pivot.y = 80;
-      // this._pixiContainer.position.x = 80;
-      // this._pixiContainer.position.y = 80;
+        this._pixiContainer.pivot.y * Math.abs(this._object._scaleY);
 
       this._pixiContainer.rotation = gdjs.toRad(this._object.angle);
       this._pixiContainer.scale.x = this._object._scaleX;
@@ -98,8 +83,6 @@ namespace gdjs {
       this._pixiContainer.alpha = this._object.opacity / 255;
 
       this._isContainerDirty = false;
-      console.log("CO pivot: " + this._pixiContainer.pivot.x + " " + this._pixiContainer.pivot.y);
-      console.log("CO position: " + this._pixiContainer.position.x + " " + this._pixiContainer.position.y);
     }
 
     /**

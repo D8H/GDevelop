@@ -304,8 +304,6 @@ namespace gdjs {
           /** @type gdjs.Layer */
           const theLayer: gdjs.Layer = this._layers.items[name];
           theLayer.onGameResolutionResized(oldOriginX, oldOriginY);
-          console.log("Layer: " + theLayer._cameraX + " " + theLayer._cameraY);
-          console.log("ViewportOrigin: " + this.getViewportOriginX() + " " + this.getViewportOriginY());
         }
       }
     }
