@@ -1,14 +1,18 @@
 // @flow
+import assignIn from 'lodash/assignIn';
 import {
   serializeToJSObject,
   serializeToObjectAsset,
 } from '../../Utils/Serializer';
-import { mapFor } from '../../Utils/MapFor';
 import optionalRequire from '../../Utils/OptionalRequire';
+import LocalFileSystem from '../../Export/LocalExporters/LocalFileSystem';
+import { archiveLocalFolder } from '../../Utils/LocalArchiver';
 const fs = optionalRequire('fs-extra');
 const path = optionalRequire('path');
 const remote = optionalRequire('@electron/remote');
 const dialog = remote ? remote.dialog : null;
+
+const gd: libGDevelop = global.gd;
 
 const writeJSONFile = (object: Object, filepath: string): Promise<void> => {
   if (!fs) return Promise.reject(new Error('Filesystem is not supported.'));
@@ -82,8 +86,8 @@ export default class LocalEventsFunctionsExtensionWriter {
         title: 'Export an object of the project',
         filters: [
           {
-            name: 'GDevelop 5 object configuration',
-            extensions: ['asset.json'],
+            name: 'GDevelop 5 object pack',
+            extensions: ['gdo'],
           },
         ],
         defaultPath:
@@ -95,43 +99,24 @@ export default class LocalEventsFunctionsExtensionWriter {
       });
   };
 
-  static chooseAssetsFolder = (layoutName?: string): Promise<?string> => {
-    if (!dialog) return Promise.reject('Not supported');
-    const browserWindow = remote.getCurrentWindow();
-
-    return dialog
-      .showOpenDialog(browserWindow, {
-        title: 'Export all object of the scene into a folder',
-        properties: ['openDirectory', 'createDirectory'],
-        filters: [],
-        defaultPath: '',
-      })
-      .then(({ filePaths }) =>
-        filePaths && filePaths.length > 0 ? filePaths[0] : null
-      );
-  };
-
-  static writeObjectAsset = (
+  static writeObjectsAssets = (
     project: gdProject,
-    exportedObject: gdObject,
+    exportedObjects: gdObject[],
     filepath: string
   ): Promise<void> => {
-    const serializedObject = serializeToObjectAsset(project, exportedObject);
-    return writeJSONFile(serializedObject, filepath).catch(err => {
-      console.error('Unable to write the object:', err);
-      throw err;
+    const localFileSystem = new LocalFileSystem({
+      downloadUrlsToLocalFiles: true,
     });
-  };
+    const fileSystem = assignIn(new gd.AbstractFileSystemJS(), localFileSystem);
+    const temporaryOutputDir = path.join(
+      fileSystem.getTempDir(),
+      'AssetExport'
+    );
+    fileSystem.mkDir(temporaryOutputDir);
+    fileSystem.clearDir(temporaryOutputDir);
 
-  static writeLayoutObjectAssets = (
-    project: gdProject,
-    layout: gdLayout,
-    directoryPath: string
-  ): Promise<any> => {
     return Promise.all(
-      mapFor(0, layout.getObjectsCount(), i => {
-        const exportedObject = layout.getObjectAt(i);
-
+      exportedObjects.map(exportedObject => {
         const serializedObject = serializeToObjectAsset(
           project,
           exportedObject
@@ -139,7 +124,7 @@ export default class LocalEventsFunctionsExtensionWriter {
         return writeJSONFile(
           serializedObject,
           path.join(
-            directoryPath,
+            temporaryOutputDir,
             addSpacesToPascalCase(exportedObject.getName()) + '.asset.json'
           )
         ).catch(err => {
@@ -147,6 +132,11 @@ export default class LocalEventsFunctionsExtensionWriter {
           throw err;
         });
       })
-    );
+    ).then(() => {
+      archiveLocalFolder({
+        path: temporaryOutputDir,
+        outputFilename: filepath,
+      });
+    });
   };
 }

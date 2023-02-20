@@ -13,11 +13,39 @@ import EventsFunctionsExtensionsContext, {
   type EventsFunctionsExtensionsState,
 } from '../EventsFunctionsExtensionsLoader/EventsFunctionsExtensionsContext';
 import Window from '../Utils/Window';
+import { mapFor } from '../Utils/MapFor';
 
 const exportObjectAsset = async (
   eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
   project: gdProject,
   customObject: gdObject
+) => {
+  await exportObjectsAssets(
+    eventsFunctionsExtensionsState,
+    project,
+    [customObject],
+    customObject.getName()
+  );
+};
+
+const exportLayoutObjectAssets = async (
+  eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
+  project: gdProject,
+  layout: gdLayout
+) => {
+  await exportObjectsAssets(
+    eventsFunctionsExtensionsState,
+    project,
+    mapFor(0, layout.getObjectsCount(), i => layout.getObjectAt(i)),
+    layout.getName()
+  );
+};
+
+const exportObjectsAssets = async (
+  eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
+  project: gdProject,
+  objects: gdObject[],
+  defaultName: string
 ) => {
   const eventsFunctionsExtensionWriter = eventsFunctionsExtensionsState.getEventsFunctionsExtensionWriter();
   if (!eventsFunctionsExtensionWriter) {
@@ -27,39 +55,14 @@ const exportObjectAsset = async (
     );
   }
   const pathOrUrl = await eventsFunctionsExtensionWriter.chooseObjectAssetFile(
-    customObject.getName()
+    defaultName
   );
 
   if (!pathOrUrl) return;
 
-  await eventsFunctionsExtensionWriter.writeObjectAsset(
+  await eventsFunctionsExtensionWriter.writeObjectsAssets(
     project,
-    customObject,
-    pathOrUrl
-  );
-};
-
-const exportLayoutObjectAssets = async (
-  eventsFunctionsExtensionsState: EventsFunctionsExtensionsState,
-  project: gdProject,
-  layout: gdLayout
-) => {
-  const eventsFunctionsExtensionWriter = eventsFunctionsExtensionsState.getEventsFunctionsExtensionWriter();
-  if (!eventsFunctionsExtensionWriter) {
-    // This won't happen in practice because this view can't be reached from the web-app.
-    throw new Error(
-      "Objects can't be exported because it's not supported by the web-app."
-    );
-  }
-  const pathOrUrl = await eventsFunctionsExtensionWriter.chooseAssetsFolder(
-    layout.getName()
-  );
-
-  if (!pathOrUrl) return;
-
-  await eventsFunctionsExtensionWriter.writeLayoutObjectAssets(
-    project,
-    layout,
+    objects,
     pathOrUrl
   );
 };
