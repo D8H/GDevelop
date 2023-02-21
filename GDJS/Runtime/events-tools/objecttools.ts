@@ -650,5 +650,9 @@ namespace gdjs {
       );
       this.callbacks.delete(runtimeObject);
     }
+
+    setIncludedInParentCollisionMask(child: gdjs.RuntimeObject, isIncluded: boolean): void {
+      child.setIncludedInParentCollisionMask(isIncluded);
+    }
   }
 }
