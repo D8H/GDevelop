@@ -292,7 +292,7 @@ export default class EventsBasedBehaviorPropertiesEditor extends React.Component
                         {property.getType() === "Number" && (
                         <SelectField
                           floatingLabelText={<Trans>Measurement unit</Trans>}
-                          value={property.getMeasurementUnit() ? property.getMeasurementUnit().getName() : gd.MeasurementUnit.getUndefined().getName()}
+                          value={property.getMeasurementUnit().getName()}
                           onChange={(e, i, value: string) => {
                             property.setMeasurementUnit(gd.MeasurementUnit.getDefaultMeasurementUnitByName(value));
                             this.forceUpdate();
