@@ -12,14 +12,14 @@ namespace gdjs {
    * (see gdjs.TopDownObstaclesManager.getManager).
    */
   export class TopDownObstaclesManager {
-    _obstacleRBush: any;
+    obstacleRBush: any;
     _runtimeScene: gdjs.RuntimeInstanceContainer;
 
     /**
      * @param object The object
      */
     constructor(runtimeScene: gdjs.RuntimeInstanceContainer) {
-      this._obstacleRBush = new rbush(9, [
+      this.obstacleRBush = new rbush(9, [
         '.getHitBoxesAABB().min[0]',
         '.getHitBoxesAABB().min[1]',
         '.getHitBoxesAABB().max[0]',
@@ -50,7 +50,7 @@ namespace gdjs {
      * Add a obstacle to the list of existing obstacles.
      */
     addObstacle(obstacleBehavior: gdjs.TopDownObstacleRuntimeBehavior) {
-      this._obstacleRBush.insert(obstacleBehavior);
+      this.obstacleRBush.insert(obstacleBehavior);
     }
 
     /**
@@ -58,7 +58,7 @@ namespace gdjs {
      * added before.
      */
     removeObstacle(obstacleBehavior: gdjs.TopDownObstacleRuntimeBehavior) {
-      this._obstacleRBush.remove(obstacleBehavior);
+      this.obstacleRBush.remove(obstacleBehavior);
     }
 
     /**
@@ -84,7 +84,7 @@ namespace gdjs {
       searchArea.maxX = object.max[0] + maxMovementLength;
       // @ts-ignore
       searchArea.maxY = object.max[1] + maxMovementLength;
-      const nearbyObstacles = this._obstacleRBush.search(searchArea);
+      const nearbyObstacles = this.obstacleRBush.search(searchArea);
       result.length = 0;
       result.push.apply(result, nearbyObstacles);
     }
@@ -115,9 +115,9 @@ namespace gdjs {
       searchArea.maxX = maxX;
       // @ts-ignore
       searchArea.maxY = maxY;
-      var nearbyObstacles = this._obstacleRBush.search(searchArea);
+      const nearbyObstacles = this.obstacleRBush.search(searchArea);
 
-      for (var i = 0; i < nearbyObstacles.length; i++) {
+      for (let i = 0; i < nearbyObstacles.length; i++) {
         if (!excluded.includes(nearbyObstacles[i].owner)) {
           return true;
         }
@@ -268,17 +268,20 @@ namespace gdjs {
 
     getHitBoxesAABB(): gdjs.AABB {
       if (!this._hitBoxesAABBUpToDate) {
-        const hitBoxes: gdjs.Polygon[] = this.owner.getHitBoxes();
+        const hitBoxes = this.owner.getHitBoxes();
 
-        let minX: number = Number.MAX_VALUE;
-        let minY: number = Number.MAX_VALUE;
-        let maxX: number = -Number.MAX_VALUE;
-        let maxY: number = -Number.MAX_VALUE;
+        let minX = Number.MAX_VALUE;
+        let minY = Number.MAX_VALUE;
+        let maxX = -Number.MAX_VALUE;
+        let maxY = -Number.MAX_VALUE;
         for (let h = 0, lenh = hitBoxes.length; h < lenh; ++h) {
-          let hitBox: gdjs.Polygon = hitBoxes[h];
+          let hitBox = hitBoxes[h];
           for (let p = 0, lenp = hitBox.vertices.length; p < lenp; ++p) {
             const point = this._point;
-            this._basisTransformation.toWorld(hitBox.vertices[p], point);
+            // TODO Handle Isometry
+            //this._basisTransformation.toWorld(hitBox.vertices[p], point);
+            point[0] = hitBox.vertices[p][0];
+            point[1] = hitBox.vertices[p][1];
 
             minX = Math.min(minX, point[0]);
             maxX = Math.max(maxX, point[0]);

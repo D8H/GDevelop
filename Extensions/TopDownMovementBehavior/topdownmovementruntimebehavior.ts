@@ -148,6 +148,28 @@ namespace gdjs {
       }
     }
 
+    // TODO replace IsometryTransformation
+    createIsometricTransformation = (angle: float) => {
+      if (angle <= 0 || angle >= Math.PI / 4)
+        throw new RangeError(
+          'An isometry angle must be in ]0; pi/4] but was: ' + angle
+        );
+
+      const alpha = Math.asin(Math.tan(angle));
+      const sinA = Math.sin(alpha);
+      const cosB = Math.cos(Math.PI / 4);
+      const sinB = cosB;
+      // https://en.wikipedia.org/wiki/Isometric_projection
+      //
+      //   / 1     0    0 \ / cosB 0 -sinB \ / 1 0  0 \
+      //   | 0  cosA sinA | |    0 1     0 | | 0 0 -1 |
+      //   \ 0 -sinA cosA / \ sinB 0  cosB / \ 0 1  0 /
+      const transformation = new AffineTransformation();
+      transformation.setTo(cosB, -sinB, 0, //
+                          sinA * sinB, sinA * cosB, 0);
+      return transformation;
+    }
+
     setAcceleration(acceleration: float): void {
       this._acceleration = acceleration;
     }
@@ -717,6 +739,10 @@ namespace gdjs {
     const temporaryPointForTransformations: FloatPoint = [0, 0];
     const epsilon: float = 0.015625;
 
+    const almostEquals = (a: float, b: float) => {
+      return b - epsilon < a && a < b + epsilon;
+    }
+
     /** Corner sliding on TopDownObstacleRuntimeBehavior instances.
      *
      * To change of direction the player must be perfectly aligned.
@@ -778,27 +804,29 @@ namespace gdjs {
           // To avoid to loop on the transform and its inverse
           // because of float approximation.
           const position = temporaryPointForTransformations;
-          if (this.topDownBehavior._basisTransformation) {
-            this.topDownBehavior._basisTransformation.toScreen(
-              this.transformedPosition,
-              position
-            );
-          } else {
+          // TODO Handle isometry
+          // if (this.topDownBehavior._basisTransformation) {
+          //   this.topDownBehavior._basisTransformation.toScreen(
+          //     this.transformedPosition,
+          //     position
+          //   );
+          // } else {
             position[0] = this.transformedPosition[0];
             position[1] = this.transformedPosition[1];
-          }
+          // }
           if (object.getX() !== position[0] || object.getY() !== position[1]) {
             position[0] = object.getX();
             position[1] = object.getY();
-            if (this.topDownBehavior._basisTransformation) {
-              this.topDownBehavior._basisTransformation.toWorld(
-                position,
-                this.transformedPosition
-              );
-            } else {
+            // TODO Handle isometry
+            // if (this.topDownBehavior._basisTransformation) {
+            //   this.topDownBehavior._basisTransformation.toWorld(
+            //     position,
+            //     this.transformedPosition
+            //   );
+            // } else {
               this.transformedPosition[0] = position[0];
               this.transformedPosition[1] = position[1];
-            }
+            // }
           }
 
           const stickIsUsed =
@@ -844,24 +872,26 @@ namespace gdjs {
           const point = temporaryPointForTransformations;
           point[0] = object.getX() - this.previousX;
           point[1] = object.getY() - this.previousY;
-          if (this.topDownBehavior._basisTransformation) {
-            this.topDownBehavior._basisTransformation.toWorld(point, point);
-          }
+          // TODO Handle isometry
+          // if (this.topDownBehavior._basisTransformation) {
+          //   this.topDownBehavior._basisTransformation.toWorld(point, point);
+          // }
           this.shift(point[0], point[1]);
 
           this.applyCollision();
 
           const position = temporaryPointForTransformations;
 
-          if (this.topDownBehavior._basisTransformation) {
-            this.topDownBehavior._basisTransformation.toScreen(
-              this.transformedPosition,
-              position
-            );
-          } else {
+          // TODO Handle isometry
+          // if (this.topDownBehavior._basisTransformation) {
+          //   this.topDownBehavior._basisTransformation.toScreen(
+          //     this.transformedPosition,
+          //     position
+          //   );
+          // } else {
             position[0] = this.transformedPosition[0];
             position[1] = this.transformedPosition[1];
-          }
+          // }
           object.setX(position[0]);
           object.setY(position[1]);
         }
@@ -887,10 +917,6 @@ namespace gdjs {
         return direction;
       }
 
-      almostEquals(a: float, b: float) {
-        return b - epsilon < a && a < b + epsilon;
-      }
-
       /** Analyze the real intent of the player instead of applying the input blindly.
        * @returns a direction that matches the player intents.
        */
@@ -914,39 +940,39 @@ namespace gdjs {
 
         // Compute the list of the objects that will be used
         const timeDelta = object.getElapsedTime(this.instanceContainer) / 1000;
-        this._updatePotentialCollidingObjects(
+        this.updatePotentialCollidingObjects(
           1 + this.topDownBehavior.getMaxSpeed() * timeDelta
         );
 
-        const downKey: boolean = 1 <= direction && direction <= 3;
-        const leftKey: boolean = 3 <= direction && direction <= 5;
-        const upKey: boolean = 5 <= direction && direction <= 7;
-        const rightKey: boolean = direction <= 1 || 7 <= direction;
+        const downKey = 1 <= direction && direction <= 3;
+        const leftKey = 3 <= direction && direction <= 5;
+        const upKey = 5 <= direction && direction <= 7;
+        const rightKey = direction <= 1 || 7 <= direction;
 
         // Used to align the player when the assistance make him bypass an obstacle
-        let stopMinX: float = Number.MAX_VALUE;
-        let stopMinY: float = Number.MAX_VALUE;
-        let stopMaxX: float = -Number.MAX_VALUE;
-        let stopMaxY: float = -Number.MAX_VALUE;
-        let isBypassX: boolean = false;
-        let isBypassY: boolean = false;
+        let stopMinX = Number.MAX_VALUE;
+        let stopMinY = Number.MAX_VALUE;
+        let stopMaxX = -Number.MAX_VALUE;
+        let stopMaxY = -Number.MAX_VALUE;
+        let isBypassX = false;
+        let isBypassY = false;
 
         // Incites of how the player should be assisted
-        let assistanceLeft: integer = 0;
-        let assistanceRight: integer = 0;
-        let assistanceUp: integer = 0;
-        let assistanceDown: integer = 0;
+        let assistanceLeft = 0;
+        let assistanceRight = 0;
+        let assistanceUp = 0;
+        let assistanceDown = 0;
 
         // the actual decision
-        let assistanceDirection: integer = -1;
+        let assistanceDirection = -1;
 
-        const objectAABB: AABB = this.getHitBoxesAABB();
-        const minX: float = objectAABB.min[0];
-        const minY: float = objectAABB.min[1];
-        const maxX: float = objectAABB.max[0];
-        const maxY: float = objectAABB.max[1];
-        const width: float = maxX - minX;
-        const height: float = maxY - minY;
+        const objectAABB = this.getHitBoxesAABB();
+        const minX = objectAABB.min[0];
+        const minY = objectAABB.min[1];
+        const maxX = objectAABB.max[0];
+        const maxY = objectAABB.max[1];
+        const width = maxX - minX;
+        const height = maxY - minY;
 
         // This affectation has no meaning, it will be override.
         let bypassedObstacleAABB: AABB | null = null;
@@ -956,20 +982,20 @@ namespace gdjs {
 
         for (var i = 0; i < this.potentialCollidingObjects.length; ++i) {
           const obstacleBehavior = this.potentialCollidingObjects[i];
-          const corner: float = obstacleBehavior.getSlidingCornerSize();
+          const corner = obstacleBehavior.getSlidingCornerSize();
           const obstacle = obstacleBehavior.owner;
           if (obstacle === object) {
             continue;
           }
 
-          const obstacleAABB: AABB = obstacleBehavior.getHitBoxesAABB();
-          const obstacleMinX: float = obstacleAABB.min[0];
-          const obstacleMinY: float = obstacleAABB.min[1];
-          const obstacleMaxX: float = obstacleAABB.max[0];
-          const obstacleMaxY: float = obstacleAABB.max[1];
+          const obstacleAABB = obstacleBehavior.getHitBoxesAABB();
+          const obstacleMinX = obstacleAABB.min[0];
+          const obstacleMinY = obstacleAABB.min[1];
+          const obstacleMaxX = obstacleAABB.max[0];
+          const obstacleMaxY = obstacleAABB.max[1];
 
-          const deltaX: float = deltasX[direction];
-          const deltaY: float = deltasY[direction];
+          const deltaX = deltasX[direction];
+          const deltaY = deltasY[direction];
           // Extends the box in the player direction
           if (
             Math.max(maxX, Math.floor(maxX + deltaX)) > obstacleMinX &&
@@ -984,32 +1010,32 @@ namespace gdjs {
             // Both direction are set and the actual to take
             // is decided at the end.
             if (
-              this.almostEquals(maxX, obstacleMinX) &&
-              this.almostEquals(maxY, obstacleMinY)
+              almostEquals(maxX, obstacleMinX) &&
+              almostEquals(maxY, obstacleMinY)
             ) {
               assistanceRight++;
               assistanceDown++;
             } else if (
-              this.almostEquals(maxX, obstacleMinX) &&
-              this.almostEquals(minY, obstacleMaxY)
+              almostEquals(maxX, obstacleMinX) &&
+              almostEquals(minY, obstacleMaxY)
             ) {
               assistanceRight++;
               assistanceUp++;
             } else if (
-              this.almostEquals(minX, obstacleMaxX) &&
-              this.almostEquals(minY, obstacleMaxY)
+              almostEquals(minX, obstacleMaxX) &&
+              almostEquals(minY, obstacleMaxY)
             ) {
               assistanceLeft++;
               assistanceUp++;
             } else if (
-              this.almostEquals(minX, obstacleMaxX) &&
-              this.almostEquals(maxY, obstacleMinY)
+              almostEquals(minX, obstacleMaxX) &&
+              almostEquals(maxY, obstacleMinY)
             ) {
               assistanceLeft++;
               assistanceDown++;
             } else if (
-              (upKey && this.almostEquals(minY, obstacleMaxY)) ||
-              (downKey && this.almostEquals(maxY, obstacleMinY))
+              (upKey && almostEquals(minY, obstacleMaxY)) ||
+              (downKey && almostEquals(maxY, obstacleMinY))
             ) {
               // The player is not on the corner of the obstacle.
               // Set the assistance both ways to fall back in
@@ -1054,8 +1080,8 @@ namespace gdjs {
                 }
               }
             } else if (
-              (leftKey && this.almostEquals(minX, obstacleMaxX)) ||
-              (rightKey && this.almostEquals(maxX, obstacleMinX))
+              (leftKey && almostEquals(minX, obstacleMaxX)) ||
+              (rightKey && almostEquals(maxX, obstacleMinX))
             ) {
               // The player is not on the corner of the obstacle.
               // Set the assistance both ways to fall back in
@@ -1260,25 +1286,25 @@ namespace gdjs {
             //
             // min and max are preserved by the symmetry.
             // The symmetry image is extended to check there is no obstacle before going into the passage.
-            const searchMinX: float =
+            const searchMinX =
               cornerX +
               minY -
               cornerY +
               epsilon +
               (assistanceDirection === 6 ? cornerY - maxY : 0);
-            const searchMaxX: float =
+            const searchMaxX =
               cornerX +
               maxY -
               cornerY -
               epsilon +
               (assistanceDirection === 2 ? cornerY - minY : 0);
-            const searchMinY: float =
+            const searchMinY =
               cornerY +
               minX -
               cornerX +
               epsilon +
               (assistanceDirection === 4 ? cornerX - maxX : 0);
-            const searchMaxY: float =
+            const searchMaxY =
               cornerY +
               maxX -
               cornerX -
@@ -1311,22 +1337,22 @@ namespace gdjs {
             //
             // min and max are switched by the symmetry.
             // The symmetry image is extended to check there is no obstacle before going into the passage.
-            const searchMinX: float =
+            const searchMinX =
               cornerX -
               (maxY - cornerY) +
               epsilon +
               (assistanceDirection === 2 ? minY - cornerY : 0);
-            const searchMaxX: float =
+            const searchMaxX =
               cornerX -
               (minY - cornerY) -
               epsilon +
               (assistanceDirection === 6 ? maxY - cornerY : 0);
-            const searchMinY: float =
+            const searchMinY =
               cornerY -
               (maxX - cornerX) +
               epsilon +
               (assistanceDirection === 0 ? minX - cornerX : 0);
-            const searchMaxY: float =
+            const searchMaxY =
               cornerY -
               (minX - cornerX) -
               epsilon +
@@ -1348,34 +1374,34 @@ namespace gdjs {
           }
         }
 
-        this.result._inputDirection = direction;
-        this.result._assistanceLeft = assistanceLeft > 0;
-        this.result._assistanceRight = assistanceRight > 0;
-        this.result._assistanceUp = assistanceUp > 0;
-        this.result._assistanceDown = assistanceDown > 0;
-        this.result._isBypassX = isBypassX;
-        this.result._isBypassY = isBypassY;
-        this.result._stopMinX = stopMinX;
-        this.result._stopMinY = stopMinY;
-        this.result._stopMaxX = stopMaxX;
-        this.result._stopMaxY = stopMaxY;
+        this.result.inputDirection = direction;
+        this.result.assistanceLeft = assistanceLeft > 0;
+        this.result.assistanceRight = assistanceRight > 0;
+        this.result.assistanceUp = assistanceUp > 0;
+        this.result.assistanceDown = assistanceDown > 0;
+        this.result.isBypassX = isBypassX;
+        this.result.isBypassY = isBypassY;
+        this.result.stopMinX = stopMinX;
+        this.result.stopMinY = stopMinY;
+        this.result.stopMaxX = stopMaxX;
+        this.result.stopMaxY = stopMaxY;
 
         return assistanceDirection;
       }
 
       noAssistance(): integer {
-        this.result._isBypassX = false;
-        this.result._isBypassY = false;
+        this.result.isBypassX = false;
+        this.result.isBypassY = false;
 
         return -1;
       }
 
       applyCollision() {
-        this._checkCornerStop();
-        this._separateFromObstacles();
+        this.checkCornerStop();
+        this.separateFromObstacles();
         // check again because the object can be pushed on the stop limit,
         // it won't be detected on the next frame and the alignment won't be applied.
-        this._checkCornerStop();
+        this.checkCornerStop();
       }
 
       /**
@@ -1389,27 +1415,27 @@ namespace gdjs {
        * when the object could go between 2 obstacles,
        * with it will just fly over the hole because of its inertia.
        */
-      _checkCornerStop() {
-        const objectAABB: gdjs.AABB = this.getHitBoxesAABB();
-        const minX: float = objectAABB.min[0];
-        const minY: float = objectAABB.min[1];
+      checkCornerStop() {
+        const objectAABB = this.getHitBoxesAABB();
+        const minX = objectAABB.min[0];
+        const minY = objectAABB.min[1];
         const object = this.topDownBehavior.owner;
 
-        const direction = this.result._inputDirection;
+        const direction = this.result.inputDirection;
         const leftKey: boolean = 3 <= direction && direction <= 5;
         const upKey: boolean = 5 <= direction && direction <= 7;
 
         // Alignment: avoid to go too far and kind of drift or oscillate in front of a hole.
         if (
-          this.result._isBypassX &&
-          ((this.result._assistanceLeft && minX <= this.result._stopMinX) ||
-            (this.result._assistanceRight && minX >= this.result._stopMaxX))
+          this.result.isBypassX &&
+          ((this.result.assistanceLeft && minX <= this.result.stopMinX) ||
+            (this.result.assistanceRight && minX >= this.result.stopMaxX))
         ) {
           this.shift(
             -minX +
-              (this.result._assistanceLeft
-                ? this.result._stopMinX
-                : this.result._stopMaxX),
+              (this.result.assistanceLeft
+                ? this.result.stopMinX
+                : this.result.stopMaxX),
             0
           );
           this.topDownBehavior._yVelocity =
@@ -1423,16 +1449,16 @@ namespace gdjs {
           this.topDownBehavior._xVelocity = 0;
         }
         if (
-          this.result._isBypassY &&
-          ((this.result._assistanceUp && minY <= this.result._stopMinY) ||
-            (this.result._assistanceDown && minY >= this.result._stopMaxY))
+          this.result.isBypassY &&
+          ((this.result.assistanceUp && minY <= this.result.stopMinY) ||
+            (this.result.assistanceDown && minY >= this.result.stopMaxY))
         ) {
           this.shift(
             0,
             -minY +
-              (this.result._assistanceUp
-                ? this.result._stopMinY
-                : this.result._stopMaxY)
+              (this.result.assistanceUp
+                ? this.result.stopMinY
+                : this.result.stopMaxY)
           );
           this.topDownBehavior._xVelocity =
             (leftKey ? -1 : 1) *
@@ -1449,19 +1475,19 @@ namespace gdjs {
       /**
        * Separate from TopDownObstacleRuntimeBehavior instances.
        */
-      _separateFromObstacles() {
+      separateFromObstacles() {
         const object = this.topDownBehavior.owner;
-        const objectAABB: gdjs.AABB = this.getHitBoxesAABB();
-        const minX: float = objectAABB.min[0];
-        const minY: float = objectAABB.min[1];
-        const maxX: float = objectAABB.max[0];
-        const maxY: float = objectAABB.max[1];
+        const objectAABB = this.getHitBoxesAABB();
+        const minX = objectAABB.min[0];
+        const minY = objectAABB.min[1];
+        const maxX = objectAABB.max[0];
+        const maxY = objectAABB.max[1];
 
         // Search the obstacle with the biggest intersection
         // to separate from this one first.
         // Because smaller collisions may shift the player
         // in the wrong direction.
-        let maxSurface: float = 0;
+        let maxSurface = 0;
         let bestObstacleBehavior: TopDownObstacleRuntimeBehavior | null = null;
         for (var i = 0; i < this.potentialCollidingObjects.length; ++i) {
           const obstacleBehavior = this.potentialCollidingObjects[i];
@@ -1469,16 +1495,16 @@ namespace gdjs {
             continue;
           }
 
-          const obstacleAABB: gdjs.AABB = obstacleBehavior.getHitBoxesAABB();
-          const obstacleMinX: float = obstacleAABB.min[0];
-          const obstacleMinY: float = obstacleAABB.min[1];
-          const obstacleMaxX: float = obstacleAABB.max[0];
-          const obstacleMaxY: float = obstacleAABB.max[1];
+          const obstacleAABB = obstacleBehavior.getHitBoxesAABB();
+          const obstacleMinX = obstacleAABB.min[0];
+          const obstacleMinY = obstacleAABB.min[1];
+          const obstacleMaxX = obstacleAABB.max[0];
+          const obstacleMaxY = obstacleAABB.max[1];
 
-          const interMinX: float = Math.max(minX, obstacleMinX);
-          const interMinY: float = Math.max(minY, obstacleMinY);
-          const interMaxX: float = Math.min(maxX, obstacleMaxX);
-          const interMaxY: float = Math.min(maxY, obstacleMaxY);
+          const interMinX = Math.max(minX, obstacleMinX);
+          const interMinY = Math.max(minY, obstacleMinY);
+          const interMaxX = Math.min(maxX, obstacleMaxX);
+          const interMaxY = Math.min(maxY, obstacleMaxY);
 
           if (interMinX < interMaxX && interMinY < interMaxY) {
             const surface = (interMaxX - interMinX) * (interMaxY - interMinY);
@@ -1506,23 +1532,23 @@ namespace gdjs {
        * @param obstacle
        */
       separateFrom(obstacleBehavior: gdjs.TopDownObstacleRuntimeBehavior) {
-        const objectAABB: gdjs.AABB = this.getHitBoxesAABB();
-        const minX: float = objectAABB.min[0];
-        const minY: float = objectAABB.min[1];
-        const maxX: float = objectAABB.max[0];
-        const maxY: float = objectAABB.max[1];
+        const objectAABB = this.getHitBoxesAABB();
+        const minX = objectAABB.min[0];
+        const minY = objectAABB.min[1];
+        const maxX = objectAABB.max[0];
+        const maxY = objectAABB.max[1];
 
-        const obstacleAABB: AABB = obstacleBehavior.getHitBoxesAABB();
-        const obstacleMinX: float = obstacleAABB.min[0];
-        const obstacleMinY: float = obstacleAABB.min[1];
-        const obstacleMaxX: float = obstacleAABB.max[0];
-        const obstacleMaxY: float = obstacleAABB.max[1];
+        const obstacleAABB = obstacleBehavior.getHitBoxesAABB();
+        const obstacleMinX = obstacleAABB.min[0];
+        const obstacleMinY = obstacleAABB.min[1];
+        const obstacleMaxX = obstacleAABB.max[0];
+        const obstacleMaxY = obstacleAABB.max[1];
 
-        const leftDistance: float = maxX - obstacleMinX;
-        const upDistance: float = maxY - obstacleMinY;
-        const rightDistance: float = obstacleMaxX - minX;
-        const downDistance: float = obstacleMaxY - minY;
-        const minDistance: float = Math.min(
+        const leftDistance = maxX - obstacleMinX;
+        const upDistance = maxY - obstacleMinY;
+        const rightDistance = obstacleMaxX - minX;
+        const downDistance = obstacleMaxY - minY;
+        const minDistance = Math.min(
           leftDistance,
           upDistance,
           rightDistance,
@@ -1549,26 +1575,27 @@ namespace gdjs {
 
       getHitBoxesAABB(): gdjs.AABB {
         if (!this.hitBoxesAABBUpToDate) {
-          const hitBoxes: Polygon[] = this.topDownBehavior.owner.getHitBoxes();
+          const hitBoxes = this.topDownBehavior.owner.getHitBoxes();
 
-          let minX: float = Number.MAX_VALUE;
-          let minY: float = Number.MAX_VALUE;
-          let maxX: float = -Number.MAX_VALUE;
-          let maxY: float = -Number.MAX_VALUE;
+          let minX = Number.MAX_VALUE;
+          let minY = Number.MAX_VALUE;
+          let maxX = -Number.MAX_VALUE;
+          let maxY = -Number.MAX_VALUE;
           for (let h = 0, lenh = hitBoxes.length; h < lenh; ++h) {
             let hitBox: Polygon = hitBoxes[h];
             for (let p = 0, lenp = hitBox.vertices.length; p < lenp; ++p) {
               const point = this.topDownBehavior
                 ._temporaryPointForTransformations;
-              if (this.topDownBehavior._basisTransformation === null) {
+              // TODO Handle isometry
+              // if (this.topDownBehavior._basisTransformation) {
+              //   this.topDownBehavior._basisTransformation.toWorld(
+              //     hitBox.vertices[p],
+              //     point
+              //   );
+              // } else {
                 point[0] = hitBox.vertices[p][0];
                 point[1] = hitBox.vertices[p][1];
-              } else {
-                this.topDownBehavior._basisTransformation.toWorld(
-                  hitBox.vertices[p],
-                  point
-                );
-              }
+              // }
               minX = Math.min(minX, point[0]);
               maxX = Math.max(maxX, point[0]);
               minY = Math.min(minY, point[1]);
@@ -1596,7 +1623,7 @@ namespace gdjs {
       /**
        * Update _potentialCollidingObjects member with platforms near the object.
        */
-      private _updatePotentialCollidingObjects(maxMovementLength: float) {
+      private updatePotentialCollidingObjects(maxMovementLength: float) {
         this.obstacleManager.getAllObstaclesAround(
           this.getHitBoxesAABB(),
           maxMovementLength,
@@ -1610,17 +1637,17 @@ namespace gdjs {
      * follow a path computed to avoid obstacles.
      */
     class AssistanceResult {
-      _inputDirection: integer = -1;
-      _assistanceLeft: boolean = false;
-      _assistanceRight: boolean = false;
-      _assistanceUp: boolean = false;
-      _assistanceDown: boolean = false;
-      _isBypassX: boolean = false;
-      _isBypassY: boolean = false;
-      _stopMinX: float = 0;
-      _stopMinY: float = 0;
-      _stopMaxX: float = 0;
-      _stopMaxY: float = 0;
+      inputDirection: integer = -1;
+      assistanceLeft: boolean = false;
+      assistanceRight: boolean = false;
+      assistanceUp: boolean = false;
+      assistanceDown: boolean = false;
+      isBypassX: boolean = false;
+      isBypassY: boolean = false;
+      stopMinX: float = 0;
+      stopMinY: float = 0;
+      stopMaxX: float = 0;
+      stopMaxY: float = 0;
     }
   }
 }

@@ -16,6 +16,22 @@ namespace gdjs {
     }
 
     /**
+     * Initialize to the elements by row.
+     */
+    setTo(m0, m1, m2, m3, m4, m5) {
+      const matrix = this.matrix;
+      // | m0 m2 m4 |
+      // | m1 m3 m5 |
+      // |  0  0  1 |
+      matrix[0] = m0;
+      matrix[1] = m1;
+      matrix[2] = m2;
+      matrix[3] = m3;
+      matrix[4] = m4;
+      matrix[5] = m5;
+    }
+
+    /**
      * Reset to the identity.
      */
     setToIdentity() {
