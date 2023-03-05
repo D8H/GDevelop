@@ -18,14 +18,13 @@ namespace gdjs {
     private _rotateObject: boolean;
     private _angleOffset: float;
     private _ignoreDefaultControls: boolean;
-    private _movementAngleOffset: float;
-    private _isAssistanceEnable: boolean;
+    _movementAngleOffset: float;
+    _isAssistanceEnable: boolean;
 
     /** The latest angle of movement, in degrees. */
     private _angle: float = 0;
 
     // Attributes used when moving
-    _transformedPosition: FloatPoint = [0, 0];
     _xVelocity: float = 0;
     _yVelocity: float = 0;
     private _angularSpeed: float = 0;
@@ -40,13 +39,12 @@ namespace gdjs {
     private _upKeyPressedDuration: float = 0;
     private _downKeyPressedDuration: float = 0;
     private _wasStickUsed: boolean = false;
-    private _stickAngle: float = 0;
-    private _stickForce: float = 0;
+    _stickAngle: float = 0;
+    _stickForce: float = 0;
 
     // @ts-ignore The setter "setViewpoint" is not detected as an affectation.
-    _basisTransformation: BasisTransformation;
+    _basisTransformation: gdjs.TopDownMovementRuntimeBehavior.BasisTransformation | null;
     _temporaryPointForTransformations: FloatPoint = [0, 0];
-    private _assistance: gdjs.TopDownMovementRuntimeBehavior.Assistance;
 
     private _topDownMovementHooks: Array<
       gdjs.TopDownMovementRuntimeBehavior.TopDownMovementHook
@@ -67,9 +65,11 @@ namespace gdjs {
       this._angleOffset = behaviorData.angleOffset;
       this._ignoreDefaultControls = behaviorData.ignoreDefaultControls;
       this._isAssistanceEnable = behaviorData.enableAssistance || false;
-      this._assistance = new gdjs.TopDownMovementRuntimeBehavior.Assistance(
-        this,
-        instanceContainer
+      this.registerHook(
+        new gdjs.TopDownMovementRuntimeBehavior.Assistance(
+          this,
+          instanceContainer
+        )
       );
       this.setViewpoint(
         behaviorData.viewpoint,
@@ -144,7 +144,7 @@ namespace gdjs {
           (customIsometryAngle * Math.PI) / 180
         );
       } else {
-        this._basisTransformation = new gdjs.TopDownMovementRuntimeBehavior.IdentityTransformation();
+        this._basisTransformation = null;
       }
     }
 
@@ -372,41 +372,6 @@ namespace gdjs {
       }
 
       const object = this.owner;
-      if (this._isAssistanceEnable) {
-        // Check if the object has moved
-        // To avoid to loop on the transform and its inverse
-        // because of float approximation.
-        const position = this._temporaryPointForTransformations;
-        this._basisTransformation.toScreen(this._transformedPosition, position);
-        if (object.getX() !== position[0] || object.getY() !== position[1]) {
-          position[0] = object.getX();
-          position[1] = object.getY();
-          this._basisTransformation.toWorld(
-            position,
-            this._transformedPosition
-          );
-        }
-
-        const stickIsUsed = this._stickForce !== 0 && direction === -1;
-        let inputDirection: float;
-        if (stickIsUsed) {
-          inputDirection = this._getStickDirection();
-        } else {
-          inputDirection = direction;
-        }
-        const assistanceDirection: integer = this._assistance.suggestDirection(
-          instanceContainer,
-          inputDirection
-        );
-        if (assistanceDirection !== -1) {
-          if (stickIsUsed) {
-            this._stickAngle = assistanceDirection * 45;
-          } else {
-            direction = assistanceDirection;
-          }
-        }
-      }
-
       const timeDelta = this.owner.getElapsedTime() / 1000;
       const previousVelocityX = this._xVelocity;
       const previousVelocityY = this._yVelocity;
@@ -495,34 +460,27 @@ namespace gdjs {
       }
 
       // Position object.
-      if (this._isAssistanceEnable) {
-        this._assistance.shift(
-          this._xVelocity * timeDelta,
-          this._yVelocity * timeDelta
-        );
+      // This is a Verlet integration considering the acceleration as constant.
+      // If you expand deltaX or deltaY, it gives, thanks to the usage of both
+      // the old and the new velocity:
+      // "velocity * timeDelta + acceleration * timeDelta^2 / 2".
+      //
+      // The acceleration is not actually always constant, particularly with a gamepad,
+      // but the error is multiplied by timDelta^3. So, it shouldn't matter much.
+      const deltaX = ((previousVelocityX + this._xVelocity) / 2) * timeDelta;
+      const deltaY = ((previousVelocityY + this._yVelocity) / 2) * timeDelta;
+      if (this._basisTransformation === null) {
+        // Top-down viewpoint
+        object.setX(object.getX() + deltaX);
+        object.setY(object.getY() + deltaY);
       } else {
-        // This is a Verlet integration considering the acceleration as constant.
-        // If you expand deltaX or deltaY, it gives, thanks to the usage of both
-        // the old and the new velocity:
-        // "velocity * timeDelta + acceleration * timeDelta^2 / 2".
-        //
-        // The acceleration is not actually always constant, particularly with a gamepad,
-        // but the error is multiplied by timDelta^3. So, it shouldn't matter much.
-        const deltaX = ((previousVelocityX + this._xVelocity) / 2) * timeDelta;
-        const deltaY = ((previousVelocityY + this._yVelocity) / 2) * timeDelta;
-        if (this._basisTransformation === null) {
-          // Top-down viewpoint
-          object.setX(object.getX() + deltaX);
-          object.setY(object.getY() + deltaY);
-        } else {
-          // Isometry viewpoint
-          const point = this._temporaryPointForTransformations;
-          point[0] = deltaX;
-          point[1] = deltaY;
-          this._basisTransformation.toScreen(point, point);
-          object.setX(object.getX() + point[0]);
-          object.setY(object.getY() + point[1]);
-        }
+        // Isometry viewpoint
+        const point = this._temporaryPointForTransformations;
+        point[0] = deltaX;
+        point[1] = deltaY;
+        this._basisTransformation.toScreen(point, point);
+        object.setX(object.getX() + point[0]);
+        object.setY(object.getY() + point[1]);
       }
 
       // Also update angle if needed.
@@ -536,13 +494,8 @@ namespace gdjs {
         }
       }
 
-      if (this._isAssistanceEnable) {
-        this._assistance.applyCollision(instanceContainer);
-
-        const position = this._temporaryPointForTransformations;
-        this._basisTransformation.toScreen(this._transformedPosition, position);
-        object.setX(position[0]);
-        object.setY(position[1]);
+      for (const topDownMovementHook of this._topDownMovementHooks) {
+        topDownMovementHook.afterPositionUpdate(hookContext);
       }
 
       this._leftKey = false;
@@ -615,23 +568,6 @@ namespace gdjs {
       return this._stickAngle;
     }
 
-    _getStickDirection() {
-      let direction = (this._stickAngle + this._movementAngleOffset) / 45;
-      direction = direction - Math.floor(direction / 8) * 8;
-      for (let strait = 0; strait < 8; strait += 2) {
-        if (strait - 0.125 < direction && direction < strait + 0.125) {
-          direction = strait;
-        }
-        if (strait + 0.125 <= direction && direction <= strait + 2 - 0.125) {
-          direction = strait + 1;
-        }
-      }
-      if (8 - 0.125 < direction) {
-        direction = 0;
-      }
-      return direction;
-    }
-
     /**
      * A hook must typically be registered by a behavior that requires this one
      * in its onCreate function.
@@ -645,6 +581,11 @@ namespace gdjs {
       this._topDownMovementHooks.push(hook);
     }
   }
+
+  gdjs.registerBehavior(
+    'TopDownMovementBehavior::TopDownMovementBehavior',
+    gdjs.TopDownMovementRuntimeBehavior
+  );
 
   export namespace TopDownMovementRuntimeBehavior {
     export class TopDownMovementHookContext {
@@ -691,6 +632,11 @@ namespace gdjs {
        * angle.
        */
       beforePositionUpdate(hookContext: TopDownMovementHookContext): void;
+      /**
+       * Called after the velocity is applied to the object position and
+       * angle.
+       */
+      afterPositionUpdate(hookContext: TopDownMovementHookContext): void;
     }
 
     export interface BasisTransformation {
@@ -701,22 +647,6 @@ namespace gdjs {
       toScreen(worldPoint: FloatPoint): void;
 
       toWorld(screenPoint: FloatPoint): void;
-    }
-
-    export class IdentityTransformation implements BasisTransformation {
-      toScreen(worldPoint: FloatPoint, screenPoint?: FloatPoint): void {
-        if (screenPoint) {
-          screenPoint[0] = worldPoint[0];
-          screenPoint[1] = worldPoint[1];
-        }
-      }
-
-      toWorld(screenPoint: FloatPoint, worldPoint?: FloatPoint): void {
-        if (worldPoint) {
-          worldPoint[0] = screenPoint[0];
-          worldPoint[1] = screenPoint[1];
-        }
-      }
     }
 
     export class IsometryTransformation implements BasisTransformation {
@@ -784,6 +714,8 @@ namespace gdjs {
 
     const deltasX = [1, 1, 0, -1, -1, -1, 0, 1];
     const deltasY = [0, 1, 1, 1, 0, -1, -1, -1];
+    const temporaryPointForTransformations: FloatPoint = [0, 0];
+    const epsilon: float = 0.015625;
 
     /** Corner sliding on TopDownObstacleRuntimeBehavior instances.
      *
@@ -793,76 +725,197 @@ namespace gdjs {
      * he want to go that way, but he needs to be aligned to do so,
      * so the assistance makes him move up or down in the 1st place.
      */
-    export class Assistance {
-      static epsilon: float = 0.015625;
-      private _behavior: gdjs.TopDownMovementRuntimeBehavior;
+    export class Assistance
+      implements gdjs.TopDownMovementRuntimeBehavior.TopDownMovementHook {
+      private instanceContainer: gdjs.RuntimeInstanceContainer;
+      private topDownBehavior: gdjs.TopDownMovementRuntimeBehavior;
 
       // Obstacles near the object, updated with _updatePotentialCollidingObjects.
-      private _potentialCollidingObjects: gdjs.TopDownObstacleRuntimeBehavior[];
-      private _manager: gdjs.TopDownObstaclesManager;
+      private potentialCollidingObjects: gdjs.TopDownObstacleRuntimeBehavior[];
+      private obstacleManager: gdjs.TopDownObstaclesManager;
 
       // Remember the decision to bypass an obstacle...
-      private _lastAnyObstacle: boolean = false;
-      private _needToCheckBypassWay: boolean = true;
+      private lastAnyObstacle: boolean = false;
+      private needToCheckBypassWay: boolean = true;
 
       // ...and the context of that decision
-      private _lastAssistanceDirection: integer = -1;
-      private _lastDirection: integer = -1;
+      private lastAssistanceDirection: integer = -1;
+      private lastDirection: integer = -1;
 
-      private _relativeHitBoxesAABB: gdjs.AABB = { min: [0, 0], max: [0, 0] };
-      private _absoluteHitBoxesAABB: gdjs.AABB = { min: [0, 0], max: [0, 0] };
-      private _hitBoxesAABBUpToDate: boolean = false;
-      private _oldWidth: float = 0;
-      private _oldHeight: float = 0;
+      private transformedPosition: FloatPoint = [0, 0];
+      private relativeHitBoxesAABB: gdjs.AABB = { min: [0, 0], max: [0, 0] };
+      private absoluteHitBoxesAABB: gdjs.AABB = { min: [0, 0], max: [0, 0] };
+      private hitBoxesAABBUpToDate: boolean = false;
+      private oldWidth: float = 0;
+      private oldHeight: float = 0;
+      private previousX: float = 0;
+      private previousY: float = 0;
 
-      private _collidingObjects: gdjs.RuntimeObject[];
+      private collidingObjects: gdjs.RuntimeObject[];
 
-      private _result: AssistanceResult = new AssistanceResult();
+      private result: AssistanceResult = new AssistanceResult();
 
       constructor(
         behavior: gdjs.TopDownMovementRuntimeBehavior,
-        runtimeScene: gdjs.RuntimeInstanceContainer
+        instanceContainer: gdjs.RuntimeInstanceContainer
       ) {
-        this._behavior = behavior;
-        this._potentialCollidingObjects = [];
-        this._potentialCollidingObjects.length = 0;
-        this._collidingObjects = [];
-        this._collidingObjects.length = 0;
-        this._manager = gdjs.TopDownObstaclesManager.getManager(runtimeScene);
+        this.instanceContainer = instanceContainer;
+        this.topDownBehavior = behavior;
+        this.potentialCollidingObjects = [];
+        this.collidingObjects = [];
+        this.obstacleManager = gdjs.TopDownObstaclesManager.getManager(
+          instanceContainer
+        );
+      }
+
+      overrideDirection(
+        hookContext: gdjs.TopDownMovementRuntimeBehavior.TopDownMovementHookContext
+      ): integer {
+        let direction = hookContext.getDirection();
+        if (this.topDownBehavior._isAssistanceEnable) {
+          const object = this.topDownBehavior.owner;
+          // Check if the object has moved
+          // To avoid to loop on the transform and its inverse
+          // because of float approximation.
+          const position = temporaryPointForTransformations;
+          if (this.topDownBehavior._basisTransformation) {
+            this.topDownBehavior._basisTransformation.toScreen(
+              this.transformedPosition,
+              position
+            );
+          } else {
+            position[0] = this.transformedPosition[0];
+            position[1] = this.transformedPosition[1];
+          }
+          if (object.getX() !== position[0] || object.getY() !== position[1]) {
+            position[0] = object.getX();
+            position[1] = object.getY();
+            if (this.topDownBehavior._basisTransformation) {
+              this.topDownBehavior._basisTransformation.toWorld(
+                position,
+                this.transformedPosition
+              );
+            } else {
+              this.transformedPosition[0] = position[0];
+              this.transformedPosition[1] = position[1];
+            }
+          }
+
+          const stickIsUsed =
+            this.topDownBehavior._stickForce !== 0 && direction === -1;
+          let inputDirection: float;
+          if (stickIsUsed) {
+            inputDirection = this.getStickDirection();
+          } else {
+            inputDirection = direction;
+          }
+          const assistanceDirection: integer = this.suggestDirection(
+            inputDirection
+          );
+          if (assistanceDirection !== -1) {
+            if (stickIsUsed) {
+              this.topDownBehavior._stickAngle = assistanceDirection * 45;
+            }
+            return assistanceDirection;
+          }
+        }
+        return direction;
+      }
+
+      beforeSpeedUpdate(
+        hookContext: gdjs.TopDownMovementRuntimeBehavior.TopDownMovementHookContext
+      ): void {}
+
+      beforePositionUpdate(
+        hookContext: gdjs.TopDownMovementRuntimeBehavior.TopDownMovementHookContext
+      ): void {
+        if (this.topDownBehavior._isAssistanceEnable) {
+          const object = this.topDownBehavior.owner;
+          this.previousX = object.getX();
+          this.previousY = object.getY();
+        }
+      }
+
+      afterPositionUpdate(
+        hookContext: gdjs.TopDownMovementRuntimeBehavior.TopDownMovementHookContext
+      ): void {
+        if (this.topDownBehavior._isAssistanceEnable) {
+          const object = this.topDownBehavior.owner;
+          const point = temporaryPointForTransformations;
+          point[0] = object.getX() - this.previousX;
+          point[1] = object.getY() - this.previousY;
+          if (this.topDownBehavior._basisTransformation) {
+            this.topDownBehavior._basisTransformation.toWorld(point, point);
+          }
+          this.shift(point[0], point[1]);
+
+          this.applyCollision();
+
+          const position = temporaryPointForTransformations;
+
+          if (this.topDownBehavior._basisTransformation) {
+            this.topDownBehavior._basisTransformation.toScreen(
+              this.transformedPosition,
+              position
+            );
+          } else {
+            position[0] = this.transformedPosition[0];
+            position[1] = this.transformedPosition[1];
+          }
+          object.setX(position[0]);
+          object.setY(position[1]);
+        }
+      }
+
+      getStickDirection() {
+        let direction =
+          (this.topDownBehavior._stickAngle +
+            this.topDownBehavior._movementAngleOffset) /
+          45;
+        direction = direction - Math.floor(direction / 8) * 8;
+        for (let strait = 0; strait < 8; strait += 2) {
+          if (strait - 0.125 < direction && direction < strait + 0.125) {
+            direction = strait;
+          }
+          if (strait + 0.125 <= direction && direction <= strait + 2 - 0.125) {
+            direction = strait + 1;
+          }
+        }
+        if (8 - 0.125 < direction) {
+          direction = 0;
+        }
+        return direction;
       }
 
       almostEquals(a: float, b: float) {
-        return b - Assistance.epsilon < a && a < b + Assistance.epsilon;
+        return b - epsilon < a && a < b + epsilon;
       }
 
       /** Analyze the real intent of the player instead of applying the input blindly.
        * @returns a direction that matches the player intents.
        */
-      suggestDirection(
-        runtimeScene: gdjs.RuntimeInstanceContainer,
-        direction: integer
-      ): integer {
-        this._needToCheckBypassWay =
-          this._needToCheckBypassWay || direction !== this._lastDirection;
+      suggestDirection(direction: integer): integer {
+        this.needToCheckBypassWay =
+          this.needToCheckBypassWay || direction !== this.lastDirection;
 
         if (direction === -1) {
           return this.noAssistance();
         }
 
-        const object = this._behavior.owner;
+        const object = this.topDownBehavior.owner;
         if (
-          object.getWidth() !== this._oldWidth ||
-          object.getHeight() !== this._oldHeight
+          object.getWidth() !== this.oldWidth ||
+          object.getHeight() !== this.oldHeight
         ) {
-          this._hitBoxesAABBUpToDate = false;
-          this._oldWidth = object.getWidth();
-          this._oldHeight = object.getHeight();
+          this.hitBoxesAABBUpToDate = false;
+          this.oldWidth = object.getWidth();
+          this.oldHeight = object.getHeight();
         }
 
         // Compute the list of the objects that will be used
-        const timeDelta = object.getElapsedTime(runtimeScene) / 1000;
+        const timeDelta = object.getElapsedTime(this.instanceContainer) / 1000;
         this._updatePotentialCollidingObjects(
-          1 + this._behavior.getMaxSpeed() * timeDelta
+          1 + this.topDownBehavior.getMaxSpeed() * timeDelta
         );
 
         const downKey: boolean = 1 <= direction && direction <= 3;
@@ -898,11 +951,11 @@ namespace gdjs {
         // This affectation has no meaning, it will be override.
         let bypassedObstacleAABB: AABB | null = null;
 
-        this._collidingObjects.length = 0;
-        this._collidingObjects.push(object);
+        this.collidingObjects.length = 0;
+        this.collidingObjects.push(object);
 
-        for (var i = 0; i < this._potentialCollidingObjects.length; ++i) {
-          const obstacleBehavior = this._potentialCollidingObjects[i];
+        for (var i = 0; i < this.potentialCollidingObjects.length; ++i) {
+          const obstacleBehavior = this.potentialCollidingObjects[i];
           const corner: float = obstacleBehavior.getSlidingCornerSize();
           const obstacle = obstacleBehavior.owner;
           if (obstacle === object) {
@@ -924,7 +977,7 @@ namespace gdjs {
             Math.max(maxY, Math.floor(maxY + deltaY)) > obstacleMinY &&
             Math.min(minY, Math.ceil(minY + deltaY)) < obstacleMaxY
           ) {
-            this._collidingObjects.push(obstacle);
+            this.collidingObjects.push(obstacle);
 
             // The player is corner to corner to the obstacle.
             // The assistance will depend on other obstacles.
@@ -1099,9 +1152,9 @@ namespace gdjs {
             (downKey && !rightKey) ||
             (downKey === rightKey && assistanceDown > assistanceRight) ||
             (assistanceDown === assistanceRight &&
-              this._behavior._yVelocity > 0 &&
-              Math.abs(this._behavior._xVelocity) <
-                Math.abs(this._behavior._yVelocity))
+              this.topDownBehavior._yVelocity > 0 &&
+              Math.abs(this.topDownBehavior._xVelocity) <
+                Math.abs(this.topDownBehavior._yVelocity))
           ) {
             assistanceDirection = 2;
           } else {
@@ -1112,9 +1165,9 @@ namespace gdjs {
             (downKey && !leftKey) ||
             (downKey === leftKey && assistanceDown > assistanceLeft) ||
             (assistanceDown === assistanceLeft &&
-              this._behavior._yVelocity > 0 &&
-              Math.abs(this._behavior._xVelocity) <
-                Math.abs(this._behavior._yVelocity))
+              this.topDownBehavior._yVelocity > 0 &&
+              Math.abs(this.topDownBehavior._xVelocity) <
+                Math.abs(this.topDownBehavior._yVelocity))
           ) {
             assistanceDirection = 2;
           } else {
@@ -1125,9 +1178,9 @@ namespace gdjs {
             (upKey && !leftKey) ||
             (upKey === leftKey && assistanceUp > assistanceLeft) ||
             (assistanceUp === assistanceLeft &&
-              this._behavior._yVelocity < 0 &&
-              Math.abs(this._behavior._xVelocity) <
-                Math.abs(this._behavior._yVelocity))
+              this.topDownBehavior._yVelocity < 0 &&
+              Math.abs(this.topDownBehavior._xVelocity) <
+                Math.abs(this.topDownBehavior._yVelocity))
           ) {
             assistanceDirection = 6;
           } else {
@@ -1138,9 +1191,9 @@ namespace gdjs {
             (upKey && !rightKey) ||
             (upKey === rightKey && assistanceUp > assistanceRight) ||
             (assistanceUp === assistanceRight &&
-              this._behavior._yVelocity < 0 &&
-              Math.abs(this._behavior._xVelocity) <
-                Math.abs(this._behavior._yVelocity))
+              this.topDownBehavior._yVelocity < 0 &&
+              Math.abs(this.topDownBehavior._xVelocity) <
+                Math.abs(this.topDownBehavior._yVelocity))
           ) {
             assistanceDirection = 6;
           } else {
@@ -1172,21 +1225,21 @@ namespace gdjs {
         // before been able to go in the right direction
         // and can only move by 4 pixels afterward
         // that it'll sound silly.
-        this._needToCheckBypassWay =
-          this._needToCheckBypassWay ||
-          assistanceDirection !== this._lastAssistanceDirection;
-        if ((isBypassX || isBypassY) && !this._needToCheckBypassWay) {
+        this.needToCheckBypassWay =
+          this.needToCheckBypassWay ||
+          assistanceDirection !== this.lastAssistanceDirection;
+        if ((isBypassX || isBypassY) && !this.needToCheckBypassWay) {
           // Don't check again if the player intent stays the same.
           //
           // Do it, for instance, if an obstacle has moved out of the way
           // and the player releases and presses agin the key.
           // Because, doing it automatically would seems weird.
-          if (this._lastAnyObstacle) {
+          if (this.lastAnyObstacle) {
             return this.noAssistance();
           }
         } else if (isBypassX || isBypassY) {
-          this._lastAssistanceDirection = assistanceDirection;
-          this._lastDirection = direction;
+          this.lastAssistanceDirection = assistanceDirection;
+          this.lastDirection = direction;
 
           let anyObstacle: boolean = false;
           // reflection symmetry: y = x
@@ -1207,7 +1260,6 @@ namespace gdjs {
             //
             // min and max are preserved by the symmetry.
             // The symmetry image is extended to check there is no obstacle before going into the passage.
-            const epsilon: float = Assistance.epsilon;
             const searchMinX: float =
               cornerX +
               minY -
@@ -1233,12 +1285,12 @@ namespace gdjs {
               epsilon +
               (assistanceDirection === 0 ? cornerX - minX : 0);
 
-            anyObstacle = this._manager.anyObstacle(
+            anyObstacle = this.obstacleManager.anyObstacle(
               searchMinX,
               searchMaxX,
               searchMinY,
               searchMaxY,
-              this._collidingObjects
+              this.collidingObjects
             );
           }
           // reflection symmetry: y = -x
@@ -1259,7 +1311,6 @@ namespace gdjs {
             //
             // min and max are switched by the symmetry.
             // The symmetry image is extended to check there is no obstacle before going into the passage.
-            const epsilon: float = Assistance.epsilon;
             const searchMinX: float =
               cornerX -
               (maxY - cornerY) +
@@ -1281,45 +1332,45 @@ namespace gdjs {
               epsilon +
               (assistanceDirection === 4 ? maxX - cornerX : 0);
 
-            anyObstacle = this._manager.anyObstacle(
+            anyObstacle = this.obstacleManager.anyObstacle(
               searchMinX,
               searchMaxX,
               searchMinY,
               searchMaxY,
-              this._collidingObjects
+              this.collidingObjects
             );
           }
-          this._lastAnyObstacle = anyObstacle;
-          this._needToCheckBypassWay = false;
+          this.lastAnyObstacle = anyObstacle;
+          this.needToCheckBypassWay = false;
 
           if (anyObstacle) {
             return this.noAssistance();
           }
         }
 
-        this._result._inputDirection = direction;
-        this._result._assistanceLeft = assistanceLeft > 0;
-        this._result._assistanceRight = assistanceRight > 0;
-        this._result._assistanceUp = assistanceUp > 0;
-        this._result._assistanceDown = assistanceDown > 0;
-        this._result._isBypassX = isBypassX;
-        this._result._isBypassY = isBypassY;
-        this._result._stopMinX = stopMinX;
-        this._result._stopMinY = stopMinY;
-        this._result._stopMaxX = stopMaxX;
-        this._result._stopMaxY = stopMaxY;
+        this.result._inputDirection = direction;
+        this.result._assistanceLeft = assistanceLeft > 0;
+        this.result._assistanceRight = assistanceRight > 0;
+        this.result._assistanceUp = assistanceUp > 0;
+        this.result._assistanceDown = assistanceDown > 0;
+        this.result._isBypassX = isBypassX;
+        this.result._isBypassY = isBypassY;
+        this.result._stopMinX = stopMinX;
+        this.result._stopMinY = stopMinY;
+        this.result._stopMaxX = stopMaxX;
+        this.result._stopMaxY = stopMaxY;
 
         return assistanceDirection;
       }
 
       noAssistance(): integer {
-        this._result._isBypassX = false;
-        this._result._isBypassY = false;
+        this.result._isBypassX = false;
+        this.result._isBypassY = false;
 
         return -1;
       }
 
-      applyCollision(runtimeScene: gdjs.RuntimeInstanceContainer) {
+      applyCollision() {
         this._checkCornerStop();
         this._separateFromObstacles();
         // check again because the object can be pushed on the stop limit,
@@ -1342,52 +1393,56 @@ namespace gdjs {
         const objectAABB: gdjs.AABB = this.getHitBoxesAABB();
         const minX: float = objectAABB.min[0];
         const minY: float = objectAABB.min[1];
-        const object = this._behavior.owner;
+        const object = this.topDownBehavior.owner;
 
-        const direction = this._result._inputDirection;
+        const direction = this.result._inputDirection;
         const leftKey: boolean = 3 <= direction && direction <= 5;
         const upKey: boolean = 5 <= direction && direction <= 7;
 
         // Alignment: avoid to go too far and kind of drift or oscillate in front of a hole.
         if (
-          this._result._isBypassX &&
-          ((this._result._assistanceLeft && minX <= this._result._stopMinX) ||
-            (this._result._assistanceRight && minX >= this._result._stopMaxX))
+          this.result._isBypassX &&
+          ((this.result._assistanceLeft && minX <= this.result._stopMinX) ||
+            (this.result._assistanceRight && minX >= this.result._stopMaxX))
         ) {
           this.shift(
             -minX +
-              (this._result._assistanceLeft
-                ? this._result._stopMinX
-                : this._result._stopMaxX),
+              (this.result._assistanceLeft
+                ? this.result._stopMinX
+                : this.result._stopMaxX),
             0
           );
-          this._behavior._yVelocity =
+          this.topDownBehavior._yVelocity =
             (upKey ? -1 : 1) *
             Math.sqrt(
-              this._behavior._xVelocity * this._behavior._xVelocity +
-                this._behavior._yVelocity * this._behavior._yVelocity
+              this.topDownBehavior._xVelocity *
+                this.topDownBehavior._xVelocity +
+                this.topDownBehavior._yVelocity *
+                  this.topDownBehavior._yVelocity
             );
-          this._behavior._xVelocity = 0;
+          this.topDownBehavior._xVelocity = 0;
         }
         if (
-          this._result._isBypassY &&
-          ((this._result._assistanceUp && minY <= this._result._stopMinY) ||
-            (this._result._assistanceDown && minY >= this._result._stopMaxY))
+          this.result._isBypassY &&
+          ((this.result._assistanceUp && minY <= this.result._stopMinY) ||
+            (this.result._assistanceDown && minY >= this.result._stopMaxY))
         ) {
           this.shift(
             0,
             -minY +
-              (this._result._assistanceUp
-                ? this._result._stopMinY
-                : this._result._stopMaxY)
+              (this.result._assistanceUp
+                ? this.result._stopMinY
+                : this.result._stopMaxY)
           );
-          this._behavior._xVelocity =
+          this.topDownBehavior._xVelocity =
             (leftKey ? -1 : 1) *
             Math.sqrt(
-              this._behavior._xVelocity * this._behavior._xVelocity +
-                this._behavior._yVelocity * this._behavior._yVelocity
+              this.topDownBehavior._xVelocity *
+                this.topDownBehavior._xVelocity +
+                this.topDownBehavior._yVelocity *
+                  this.topDownBehavior._yVelocity
             );
-          this._behavior._yVelocity = 0;
+          this.topDownBehavior._yVelocity = 0;
         }
       }
 
@@ -1395,7 +1450,7 @@ namespace gdjs {
        * Separate from TopDownObstacleRuntimeBehavior instances.
        */
       _separateFromObstacles() {
-        const object = this._behavior.owner;
+        const object = this.topDownBehavior.owner;
         const objectAABB: gdjs.AABB = this.getHitBoxesAABB();
         const minX: float = objectAABB.min[0];
         const minY: float = objectAABB.min[1];
@@ -1408,8 +1463,8 @@ namespace gdjs {
         // in the wrong direction.
         let maxSurface: float = 0;
         let bestObstacleBehavior: TopDownObstacleRuntimeBehavior | null = null;
-        for (var i = 0; i < this._potentialCollidingObjects.length; ++i) {
-          const obstacleBehavior = this._potentialCollidingObjects[i];
+        for (var i = 0; i < this.potentialCollidingObjects.length; ++i) {
+          const obstacleBehavior = this.potentialCollidingObjects[i];
           if (obstacleBehavior.owner === object) {
             continue;
           }
@@ -1436,8 +1491,8 @@ namespace gdjs {
         if (bestObstacleBehavior !== null) {
           this.separateFrom(bestObstacleBehavior);
         }
-        for (var i = 0; i < this._potentialCollidingObjects.length; ++i) {
-          const obstacleBehavior = this._potentialCollidingObjects[i];
+        for (var i = 0; i < this.potentialCollidingObjects.length; ++i) {
+          const obstacleBehavior = this.potentialCollidingObjects[i];
           const obstacle = obstacleBehavior.owner;
           if (obstacle === object) {
             continue;
@@ -1488,13 +1543,13 @@ namespace gdjs {
       }
 
       shift(deltaX: float, deltaY: float) {
-        this._behavior._transformedPosition[0] += deltaX;
-        this._behavior._transformedPosition[1] += deltaY;
+        this.transformedPosition[0] += deltaX;
+        this.transformedPosition[1] += deltaY;
       }
 
       getHitBoxesAABB(): gdjs.AABB {
-        if (!this._hitBoxesAABBUpToDate) {
-          const hitBoxes: Polygon[] = this._behavior.owner.getHitBoxes();
+        if (!this.hitBoxesAABBUpToDate) {
+          const hitBoxes: Polygon[] = this.topDownBehavior.owner.getHitBoxes();
 
           let minX: float = Number.MAX_VALUE;
           let minY: float = Number.MAX_VALUE;
@@ -1503,12 +1558,13 @@ namespace gdjs {
           for (let h = 0, lenh = hitBoxes.length; h < lenh; ++h) {
             let hitBox: Polygon = hitBoxes[h];
             for (let p = 0, lenp = hitBox.vertices.length; p < lenp; ++p) {
-              const point = this._behavior._temporaryPointForTransformations;
-              if (this._behavior._basisTransformation === null) {
+              const point = this.topDownBehavior
+                ._temporaryPointForTransformations;
+              if (this.topDownBehavior._basisTransformation === null) {
                 point[0] = hitBox.vertices[p][0];
                 point[1] = hitBox.vertices[p][1];
               } else {
-                this._behavior._basisTransformation.toWorld(
+                this.topDownBehavior._basisTransformation.toWorld(
                   hitBox.vertices[p],
                   point
                 );
@@ -1519,40 +1575,32 @@ namespace gdjs {
               maxY = Math.max(maxY, point[1]);
             }
           }
-          this._relativeHitBoxesAABB.min[0] =
-            minX - this._behavior._transformedPosition[0];
-          this._relativeHitBoxesAABB.min[1] =
-            minY - this._behavior._transformedPosition[1];
-          this._relativeHitBoxesAABB.max[0] =
-            maxX - this._behavior._transformedPosition[0];
-          this._relativeHitBoxesAABB.max[1] =
-            maxY - this._behavior._transformedPosition[1];
+          this.relativeHitBoxesAABB.min[0] = minX - this.transformedPosition[0];
+          this.relativeHitBoxesAABB.min[1] = minY - this.transformedPosition[1];
+          this.relativeHitBoxesAABB.max[0] = maxX - this.transformedPosition[0];
+          this.relativeHitBoxesAABB.max[1] = maxY - this.transformedPosition[1];
 
-          this._hitBoxesAABBUpToDate = true;
+          this.hitBoxesAABBUpToDate = true;
         }
-        this._absoluteHitBoxesAABB.min[0] =
-          this._relativeHitBoxesAABB.min[0] +
-          this._behavior._transformedPosition[0];
-        this._absoluteHitBoxesAABB.min[1] =
-          this._relativeHitBoxesAABB.min[1] +
-          this._behavior._transformedPosition[1];
-        this._absoluteHitBoxesAABB.max[0] =
-          this._relativeHitBoxesAABB.max[0] +
-          this._behavior._transformedPosition[0];
-        this._absoluteHitBoxesAABB.max[1] =
-          this._relativeHitBoxesAABB.max[1] +
-          this._behavior._transformedPosition[1];
-        return this._absoluteHitBoxesAABB;
+        this.absoluteHitBoxesAABB.min[0] =
+          this.relativeHitBoxesAABB.min[0] + this.transformedPosition[0];
+        this.absoluteHitBoxesAABB.min[1] =
+          this.relativeHitBoxesAABB.min[1] + this.transformedPosition[1];
+        this.absoluteHitBoxesAABB.max[0] =
+          this.relativeHitBoxesAABB.max[0] + this.transformedPosition[0];
+        this.absoluteHitBoxesAABB.max[1] =
+          this.relativeHitBoxesAABB.max[1] + this.transformedPosition[1];
+        return this.absoluteHitBoxesAABB;
       }
 
       /**
        * Update _potentialCollidingObjects member with platforms near the object.
        */
       private _updatePotentialCollidingObjects(maxMovementLength: float) {
-        this._manager.getAllObstaclesAround(
+        this.obstacleManager.getAllObstaclesAround(
           this.getHitBoxesAABB(),
           maxMovementLength,
-          this._potentialCollidingObjects
+          this.potentialCollidingObjects
         );
       }
     }
@@ -1574,9 +1622,5 @@ namespace gdjs {
       _stopMaxX: float = 0;
       _stopMaxY: float = 0;
     }
-    gdjs.registerBehavior(
-      'TopDownMovementBehavior::TopDownMovementBehavior',
-      gdjs.TopDownMovementRuntimeBehavior
-    );
   }
 }
