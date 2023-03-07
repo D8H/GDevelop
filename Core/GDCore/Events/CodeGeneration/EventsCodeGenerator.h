@@ -484,6 +484,19 @@ class GD_CORE_API EventsCodeGenerator {
   virtual const gd::String GenerateRelationalOperatorCodes(
       const gd::String& operatorString);
 
+  /**
+   * \brief Must create a boolean which is a reference to a boolean declared in
+   * the parent scope.
+   *
+   * The default implementation generates C-style code.
+   */
+  virtual gd::String GenerateReferenceToUpperScopeBoolean(
+      const gd::String& referenceName,
+      const gd::String& referencedBoolean,
+      gd::EventsCodeGenerationContext& context) {
+    return "bool & " + referenceName + " = " + referencedBoolean + ";\n";
+  }
+
  protected:
   /**
    * \brief Generate the code for a single parameter.
@@ -664,19 +677,6 @@ class GD_CORE_API EventsCodeGenerator {
   virtual gd::String GenerateNegatedPredicat(const gd::String& predicat) const {
     return "!(" + predicat + ")";
   };
-
-  /**
-   * \brief Must create a boolean which is a reference to a boolean declared in
-   * the parent scope.
-   *
-   * The default implementation generates C-style code.
-   */
-  virtual gd::String GenerateReferenceToUpperScopeBoolean(
-      const gd::String& referenceName,
-      const gd::String& referencedBoolean,
-      gd::EventsCodeGenerationContext& context) {
-    return "bool & " + referenceName + " = " + referencedBoolean + ";\n";
-  }
 
   virtual gd::String GenerateFreeCondition(
       const std::vector<gd::String>& arguments,

@@ -212,6 +212,11 @@ class EventsCodeGenerator : public gd::EventsCodeGenerator {
     codeNamespace = codeNamespace_;
   };
 
+  virtual gd::String GenerateReferenceToUpperScopeBoolean(
+      const gd::String& referenceName,
+      const gd::String& referencedBoolean,
+      gd::EventsCodeGenerationContext& context);
+
  protected:
   virtual gd::String GenerateParameterCodes(
       const gd::Expression& parameter,
@@ -314,11 +319,6 @@ class EventsCodeGenerator : public gd::EventsCodeGenerator {
   virtual gd::String GenerateNegatedPredicat(const gd::String& predicat) const {
     return "!(" + predicat + ")";
   };
-
-  virtual gd::String GenerateReferenceToUpperScopeBoolean(
-      const gd::String& referenceName,
-      const gd::String& referencedBoolean,
-      gd::EventsCodeGenerationContext& context);
 
   virtual gd::String GenerateObjectsDeclarationCode(
       gd::EventsCodeGenerationContext& context);

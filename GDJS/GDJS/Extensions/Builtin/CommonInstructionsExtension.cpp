@@ -139,11 +139,8 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
             event.GetConditions().empty()
                 ? ""
                 : codeGenerator.GenerateBooleanFullName(
-                      "condition" +
-                          gd::String::From(event.GetConditions().size() - 1) +
-                          "IsTrue",
-                      context) +
-                      ".val";
+                      "isConditionTrue",
+                      context);
 
         gd::EventsCodeGenerationContext actionsContext;
         actionsContext.Reuse(context);
@@ -318,77 +315,31 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
             outputCode += codeGenerator.GenerateConditionsListCode(
                 instruction.GetSubInstructions(), parentContext);
 
-            gd::String predicat = "true";
-            for (unsigned int i = 0;
-                 i < instruction.GetSubInstructions().size();
-                 ++i)
-              predicat += " && " +
-                          codeGenerator.GenerateBooleanFullName(
-                              "condition" + gd::String::From(i) + "IsTrue",
-                              parentContext) +
-                          ".val";
-
-            outputCode += codeGenerator.GenerateBooleanFullName("conditionTrue",
-                                                                parentContext) +
-                          ".val = " + predicat + ";\n";
+            outputCode += codeGenerator.GenerateReferenceToUpperScopeBoolean(
+"isConditionTrue", "isConditionTrue", parentContext);
 
             return outputCode;
           });
 
   GetAllConditions()["BuiltinCommonInstructions::Not"]
       .codeExtraInformation.SetCustomCodeGenerator(
-          [](gd::Instruction& instruction,
-             gd::EventsCodeGenerator& codeGenerator,
-             gd::EventsCodeGenerationContext& context) {
-            gd::InstructionsList& conditions = instruction.GetSubInstructions();
+          [](gd::Instruction &instruction,
+             gd::EventsCodeGenerator &codeGenerator,
+             gd::EventsCodeGenerationContext &parentContext) {
             gd::String outputCode;
 
-            for (unsigned int i = 0; i < conditions.size(); ++i) {
-              outputCode +=
-                  codeGenerator.GenerateBooleanFullName(
-                      "condition" + gd::String::From(i) + "IsTrue", context) +
-                  ".val = false;\n";
-            }
+            outputCode += codeGenerator.GenerateConditionsListCode(
+                instruction.GetSubInstructions(), parentContext);
 
-            for (unsigned int cId = 0; cId < conditions.size(); ++cId) {
-              if (cId != 0)
-                outputCode +=
-                    "if ( !" +
-                    codeGenerator.GenerateBooleanFullName(
-                        "condition" + gd::String::From(cId - 1) + "IsTrue",
-                        context) +
-                    ".val ) {\n";
+            outputCode += codeGenerator.GenerateBooleanFullName(
+                              "isConditionTrue", parentContext) +
+                          " = !" +
+                          codeGenerator.GenerateBooleanFullName(
+                              "isConditionTrue", parentContext) +
+                          ";\n";
 
-              const gd::InstructionMetadata& instrInfos =
-                  gd::MetadataProvider::GetConditionMetadata(
-                      codeGenerator.GetPlatform(), conditions[cId].GetType());
-
-              gd::String conditionCode = codeGenerator.GenerateConditionCode(
-                  conditions[cId],
-                  "condition" + gd::String::From(cId) + "IsTrue",
-                  context);
-              if (!conditions[cId].GetType().empty()) {
-                outputCode += "{\n";
-                outputCode += conditionCode;
-                outputCode += "}";
-              }
-            }
-
-            for (unsigned int cId = 0; cId < conditions.size(); ++cId) {
-              if (cId != 0) outputCode += "}\n";
-            }
-
-            if (!conditions.empty()) {
-              outputCode += codeGenerator.GenerateBooleanFullName(
-                                "conditionTrue", context) +
-                            ".val = !";
-              outputCode +=
-                  codeGenerator.GenerateBooleanFullName(
-                      "condition" + gd::String::From(conditions.size() - 1) +
-                          "IsTrue",
-                      context) +
-                  ".val;\n";
-            }
+            outputCode += codeGenerator.GenerateReferenceToUpperScopeBoolean(
+                "isConditionTrue", "isConditionTrue", parentContext);
 
             return outputCode;
           });
