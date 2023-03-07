@@ -200,7 +200,7 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
 
               gd::String conditionCode = codeGenerator.GenerateConditionCode(
                   conditions[cId],
-                  "condition" + gd::String::From(cId) + "IsTrue",
+                  "isConditionTrue",
                   context);
 
               conditionsCode += "{\n";
@@ -214,14 +214,14 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
               // If the condition is true : merge all objects picked in the
               // final object lists.
               conditionsCode +=
-                  "if( " +
+                  "if(" +
                   codeGenerator.GenerateBooleanFullName(
-                      "condition" + gd::String::From(cId) + "IsTrue", context) +
-                  ".val ) {\n";
+                      "isConditionTrue", context) +
+                  ") {\n";
               conditionsCode += "    " +
-                                codeGenerator.GenerateBooleanFullName(
+                                codeGenerator.GenerateUpperScopeBooleanFullName(
                                     "conditionTrue", context) +
-                                ".val = true;\n";
+                                " = true;\n";
               std::set<gd::String> objectsListsToBeDeclared =
                   context.GetAllObjectsToBeDeclared();
               for (set<gd::String>::iterator it =
@@ -315,8 +315,9 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
             outputCode += codeGenerator.GenerateConditionsListCode(
                 instruction.GetSubInstructions(), parentContext);
 
-            outputCode += codeGenerator.GenerateReferenceToUpperScopeBoolean(
-"isConditionTrue", "isConditionTrue", parentContext);
+            outputCode += codeGenerator.GenerateUpperScopeBooleanFullName(
+"isConditionTrue", parentContext) + " = " + codeGenerator.GenerateBooleanFullName(
+"isConditionTrue", parentContext) + ";\n";
 
             return outputCode;
           });
@@ -331,15 +332,9 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
             outputCode += codeGenerator.GenerateConditionsListCode(
                 instruction.GetSubInstructions(), parentContext);
 
-            outputCode += codeGenerator.GenerateBooleanFullName(
-                              "isConditionTrue", parentContext) +
-                          " = !" +
-                          codeGenerator.GenerateBooleanFullName(
-                              "isConditionTrue", parentContext) +
-                          ";\n";
-
-            outputCode += codeGenerator.GenerateReferenceToUpperScopeBoolean(
-                "isConditionTrue", "isConditionTrue", parentContext);
+            outputCode += codeGenerator.GenerateUpperScopeBooleanFullName(
+"isConditionTrue", parentContext) + " = !" + codeGenerator.GenerateBooleanFullName(
+"isConditionTrue", parentContext) + ";\n";;
 
             return outputCode;
           });

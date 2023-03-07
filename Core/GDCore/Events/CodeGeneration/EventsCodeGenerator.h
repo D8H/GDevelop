@@ -405,6 +405,18 @@ class GD_CORE_API EventsCodeGenerator {
   }
 
   /**
+   * \brief Generate the full name for accessing to a boolean variable used for
+   * conditions.
+   *
+   * Default implementation just returns the boolean name passed as argument.
+   */
+  virtual gd::String GenerateUpperScopeBooleanFullName(
+      const gd::String& boolName,
+      const gd::EventsCodeGenerationContext& context) {
+    return boolName;
+  }
+
+  /**
    * \brief Must create a boolean. Its value must be false.
    *
    * The default implementation generates C-style code.
@@ -483,19 +495,6 @@ class GD_CORE_API EventsCodeGenerator {
 
   virtual const gd::String GenerateRelationalOperatorCodes(
       const gd::String& operatorString);
-
-  /**
-   * \brief Must create a boolean which is a reference to a boolean declared in
-   * the parent scope.
-   *
-   * The default implementation generates C-style code.
-   */
-  virtual gd::String GenerateReferenceToUpperScopeBoolean(
-      const gd::String& referenceName,
-      const gd::String& referencedBoolean,
-      gd::EventsCodeGenerationContext& context) {
-    return "bool & " + referenceName + " = " + referencedBoolean + ";\n";
-  }
 
  protected:
   /**

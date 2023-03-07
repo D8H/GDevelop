@@ -1311,18 +1311,15 @@ gd::String EventsCodeGenerator::GenerateGetVariable(
   return output;
 }
 
-// TODO Rename
-gd::String EventsCodeGenerator::GenerateReferenceToUpperScopeBoolean(
-    const gd::String& referenceName,
-    const gd::String& referencedBoolean,
-    gd::EventsCodeGenerationContext& context) {
+gd::String EventsCodeGenerator::GenerateUpperScopeBooleanFullName(
+    const gd::String& boolName,
+    const gd::EventsCodeGenerationContext& context) {
   if (context.GetCurrentConditionDepth() <= 0)
     return "/* Code generation error: the referenced boolean can't exist as "
            "the context has a condition depth of 0. */";
 
-  return referencedBoolean + "_" +
-         gd::String::From(context.GetCurrentConditionDepth() - 1) + " = " +
-          GenerateBooleanFullName(referenceName, context) + ";\n";
+  return boolName + "_" +
+         gd::String::From(context.GetCurrentConditionDepth() - 1);
 }
 
 gd::String EventsCodeGenerator::GenerateBooleanInitializationToFalse(
