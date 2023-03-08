@@ -752,7 +752,7 @@ gd::String EventsCodeGenerator::GenerateObjectCondition(
   conditionCode += "        ++k;\n";
   conditionCode += "    }\n";
   conditionCode += "}\n";
-  conditionCode += GetObjectListName(objectName, context) + ".length = k;";
+  conditionCode += GetObjectListName(objectName, context) + ".length = k;\n";
 
   return conditionCode;
 }
@@ -808,7 +808,7 @@ gd::String EventsCodeGenerator::GenerateBehaviorCondition(
     conditionCode += "        ++k;\n";
     conditionCode += "    }\n";
     conditionCode += "}\n";
-    conditionCode += GetObjectListName(objectName, context) + ".length = k;";
+    conditionCode += GetObjectListName(objectName, context) + ".length = k;\n";
   }
 
   return conditionCode;
