@@ -68,7 +68,7 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
                 instruction.GetParameter(2).GetPlainString());
 
         gd::String resultingBoolean =
-            codeGenerator.GenerateBooleanFullName("isConditionTrue", context);
+            codeGenerator.GenerateUpperScopeBooleanFullName("isConditionTrue", context);
 
         return resultingBoolean + " = (" + value1Code + " " + operatorCode +
                " " + value2Code + ");\n";
@@ -98,7 +98,7 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
                 instruction.GetParameter(2).GetPlainString());
 
         gd::String resultingBoolean =
-            codeGenerator.GenerateBooleanFullName("isConditionTrue", context);
+            codeGenerator.GenerateUpperScopeBooleanFullName("isConditionTrue", context);
 
         return resultingBoolean + " = (" + value1Code + " " + operatorCode +
                " " + value2Code + ");\n";
@@ -218,7 +218,7 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
                   ") {\n";
               conditionsCode += "    " +
                                 codeGenerator.GenerateUpperScopeBooleanFullName(
-                                    "conditionTrue", context) +
+                                    "isConditionTrue", context) +
                                 " = true;\n";
               std::set<gd::String> objectsListsToBeDeclared =
                   context.GetAllObjectsToBeDeclared();
@@ -349,7 +349,7 @@ CommonInstructionsExtension::CommonInstructionsExtension() {
              gd::EventsCodeGenerationContext& context) {
             size_t uniqueId = codeGenerator.GenerateSingleUsageUniqueIdFor(
                 instruction.GetOriginalInstruction().lock().get());
-            gd::String outputCode = codeGenerator.GenerateBooleanFullName(
+            gd::String outputCode = codeGenerator.GenerateUpperScopeBooleanFullName(
                                         "isConditionTrue", context) +
                                     " = ";
             gd::String contextObjectName = codeGenerator.HasProjectAndLayout()
