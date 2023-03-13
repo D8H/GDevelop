@@ -40,6 +40,7 @@ import {
   getEventsFunctionsExtensionEditor,
   notifyPreviewWillStart,
   moveTabToTheRightOfHoveredTab,
+  isEventsFunctionsExtensionTab,
 } from './EditorTabs/EditorTabsHandler';
 import HelpFinder from '../HelpFinder';
 import { renderDebuggerEditorContainer } from './EditorContainers/DebuggerEditorContainer';
@@ -361,7 +362,8 @@ const MainFrame = (props: Props) => {
   const inAppTutorialOrchestratorRef = React.useRef<?InAppTutorialOrchestratorInterface>(
     null
   );
-
+  const currentExtensionTab = React.useRef<?EditorTab>(null);
+  const currentTab = React.useRef<?EditorTab>(null);
   const eventsFunctionsExtensionsContext = React.useContext(
     EventsFunctionsExtensionsContext
   );
@@ -676,6 +678,9 @@ const MainFrame = (props: Props) => {
 
   const closeProject = React.useCallback(
     async (): Promise<void> => {
+      currentExtensionTab.current = null;
+      currentTab.current = null;
+
       setHasProjectOpened(false);
       setPreviewState(initialPreviewState);
 
@@ -693,9 +698,6 @@ const MainFrame = (props: Props) => {
         ...state,
         currentProject: null,
         currentFileMetadata: null,
-      }));
-      await setState(state => ({
-        ...state,
         editorTabs: closeProjectTabs(state.editorTabs, currentProject),
       }));
 
@@ -705,6 +707,7 @@ const MainFrame = (props: Props) => {
       eventsFunctionsExtensionsState.unloadProjectEventsFunctionsExtensions(
         currentProject
       );
+      await eventsFunctionsExtensionsState.ensureLoadFinished();
       currentProject.delete();
       if (unsavedChanges.hasUnsavedChanges) {
         unsavedChanges.sealUnsavedChanges();
@@ -2276,6 +2279,26 @@ const MainFrame = (props: Props) => {
     editorTab: EditorTab,
     newState: State = state
   ) => {
+    if (
+      // Leave an extension tab
+      currentExtensionTab.current &&
+      currentExtensionTab.current !== editorTab &&
+      // Actually changing of tab.
+      editorTab !== currentTab.current &&
+      // Exclude Home to avoid triggering extensions reload when the project
+      // is closed.
+      editorTab.closable
+    ) {
+      currentExtensionTab.current = null;
+      eventsFunctionsExtensionsState.loadProjectEventsFunctionsExtensions(
+        currentProject
+      );
+    }
+    if (isEventsFunctionsExtensionTab(editorTab)) {
+      currentExtensionTab.current = editorTab;
+    }
+    currentTab.current = editorTab;
+
     updateToolbar(newState.editorTabs);
     // Ensure the editors shown on the screen are updated. This is for
     // example useful if global objects have been updated in another editor.
@@ -2904,12 +2927,12 @@ const MainFrame = (props: Props) => {
               openPlatformSpecificAssetsDialog(true)
             }
             eventsFunctionsExtensionsError={eventsFunctionsExtensionsError}
-            onReloadEventsFunctionsExtensions={() =>
+            onReloadEventsFunctionsExtensions={() => {
               // Check if load is sufficient
               eventsFunctionsExtensionsState.reloadProjectEventsFunctionsExtensions(
                 currentProject
-              )
-            }
+              );
+            }}
             freezeUpdate={!projectManagerOpen}
             unsavedChanges={unsavedChanges}
             hotReloadPreviewButtonProps={hotReloadPreviewButtonProps}
@@ -3038,10 +3061,9 @@ const MainFrame = (props: Props) => {
                     onOpenPreferences: () => openPreferencesDialog(true),
                     onOpenAbout: () => openAboutDialog(true),
                     selectInAppTutorial: selectInAppTutorial,
-                    onLoadEventsFunctionsExtensions: () =>
-                      eventsFunctionsExtensionsState.loadProjectEventsFunctionsExtensions(
-                        currentProject
-                      ),
+                    onLoadEventsFunctionsExtensions: () => {
+                      return Promise.resolve();
+                    },
                     onReloadEventsFunctionsExtensionMetadata: extension =>
                       eventsFunctionsExtensionsState.reloadProjectEventsFunctionsExtensionMetadata(
                         currentProject,
