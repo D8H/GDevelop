@@ -286,9 +286,6 @@ export const closeEventsFunctionsExtensionTabs = (
   });
 };
 
-export const isEventsFunctionsExtensionTab = (editorTab: EditorTab) =>
-  editorTab.editorRef instanceof EventsFunctionsExtensionEditorContainer;
-
 export const getEventsFunctionsExtensionEditor = (
   state: EditorTabsState,
   eventsFunctionsExtension: gdEventsFunctionsExtension
