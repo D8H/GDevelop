@@ -124,7 +124,7 @@ describe.only('gdjs.evtTools.object', function () {
     );
   });
 
-  it('can create an instance and keep all instances picked', function () {
+  it.only('can create an instance and keep all instances picked', function () {
     const runtimeGame = gdjs.getPixiRuntimeGame();
     const runtimeScene = new gdjs.TestRuntimeScene(runtimeGame);
 
