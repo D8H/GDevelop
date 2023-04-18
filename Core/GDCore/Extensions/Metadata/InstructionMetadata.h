@@ -4,8 +4,10 @@
  * reserved. This project is released under the MIT License.
  */
 
-#ifndef INSTRUCTIONMETADATA_H
-#define INSTRUCTIONMETADATA_H
+#pragma once
+
+#include "ParameterContainerMetadata.h"
+
 #include <algorithm>
 #include <functional>
 #include <map>
@@ -33,7 +35,7 @@ namespace gd {
  *
  * \ingroup Events
  */
-class GD_CORE_API InstructionMetadata {
+class GD_CORE_API InstructionMetadata : public ParameterContainerMetadata {
  public:
   /**
    * Construct a new instruction metadata.
@@ -231,7 +233,7 @@ class GD_CORE_API InstructionMetadata {
       const gd::String &type,
       const gd::String &label,
       const gd::String &supplementaryInformation = "",
-      bool parameterIsOptional = false);
+      bool parameterIsOptional = false) override;
 
   /**
    * \brief Add a parameter not displayed in editor.
@@ -245,7 +247,7 @@ class GD_CORE_API InstructionMetadata {
    * \see EventsCodeGenerator::GenerateParametersCodes
    */
   InstructionMetadata &AddCodeOnlyParameter(
-      const gd::String &type, const gd::String &supplementaryInformation);
+      const gd::String &type, const gd::String &supplementaryInformation) override;
 
   /**
    * \brief Set the default value used in editor (or if an optional parameter is
@@ -253,7 +255,7 @@ class GD_CORE_API InstructionMetadata {
    *
    * \see AddParameter
    */
-  InstructionMetadata &SetDefaultValue(const gd::String &defaultValue_) {
+  InstructionMetadata &SetDefaultValue(const gd::String &defaultValue_) override {
     if (!parameters.empty()) parameters.back().SetDefaultValue(defaultValue_);
     return *this;
   };
@@ -265,7 +267,7 @@ class GD_CORE_API InstructionMetadata {
    * \see AddParameter
    */
   InstructionMetadata &SetParameterLongDescription(
-      const gd::String &longDescription) {
+      const gd::String &longDescription) override {
     if (!parameters.empty())
       parameters.back().SetLongDescription(longDescription);
     return *this;
@@ -278,7 +280,7 @@ class GD_CORE_API InstructionMetadata {
    *
    * \see AddParameter
    */
-  InstructionMetadata &SetParameterExtraInfo(const gd::String &extraInfo) {
+  InstructionMetadata &SetParameterExtraInfo(const gd::String &extraInfo) override {
     if (!parameters.empty()) parameters.back().SetExtraInfo(extraInfo);
     return *this;
   }
@@ -604,5 +606,3 @@ class GD_CORE_API InstructionMetadata {
 };
 
 }  // namespace gd
-
-#endif  // INSTRUCTIONMETADATA_H

@@ -3,9 +3,10 @@
  * Copyright 2008-2016 Florian Rival (Florian.Rival@gmail.com). All rights
  * reserved. This project is released under the MIT License.
  */
-#ifndef EXPRESSIONMETADATA_H
-#define EXPRESSIONMETADATA_H
-#if defined(GD_IDE_ONLY)
+#pragma once
+
+#include "ParameterContainerMetadata.h"
+
 #include <functional>
 #include <memory>
 
@@ -118,7 +119,7 @@ class ExpressionCodeGenerationInformation {
  *
  * \ingroup Events
  */
-class GD_CORE_API ExpressionMetadata {
+class GD_CORE_API ExpressionMetadata : public ParameterContainerMetadata {
  public:
   /**
    * Construct a new expression metadata.
@@ -248,17 +249,17 @@ class GD_CORE_API ExpressionMetadata {
   /**
    * \see gd::InstructionMetadata::AddParameter
    */
-  gd::ExpressionMetadata& AddParameter(
-      const gd::String& type,
-      const gd::String& description,
-      const gd::String& supplementaryInformation = "",
-      bool parameterIsOptional = false);
+  gd::ExpressionMetadata &
+  AddParameter(const gd::String &type, const gd::String &label,
+               const gd::String &supplementaryInformation = "",
+               bool parameterIsOptional = false) override;
 
   /**
    * \see gd::InstructionMetadata::AddCodeOnlyParameter
    */
-  gd::ExpressionMetadata& AddCodeOnlyParameter(
-      const gd::String& type, const gd::String& supplementaryInformation);
+  gd::ExpressionMetadata &
+  AddCodeOnlyParameter(const gd::String &type,
+                       const gd::String &supplementaryInformation) override;
 
   /**
    * Set the default value used in editor (or if an optional parameter is empty
@@ -266,8 +267,9 @@ class GD_CORE_API ExpressionMetadata {
    *
    * \see AddParameter
    */
-  ExpressionMetadata& SetDefaultValue(gd::String defaultValue_) {
-    if (!parameters.empty()) parameters.back().SetDefaultValue(defaultValue_);
+  ExpressionMetadata &SetDefaultValue(const gd::String &defaultValue) override {
+    if (!parameters.empty())
+      parameters.back().SetDefaultValue(defaultValue);
     return *this;
   };
 
@@ -277,7 +279,8 @@ class GD_CORE_API ExpressionMetadata {
    *
    * \see AddParameter
    */
-  ExpressionMetadata& SetParameterLongDescription(gd::String longDescription) {
+  ExpressionMetadata &
+  SetParameterLongDescription(const gd::String &longDescription) override {
     if (!parameters.empty())
       parameters.back().SetLongDescription(longDescription);
     return *this;
@@ -290,7 +293,8 @@ class GD_CORE_API ExpressionMetadata {
    *
    * \see AddParameter
    */
-  ExpressionMetadata &SetParameterExtraInfo(const gd::String &extraInfo) {
+  ExpressionMetadata &SetParameterExtraInfo(
+      const gd::String &extraInfo) override {
     if (!parameters.empty()) parameters.back().SetExtraInfo(extraInfo);
     return *this;
   }
@@ -391,6 +395,3 @@ class GD_CORE_API ExpressionMetadata {
 };
 
 }  // namespace gd
-
-#endif
-#endif  // EXPRESSIONMETADATA_H

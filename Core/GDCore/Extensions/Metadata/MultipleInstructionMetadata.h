@@ -3,8 +3,8 @@
  * Copyright 2008-present Florian Rival (Florian.Rival@gmail.com). All rights
  * reserved. This project is released under the MIT License.
  */
-#ifndef MULTIPLEINSTRUCTIONSMETADATA_H
-#define MULTIPLEINSTRUCTIONSMETADATA_H
+#pragma once
+
 #include "GDCore/Extensions/Metadata/ExpressionMetadata.h"
 #include "GDCore/Extensions/Metadata/InstructionMetadata.h"
 #include "GDCore/String.h"
@@ -21,7 +21,7 @@ namespace gd {
  *
  * \ingroup PlatformDefinition
  */
-class GD_CORE_API MultipleInstructionMetadata {
+class GD_CORE_API MultipleInstructionMetadata : public ParameterContainerMetadata {
  public:
   static MultipleInstructionMetadata WithExpressionAndCondition(
       gd::ExpressionMetadata &expression, gd::InstructionMetadata &condition) {
@@ -45,7 +45,7 @@ class GD_CORE_API MultipleInstructionMetadata {
       const gd::String &type,
       const gd::String &label,
       const gd::String &supplementaryInformation = "",
-      bool parameterIsOptional = false) {
+      bool parameterIsOptional = false) override {
     if (expression)
       expression->AddParameter(
           type, label, supplementaryInformation, parameterIsOptional);
@@ -62,7 +62,7 @@ class GD_CORE_API MultipleInstructionMetadata {
    * \see gd::InstructionMetadata::AddCodeOnlyParameter
    */
   MultipleInstructionMetadata &AddCodeOnlyParameter(
-      const gd::String &type, const gd::String &supplementaryInformation) {
+      const gd::String &type, const gd::String &supplementaryInformation) override {
     if (expression)
       expression->AddCodeOnlyParameter(type, supplementaryInformation);
     if (condition)
@@ -74,7 +74,7 @@ class GD_CORE_API MultipleInstructionMetadata {
   /**
    * \see gd::InstructionMetadata::SetDefaultValue
    */
-  MultipleInstructionMetadata &SetDefaultValue(const gd::String &defaultValue) {
+  MultipleInstructionMetadata &SetDefaultValue(const gd::String &defaultValue) override {
     if (expression) expression->SetDefaultValue(defaultValue);
     if (condition) condition->SetDefaultValue(defaultValue);
     if (action) action->SetDefaultValue(defaultValue);
@@ -85,7 +85,7 @@ class GD_CORE_API MultipleInstructionMetadata {
    * \see gd::InstructionMetadata::SetParameterExtraInfo
    */
   MultipleInstructionMetadata &SetParameterExtraInfo(
-      const gd::String &defaultValue) {
+      const gd::String &defaultValue) override {
     if (expression) expression->SetParameterExtraInfo(defaultValue);
     if (condition) condition->SetParameterExtraInfo(defaultValue);
     if (action) action->SetParameterExtraInfo(defaultValue);
@@ -96,7 +96,7 @@ class GD_CORE_API MultipleInstructionMetadata {
    * \see gd::InstructionMetadata::SetParameterLongDescription
    */
   MultipleInstructionMetadata &SetParameterLongDescription(
-      const gd::String &longDescription) {
+      const gd::String &longDescription) override {
     if (expression) expression->SetParameterLongDescription(longDescription);
     if (condition) condition->SetParameterLongDescription(longDescription);
     if (action) action->SetParameterLongDescription(longDescription);
@@ -242,5 +242,3 @@ class GD_CORE_API MultipleInstructionMetadata {
 };
 
 }  // namespace gd
-
-#endif  // MULTIPLEINSTRUCTIONSMETADATA_H
