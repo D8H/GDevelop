@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <functional>
 
 namespace gd {
 class PlatformExtension;
@@ -152,9 +153,9 @@ static void declarePropertyInstructionAndExpression(
   const gd::String& getterName,
   const gd::String& toggleFunctionName,
   const int valueParameterIndex,
-  addObjectAndBehaviorParameters: <T: gdInstructionOrExpressionMetadata>(
-    instructionOrExpression: T
-  ) => T
+  std::function<gd::InstructionOrExpressionMetadata&(
+                               gd::InstructionOrExpressionMetadata& instructionOrExpression)>
+          addObjectAndBehaviorParameters
 );
 
 /**
@@ -200,7 +201,7 @@ static void declareObjectInternalInstructions(
 static void declareEventsFunctionParameters(
   const gd::EventsFunctionsContainer& eventsFunctionsContainer,
   const gd::EventsFunction& eventsFunction,
-  const gd::ParameterContainerMetadata& instructionOrExpression,
+  gd::ParameterContainerMetadata& instructionOrExpression,
   const int userDefinedFirstParameterIndex
 );
 

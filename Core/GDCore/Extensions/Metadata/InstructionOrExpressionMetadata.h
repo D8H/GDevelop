@@ -35,7 +35,7 @@ namespace gd {
  *
  * \ingroup Events
  */
-class GD_CORE_API InstructionOrExpressionMetadata : ParameterContainerMetadata {
+class GD_CORE_API InstructionOrExpressionMetadata : public ParameterContainerMetadata {
  public:
   /**
    * Construct an empty InstructionMetadata.
@@ -124,7 +124,7 @@ class GD_CORE_API InstructionOrExpressionMetadata : ParameterContainerMetadata {
    *
    * Used mainly when an instruction is deprecated.
    */
-  virtual InstructionOrExpressionMetadata &SetHidden() override = 0;
+  virtual InstructionOrExpressionMetadata &SetHidden() = 0;
 
   /**
    * \brief Set the group of the instruction in the IDE.
@@ -226,13 +226,22 @@ class GD_CORE_API InstructionOrExpressionMetadata : ParameterContainerMetadata {
    * instruction as it does not apply to them.
    */
   virtual InstructionOrExpressionMetadata &SetRequiresBaseObjectCapability(
-      const gd::String& capability) override = 0;
+      const gd::String& capability) = 0;
 
   /**
    * \brief Get the required specified capability for this (object) instruction,
    * or an empty string if there is nothing specific required.
    */
   virtual const gd::String &GetRequiredBaseObjectCapability() const = 0;
+
+  /**
+   * \brief Set the function that should be called when generating the source
+   * code from events.
+   * \param functionName the name of the function to call
+   * \note Shortcut for `codeExtraInformation.SetFunctionName`.
+   */
+  virtual InstructionOrExpressionMetadata& SetFunctionName(
+      const gd::String& functionName) = 0;
 
  private:
 };

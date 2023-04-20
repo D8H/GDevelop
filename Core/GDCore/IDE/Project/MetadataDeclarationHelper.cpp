@@ -584,17 +584,17 @@ gd::String MetadataDeclarationHelper::shiftSentenceParamIndexes(
   }
   auto& parameterIndexes = parameterIndexesStrings.map(indexString =>
     Number.parseInt(
-      indexString.substring('_PARAM'.length, indexString.length - '_'.length)
+      indexString.substring("_PARAM".length, indexString.length - "_".length)
     )
   );
   auto& sentenceElements = sentence.split(/_PARAM\d+_/);
-  let shiftedSentence = "";
-  for (let index = 0; index < parameterIndexes.length; index++) {
+  gd::String shiftedSentence = "";
+  for (size_t index = 0; index < parameterIndexes.length; index++) {
     shiftedSentence +=
       sentenceElements[index] +
-      '_PARAM' +
+      "_PARAM" +
       (parameterIndexes[index] + offset) +
-      '_';
+      "_";
   }
   auto& sentenceIsEndingWithAnElement =
     sentenceElements.length > parameterIndexes.length;
@@ -786,14 +786,15 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareObjectInstruct
     if (eventsFunctionsContainer.HasEventsFunctionNamed(
       eventsFunction.GetGetterName()
     )) {
-
+        auto& getterFunction = eventsFunctionsContainer.GetEventsFunction(
+          eventsFunction.GetGetterName()
+        );
         auto& action = objectMetadata.AddScopedAction(
         eventsFunction.GetName(),
         getterFunction.GetFullName() ||
             eventsFunction.GetName(),
         "Change " +
-            ((getterFunction && getterFunction.GetDescription()) ||
-            eventsFunction.GetFullName()),
+            (getterFunction.GetDescription() || eventsFunction.GetFullName()),
         // An operator and an operand are inserted before user parameters.
         shiftSentenceParamIndexes(getterFunction.GetSentence(), 2),
         getterFunction.GetGroup() ||
@@ -869,7 +870,7 @@ gd::String MetadataDeclarationHelper::GetStringifiedExtraInfo(const gd::Property
 gd::String MetadataDeclarationHelper::uncapitalizedFirstLetter(const gd::String& string) {
   string.size() < 1
     ? string
-    : string.substr(0, 1).toLowerCase() + string.substr(1);
+    : string.substr(0, 1).LowerCase() + string.substr(1);
 }
 
 void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
@@ -886,9 +887,9 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
   const gd::String& getterName,
   const gd::String& toggleFunctionName,
   const int valueParameterIndex,
-  addObjectAndBehaviorParameters: <T: gdInstructionOrExpressionMetadata>(
-    instructionOrExpression: T
-  ) => T
+  std::function<gd::InstructionOrExpressionMetadata&(
+        gd::InstructionOrExpressionMetadata& instructionOrExpression)>
+          addObjectAndBehaviorParameters
 ) {
   auto& propertyType = property.GetType();
 
@@ -900,8 +901,8 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
       entityMetadata.AddScopedCondition(
         conditionName,
         propertyLabel,
-        _(t`Check the property value for "${uncapitalizedLabel}".`),
-        _(t`Property "${uncapitalizedLabel}" of _PARAM0_ is true`),
+        _("Check the property value for") + " " + uncapitalizedLabel + ".",
+        _("Property") + " " + uncapitalizedLabel + " " + "of _PARAM0_ is true",
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension),
         GetExtensionIconUrl(extension)
@@ -914,10 +915,8 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
       entityMetadata.AddScopedAction(
         actionName,
         propertyLabel,
-        _("Update the property value for \"") + uncapitalizedLabel + _("\"."),
-        _(
-          t`Set property value for "${uncapitalizedLabel}" of _PARAM0_ to _PARAM${valueParameterIndex}_`
-        ),
+        _("Update the property value for") + " \"" + uncapitalizedLabel + _("\"."),
+        _("Set property value for") + uncapitalizedLabel + " " + _("of _PARAM0_ to") + " _PARAM" + gd::String::From(valueParameterIndex) + "_",
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension),
         GetExtensionIconUrl(extension)
@@ -930,19 +929,15 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
     addObjectAndBehaviorParameters(
       entityMetadata.AddScopedAction(
         toggleActionName,
-        _(t`Toggle ${propertyLabel}`),
-        _(t`Toggle the property value for "${uncapitalizedLabel}".`) +
-          '\n' +
-          _(
-            `If it was true, it will become false, and if it was false it will become true.`
-          ),
-        _(t`Toggle property "${uncapitalizedLabel}" of _PARAM0_`),
+        _("Toggle") + " " + propertyLabel,
+        _("Toggle the property value for") + " " + uncapitalizedLabel + ".\n" +
+          _("If it was true, it will become false, and if it was false it will become true."),
+        _("Toggle property") + " " + uncapitalizedLabel + " " + _("of") + " _PARAM0_",
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension),
         GetExtensionIconUrl(extension)
       )
     )
-      .GetCodeExtraInformation()
       .SetFunctionName(toggleFunctionName);
   } else {
     auto typeExtraInfo = GetStringifiedExtraInfo(property);
@@ -953,8 +948,8 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
         gd::ValueTypeMetadata::ConvertPropertyTypeToValueType(propertyType),
         expressionName,
         propertyLabel,
-        _(t`the property value for the ${uncapitalizedLabel}`),
-        _(t`the property value for the ${uncapitalizedLabel}`),
+        _("the property value for the "),
+        _("the property value for the "),
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension)
       )
@@ -979,9 +974,9 @@ void MetadataDeclarationHelper::declareBehaviorPropertiesInstructionAndExpressio
   gd::BehaviorMetadata& behaviorMetadata,
   const gd::EventsBasedBehavior& eventsBasedBehavior
 ) {
-  auto& addObjectAndBehaviorParameters = <T: gdInstructionOrExpressionMetadata>(
-    instructionOrExpression: T
-  ): T => {
+  auto& addObjectAndBehaviorParameters = [&eventsBasedBehavior](
+    gd::InstructionOrExpressionMetadata& instructionOrExpression
+  ) -> gd::InstructionOrExpressionMetadata& {
     // By convention, first parameter is always the object:
     instructionOrExpression
       .AddParameter(
@@ -1010,17 +1005,15 @@ void MetadataDeclarationHelper::declareBehaviorPropertiesInstructionAndExpressio
     return instructionOrExpression;
   };
 
-  mapVector(eventsBasedBehavior.GetPropertyDescriptors(), property => {
-    auto& propertyType = property.GetType();
+  for (auto& property : eventsBasedBehavior.GetPropertyDescriptors().GetInternalVector()) {
+    auto& propertyType = property->GetType();
     if (propertyType == "Behavior") {
       // Required behaviors don't need accessors and mutators.
       return;
     }
 
-    auto& propertyName = property.GetName();
-    auto& propertyLabel = _(
-      t`${property.GetLabel() || propertyName} property`
-    );
+    auto& propertyName = property->GetName();
+    auto& propertyLabel = (property->GetLabel() || propertyName) + " " + _("property");
     auto& expressionName = gd::EventsBasedBehavior::GetPropertyExpressionName(
       propertyName
     );
@@ -1047,7 +1040,7 @@ void MetadataDeclarationHelper::declareBehaviorPropertiesInstructionAndExpressio
       extension,
       behaviorMetadata,
       eventsBasedBehavior,
-      property,
+      *property,
       propertyLabel,
       expressionName,
       conditionName,
@@ -1059,13 +1052,11 @@ void MetadataDeclarationHelper::declareBehaviorPropertiesInstructionAndExpressio
       2,
       addObjectAndBehaviorParameters
     );
-  });
+  }
 
-  mapVector(eventsBasedBehavior.GetSharedPropertyDescriptors(), property => {
-    auto& propertyName = property.GetName();
-    auto& propertyLabel = _(
-      t`${property.GetLabel() || propertyName} shared property`
-    );
+  for (auto& property : eventsBasedBehavior.GetSharedPropertyDescriptors().GetInternalVector()) {
+    auto& propertyName = property->GetName();
+    auto& propertyLabel = (property->GetLabel() || propertyName) + " " + _("shared property");
     auto& expressionName = gd::EventsBasedBehavior::GetSharedPropertyExpressionName(
       propertyName
     );
@@ -1092,7 +1083,7 @@ void MetadataDeclarationHelper::declareBehaviorPropertiesInstructionAndExpressio
       extension,
       behaviorMetadata,
       eventsBasedBehavior,
-      property,
+      *property,
       propertyLabel,
       expressionName,
       conditionName,
@@ -1104,7 +1095,7 @@ void MetadataDeclarationHelper::declareBehaviorPropertiesInstructionAndExpressio
       2,
       addObjectAndBehaviorParameters
     );
-  });
+  }
 }
 
 /**
@@ -1118,9 +1109,10 @@ void MetadataDeclarationHelper::declareObjectPropertiesInstructionAndExpressions
   gd::ObjectMetadata& objectMetadata,
   const gd::EventsBasedObject& eventsBasedObject
 ) {
-  auto& addObjectParameter = <T: gdInstructionOrExpressionMetadata>(
-    instructionOrExpression: T
-  ): T => {
+
+  auto& addObjectParameter = [&eventsBasedObject](
+    gd::InstructionOrExpressionMetadata& instructionOrExpression
+  ) -> gd::InstructionOrExpressionMetadata& {
     // By convention, first parameter is always the object:
     instructionOrExpression.AddParameter(
       "object",
@@ -1136,11 +1128,9 @@ void MetadataDeclarationHelper::declareObjectPropertiesInstructionAndExpressions
     return instructionOrExpression;
   };
 
-  mapVector(eventsBasedObject.GetPropertyDescriptors(), property => {
-    auto& propertyName = property.GetName();
-    auto& propertyLabel = _(
-      t`${property.GetLabel() || propertyName} property`
-    );
+  for (auto& property : eventsBasedObject.GetPropertyDescriptors().GetInternalVector()) {
+    auto& propertyName = property->GetName();
+    auto& propertyLabel = (property->GetLabel() || propertyName) + " " + _("property");
     auto& expressionName = gd::EventsBasedObject::GetPropertyExpressionName(
       propertyName
     );
@@ -1165,7 +1155,7 @@ void MetadataDeclarationHelper::declareObjectPropertiesInstructionAndExpressions
       extension,
       objectMetadata,
       eventsBasedObject,
-      property,
+      *property,
       propertyLabel,
       expressionName,
       conditionName,
@@ -1177,7 +1167,7 @@ void MetadataDeclarationHelper::declareObjectPropertiesInstructionAndExpressions
       1,
       addObjectParameter
     );
-  });
+  }
 }
 
 /**
@@ -1208,7 +1198,7 @@ void MetadataDeclarationHelper::declareObjectInternalInstructions(
     .AddParameter("object", _("Object"), objectType)
     .AddParameter("number", _("X position"))
     .AddParameter("number", _("Y position"))
-    .markAsAdvanced()
+    .MarkAsAdvanced()
     .SetPrivate()
     .SetFunctionName("setRotationCenter");
 }
@@ -1220,10 +1210,10 @@ void MetadataDeclarationHelper::declareObjectInternalInstructions(
 void MetadataDeclarationHelper::declareEventsFunctionParameters(
   const gd::EventsFunctionsContainer& eventsFunctionsContainer,
   const gd::EventsFunction& eventsFunction,
-  const gd::ParameterContainerMetadata& instructionOrExpression,
+  gd::ParameterContainerMetadata& instructionOrExpression,
   const int userDefinedFirstParameterIndex
 ) {
-  auto& addParameter = (parameter: gdParameterMetadata) => {
+  auto& addParameter = [&instructionOrExpression](const ParameterMetadata& parameter) {
     if (!parameter.IsCodeOnly()) {
       instructionOrExpression
         .AddParameter(
@@ -1249,54 +1239,60 @@ void MetadataDeclarationHelper::declareEventsFunctionParameters(
   };
 
   auto functionType = eventsFunction.GetFunctionType();
-  auto& getterFunction = eventsFunctionsContainer.HasEventsFunctionNamed(
+
+  bool hasGetterFunction = eventsFunctionsContainer.HasEventsFunctionNamed(
     eventsFunction.GetGetterName()
-  )
-    ? eventsFunctionsContainer.GetEventsFunction(eventsFunction.GetGetterName())
-    : null;
+  );
+
   // This is used instead of getParametersForEvents because the Value parameter
   // is already add by useStandardOperatorParameters.
   auto& parameters = (functionType == gd::EventsFunction::ActionWithOperator &&
-  getterFunction
-    ? getterFunction
+  functionType == gd::EventsFunction::ActionWithOperator && hasGetterFunction
+    ? eventsFunctionsContainer.GetEventsFunction(eventsFunction.GetGetterName())
     : eventsFunction
   ).GetParameters();
-
-  mapVector(
-    parameters,
-    (parameter: gdParameterMetadata, index: number) =>
-      index < userDefinedFirstParameterIndex && addParameter(parameter)
-  );
+  
+  for (size_t i = 0; i < userDefinedFirstParameterIndex && i < parameters.size(); i++)
+  {
+    const gd::ParameterMetadata& parameter = parameters.at(i);
+    addParameter(parameter);
+  }
 
   if (functionType == gd::EventsFunction::ExpressionAndCondition) {
     auto& options = gd::ParameterOptions::MakeNewOptions();
-    if (eventsFunction) {
-      auto& extraInfo = eventsFunction.GetExpressionType().GetExtraInfo();
-      if (extraInfo) options.SetTypeExtraInfo(extraInfo);
-    }
+    auto& extraInfo = eventsFunction.GetExpressionType().GetExtraInfo();
+    if (!extraInfo.empty()) options.SetTypeExtraInfo(extraInfo);
     // $FlowExpectedError[incompatible-cast]
-    (instructionOrExpression: gdMultipleInstructionMetadata).UseStandardParameters(
-      eventsFunction ? eventsFunction.GetExpressionType().GetName() : "string",
+    instructionOrExpression.UseStandardParameters(
+      eventsFunction.GetExpressionType().GetName(),
       options
     );
   } else if (functionType == gd::EventsFunction::ActionWithOperator) {
     auto& options = gd::ParameterOptions::MakeNewOptions();
-    if (getterFunction) {
-      auto& extraInfo = getterFunction.GetExpressionType().GetExtraInfo();
-      if (extraInfo) options.SetTypeExtraInfo(extraInfo);
+    if (hasGetterFunction) {
+        auto& getterFunction = eventsFunctionsContainer.GetEventsFunction(eventsFunction.GetGetterName());
+
+        auto& extraInfo = getterFunction.GetExpressionType().GetExtraInfo();
+        if (!extraInfo.empty()) options.SetTypeExtraInfo(extraInfo);
+        // $FlowExpectedError[incompatible-cast]
+        instructionOrExpression.UseStandardOperatorParameters(
+        getterFunction.GetExpressionType().GetName(),
+        options
+        );
     }
-    // $FlowExpectedError[incompatible-cast]
-    (instructionOrExpression: gdInstructionMetadata).UseStandardOperatorParameters(
-      getterFunction ? getterFunction.GetExpressionType().GetName() : "string",
-      options
-    );
+    else {
+        instructionOrExpression.UseStandardOperatorParameters(
+        "string",
+        options
+        );
+    }
   }
 
-  mapVector(
-    parameters,
-    (parameter: gdParameterMetadata, index: number) =>
-      index >= userDefinedFirstParameterIndex && addParameter(parameter)
-  );
+  for (size_t i = userDefinedFirstParameterIndex; i < parameters.size(); i++)
+  {
+    const gd::ParameterMetadata& parameter = parameters.at(i);
+    addParameter(parameter);
+  }
 
   // By convention, latest parameter is always the eventsFunctionContext of the calling function
   // (if any).

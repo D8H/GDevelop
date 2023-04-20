@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "ParameterContainerMetadata.h"
+#include "InstructionOrExpressionMetadata.h"
 
 #include <functional>
 #include <memory>
@@ -119,7 +119,7 @@ class ExpressionCodeGenerationInformation {
  *
  * \ingroup Events
  */
-class GD_CORE_API ExpressionMetadata : public ParameterContainerMetadata {
+class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
  public:
   /**
    * Construct a new expression metadata.
@@ -322,9 +322,10 @@ class GD_CORE_API ExpressionMetadata : public ParameterContainerMetadata {
    * \param functionName the name of the function to call
    * \note Shortcut for `codeExtraInformation.SetFunctionName`.
    */
-  ExpressionCodeGenerationInformation& SetFunctionName(
-      const gd::String& functionName) {
-    return codeExtraInformation.SetFunctionName(functionName);
+  ExpressionMetadata& SetFunctionName(
+      const gd::String& functionName) override {
+    codeExtraInformation.SetFunctionName(functionName);
+    return *this;
   }
 
   /**

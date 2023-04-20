@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "ParameterContainerMetadata.h"
+#include "InstructionOrExpressionMetadata.h"
 
 #include <algorithm>
 #include <functional>
@@ -35,7 +35,7 @@ namespace gd {
  *
  * \ingroup Events
  */
-class GD_CORE_API InstructionMetadata : public ParameterContainerMetadata {
+class GD_CORE_API InstructionMetadata : public InstructionOrExpressionMetadata {
  public:
   /**
    * Construct a new instruction metadata.
@@ -544,8 +544,9 @@ class GD_CORE_API InstructionMetadata : public ParameterContainerMetadata {
    * \param functionName the name of the function to call.
    * \note Shortcut for `codeExtraInformation.SetFunctionName`.
    */
-  ExtraInformation &SetFunctionName(const gd::String &functionName) {
-    return codeExtraInformation.SetFunctionName(functionName);
+  InstructionMetadata &SetFunctionName(const gd::String &functionName) override {
+    codeExtraInformation.SetFunctionName(functionName);
+    return *this;
   }
 
   /**
