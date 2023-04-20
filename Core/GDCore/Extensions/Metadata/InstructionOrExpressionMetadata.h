@@ -52,7 +52,6 @@ class GD_CORE_API InstructionOrExpressionMetadata : public ParameterContainerMet
   virtual const ParameterMetadata &GetParameter(size_t i) const = 0;
   virtual size_t GetParametersCount() const = 0;
   virtual const std::vector<ParameterMetadata> &GetParameters() const = 0;
-  virtual const gd::String &GetIconFilename() const = 0;
   virtual const gd::String &GetSmallIconFilename() const = 0;
 
   /**
@@ -77,7 +76,7 @@ class GD_CORE_API InstructionOrExpressionMetadata : public ParameterContainerMet
    * Set that the instruction is private - it can't be used outside of the
    * object/ behavior that it is attached too.
    */
-  virtual InstructionOrExpressionMetadata &SetPrivate() = 0;
+  virtual InstructionOrExpressionMetadata &SetPrivate() override;
 
   /**
    * Check if the instruction can be used in layouts or external events.
@@ -130,11 +129,6 @@ class GD_CORE_API InstructionOrExpressionMetadata : public ParameterContainerMet
    * \brief Set the group of the instruction in the IDE.
    */
   virtual InstructionOrExpressionMetadata &SetGroup(const gd::String &str) = 0;
-
-  /**
-   * \brief Return true if the instruction must be hidden in the IDE.
-   */
-  virtual bool IsHidden() const = 0;
 
   /**
    * \brief Add a parameter to the instruction metadata.

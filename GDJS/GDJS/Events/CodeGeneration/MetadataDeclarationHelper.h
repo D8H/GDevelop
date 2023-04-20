@@ -153,8 +153,8 @@ static void declarePropertyInstructionAndExpression(
   const gd::String& getterName,
   const gd::String& toggleFunctionName,
   const int valueParameterIndex,
-  std::function<gd::InstructionOrExpressionMetadata&(
-                               gd::InstructionOrExpressionMetadata& instructionOrExpression)>
+  std::function<gd::ParameterContainerMetadata&(
+                               gd::ParameterContainerMetadata& instructionOrExpression)>
           addObjectAndBehaviorParameters
 );
 
@@ -201,7 +201,18 @@ static void declareObjectInternalInstructions(
 static void declareEventsFunctionParameters(
   const gd::EventsFunctionsContainer& eventsFunctionsContainer,
   const gd::EventsFunction& eventsFunction,
-  gd::ParameterContainerMetadata& instructionOrExpression,
+  gd::InstructionOrExpressionMetadata& instructionOrExpression,
+  const int userDefinedFirstParameterIndex
+);
+
+/**
+ * Add to the instruction (action/condition) or expression the parameters
+ * expected by the events function.
+ */
+static void declareEventsFunctionParameters(
+  const gd::EventsFunctionsContainer& eventsFunctionsContainer,
+  const gd::EventsFunction& eventsFunction,
+  gd::MultipleInstructionMetadata& multipleInstructionMetadata,
   const int userDefinedFirstParameterIndex
 );
 
@@ -211,6 +222,27 @@ private:
   MetadataDeclarationHelper(){};
 
   static const gd::String defaultExtensionIconPath;
+
+  
+  static void AddParameter(gd::ParameterContainerMetadata& instructionOrExpression, const ParameterMetadata& parameter);
+
+
+static const gd::String& GetExtensionCodeNamespacePrefix(
+  const gd::EventsFunctionsExtension eventsFunctionsExtension
+);
+
+/** Generate the namespace for a free function. */
+static const gd::String& GetFreeFunctionCodeNamespace(
+  const gd::EventsFunction& eventsFunction,
+  const gd::String& codeNamespacePrefix
+);
+
+static const gd::String& GetFreeFunctionCodeName(
+  const EventsFunctionsExtension& eventsFunctionsExtension,
+  const EventsFunction& eventsFunction
+);
+
+
 };
 
 } // namespace gd

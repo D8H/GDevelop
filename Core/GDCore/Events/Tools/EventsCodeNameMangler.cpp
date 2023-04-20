@@ -17,7 +17,7 @@ const gd::String& EventsCodeNameMangler::GetMangledObjectsListName(
     return it->second;
   }
 
-  gd::String partiallyMangledName = originalObjectName;
+  gd::String partiallyMangledName = GetMangledName(originalObjectName);
   static const gd::String allowedCharacters =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -43,7 +43,15 @@ const gd::String& EventsCodeNameMangler::GetExternalEventsFunctionMangledName(
     return it->second;
   }
 
-  gd::String partiallyMangledName = externalEventsName;
+  gd::String partiallyMangledName = GetMangledName(externalEventsName);
+
+  mangledExternalEventsNames[externalEventsName] = "GDExternalEvents" + partiallyMangledName;
+  return mangledExternalEventsNames[externalEventsName];
+}
+
+const gd::String& EventsCodeNameMangler::GetMangledName(
+    const gd::String &name) {
+  gd::String partiallyMangledName = name;
   static const gd::String allowedCharacters =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -57,9 +65,7 @@ const gd::String& EventsCodeNameMangler::GetExternalEventsFunctionMangledName(
       partiallyMangledName.replace(i, 1, "_" + gd::String::From(unallowedChar));
     }
   }
-
-  mangledExternalEventsNames[externalEventsName] = "GDExternalEvents" + partiallyMangledName;
-  return mangledExternalEventsNames[externalEventsName];
+  return partiallyMangledName;
 }
 
 const gd::String& ManObjListName(const gd::String &objectName) {

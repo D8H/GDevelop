@@ -12,6 +12,9 @@
 #include "GDCore/Extensions/Metadata/MultipleInstructionMetadata.h"
 #include "GDCore/Tools/Localization.h"
 #include "GDCore/Tools/Log.h"
+#include "GDJS/Events/CodeGeneration/BehaviorCodeGenerator.h"
+#include "GDJS/Events/CodeGeneration/ObjectCodeGenerator.h"
+#include "GDCore/Events/Tools/EventsCodeNameMangler.h"
 
 namespace gd {
 
@@ -861,10 +864,18 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareObjectInstruct
 }
 
 gd::String MetadataDeclarationHelper::GetStringifiedExtraInfo(const gd::PropertyDescriptor& property) {
-
-  return property.GetType() == "Choice"
-    ? JSON.stringify(property.GetExtraInfo().toJSArray())
-    : "";
+  gd::String stringifiedExtraInfo = "";
+  if (property.GetType() == "Choice") {
+    stringifiedExtraInfo += "[";
+    for (size_t i = 0; i < property.GetExtraInfo().size(); i++) {
+      stringifiedExtraInfo += property.GetExtraInfo().at(i);
+      if (i < property.GetExtraInfo().size() - 1) {
+        stringifiedExtraInfo += ",";
+      }
+    }
+    stringifiedExtraInfo += "]";
+  }
+  return stringifiedExtraInfo;
 }
 
 gd::String MetadataDeclarationHelper::uncapitalizedFirstLetter(const gd::String& string) {
@@ -887,8 +898,8 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
   const gd::String& getterName,
   const gd::String& toggleFunctionName,
   const int valueParameterIndex,
-  std::function<gd::InstructionOrExpressionMetadata&(
-        gd::InstructionOrExpressionMetadata& instructionOrExpression)>
+  std::function<gd::ParameterContainerMetadata&(
+        gd::ParameterContainerMetadata& instructionOrExpression)>
           addObjectAndBehaviorParameters
 ) {
   auto& propertyType = property.GetType();
@@ -897,8 +908,7 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
     property.GetLabel() || property.GetName()
   );
   if (propertyType == "Boolean") {
-    addObjectAndBehaviorParameters(
-      entityMetadata.AddScopedCondition(
+    auto& conditionMetadata = entityMetadata.AddScopedCondition(
         conditionName,
         propertyLabel,
         _("Check the property value for") + " " + uncapitalizedLabel + ".",
@@ -906,13 +916,12 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension),
         GetExtensionIconUrl(extension)
-      )
-    )
-      .GetCodeExtraInformation()
-      .SetFunctionName(getterName);
+      );
+    addObjectAndBehaviorParameters(conditionMetadata
+    );
+      conditionMetadata.SetFunctionName(getterName);
 
-    addObjectAndBehaviorParameters(
-      entityMetadata.AddScopedAction(
+    auto& setterActionMetadata = entityMetadata.AddScopedAction(
         actionName,
         propertyLabel,
         _("Update the property value for") + " \"" + uncapitalizedLabel + _("\"."),
@@ -920,14 +929,14 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension),
         GetExtensionIconUrl(extension)
-      )
-    )
-      .AddParameter("yesorno", _("New value to set"), "", false)
-      .GetCodeExtraInformation()
+      );
+    addObjectAndBehaviorParameters(
+      setterActionMetadata
+    );
+    setterActionMetadata.AddParameter("yesorno", _("New value to set"), "", false)
       .SetFunctionName(setterName);
 
-    addObjectAndBehaviorParameters(
-      entityMetadata.AddScopedAction(
+    auto& toggleActionMetadata = entityMetadata.AddScopedAction(
         toggleActionName,
         _("Toggle") + " " + propertyLabel,
         _("Toggle the property value for") + " " + uncapitalizedLabel + ".\n" +
@@ -936,15 +945,16 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension),
         GetExtensionIconUrl(extension)
-      )
-    )
-      .SetFunctionName(toggleFunctionName);
+      );
+    addObjectAndBehaviorParameters(
+      toggleActionMetadata
+    );
+    toggleActionMetadata.SetFunctionName(toggleFunctionName);
   } else {
     auto typeExtraInfo = GetStringifiedExtraInfo(property);
     auto& parameterOptions = gd::ParameterOptions::MakeNewOptions();
     if (!typeExtraInfo.empty()) parameterOptions.SetTypeExtraInfo(typeExtraInfo);
-    addObjectAndBehaviorParameters(
-      entityMetadata.AddExpressionAndConditionAndAction(
+    auto& propertyInstructionMetadata = entityMetadata.AddExpressionAndConditionAndAction(
         gd::ValueTypeMetadata::ConvertPropertyTypeToValueType(propertyType),
         expressionName,
         propertyLabel,
@@ -952,9 +962,11 @@ void MetadataDeclarationHelper::declarePropertyInstructionAndExpression(
         _("the property value for the "),
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension)
-      )
-    )
-      .UseStandardParameters(
+      );
+    addObjectAndBehaviorParameters(
+      propertyInstructionMetadata
+    );
+    propertyInstructionMetadata.UseStandardParameters(
         gd::ValueTypeMetadata::ConvertPropertyTypeToValueType(propertyType),
         parameterOptions
       )
@@ -975,8 +987,8 @@ void MetadataDeclarationHelper::declareBehaviorPropertiesInstructionAndExpressio
   const gd::EventsBasedBehavior& eventsBasedBehavior
 ) {
   auto& addObjectAndBehaviorParameters = [&eventsBasedBehavior](
-    gd::InstructionOrExpressionMetadata& instructionOrExpression
-  ) -> gd::InstructionOrExpressionMetadata& {
+    gd::ParameterContainerMetadata& instructionOrExpression
+  ) -> gd::ParameterContainerMetadata& {
     // By convention, first parameter is always the object:
     instructionOrExpression
       .AddParameter(
@@ -1026,13 +1038,13 @@ void MetadataDeclarationHelper::declareBehaviorPropertiesInstructionAndExpressio
     auto& toggleActionName = gd::EventsBasedBehavior::GetPropertyToggleActionName(
       propertyName
     );
-    auto& setterName = gd::BehaviorCodeGenerator::GetBehaviorPropertySetterName(
+    auto& setterName = gdjs::BehaviorCodeGenerator::GetBehaviorPropertySetterName(
       propertyName
     );
-    auto& getterName = gd::BehaviorCodeGenerator::GetBehaviorPropertyGetterName(
+    auto& getterName = gdjs::BehaviorCodeGenerator::GetBehaviorPropertyGetterName(
       propertyName
     );
-    auto& toggleFunctionName = gd::BehaviorCodeGenerator::GetBehaviorPropertyToggleFunctionName(
+    auto& toggleFunctionName = gdjs::BehaviorCodeGenerator::GetBehaviorPropertyToggleFunctionName(
       propertyName
     );
 
@@ -1069,13 +1081,13 @@ void MetadataDeclarationHelper::declareBehaviorPropertiesInstructionAndExpressio
     auto& toggleActionName = gd::EventsBasedBehavior::GetSharedPropertyToggleActionName(
       propertyName
     );
-    auto& setterName = gd::BehaviorCodeGenerator::GetBehaviorSharedPropertySetterName(
+    auto& setterName = gdjs::BehaviorCodeGenerator::GetBehaviorSharedPropertySetterName(
       propertyName
     );
-    auto& getterName = gd::BehaviorCodeGenerator::GetBehaviorSharedPropertyGetterName(
+    auto& getterName = gdjs::BehaviorCodeGenerator::GetBehaviorSharedPropertyGetterName(
       propertyName
     );
-    auto& toggleFunctionName = gd::BehaviorCodeGenerator::GetBehaviorSharedPropertyToggleFunctionName(
+    auto& toggleFunctionName = gdjs::BehaviorCodeGenerator::GetBehaviorSharedPropertyToggleFunctionName(
       propertyName
     );
 
@@ -1111,8 +1123,8 @@ void MetadataDeclarationHelper::declareObjectPropertiesInstructionAndExpressions
 ) {
 
   auto& addObjectParameter = [&eventsBasedObject](
-    gd::InstructionOrExpressionMetadata& instructionOrExpression
-  ) -> gd::InstructionOrExpressionMetadata& {
+    gd::ParameterContainerMetadata& instructionOrExpression
+  ) -> gd::ParameterContainerMetadata& {
     // By convention, first parameter is always the object:
     instructionOrExpression.AddParameter(
       "object",
@@ -1141,13 +1153,13 @@ void MetadataDeclarationHelper::declareObjectPropertiesInstructionAndExpressions
     auto& toggleActionName = gd::EventsBasedObject::GetPropertyToggleActionName(
       propertyName
     );
-    auto& getterName = gd::ObjectCodeGenerator::GetObjectPropertyGetterName(
+    auto& getterName = gdjs::ObjectCodeGenerator::GetObjectPropertyGetterName(
       propertyName
     );
-    auto& setterName = gd::ObjectCodeGenerator::GetObjectPropertySetterName(
+    auto& setterName = gdjs::ObjectCodeGenerator::GetObjectPropertySetterName(
       propertyName
     );
-    auto& toggleFunctionName = gd::ObjectCodeGenerator::GetObjectPropertyToggleFunctionName(
+    auto& toggleFunctionName = gdjs::ObjectCodeGenerator::GetObjectPropertyToggleFunctionName(
       propertyName
     );
 
@@ -1203,6 +1215,31 @@ void MetadataDeclarationHelper::declareObjectInternalInstructions(
     .SetFunctionName("setRotationCenter");
 }
 
+void AddParameter(gd::ParameterContainerMetadata& instructionOrExpression, const ParameterMetadata& parameter) {
+  if (!parameter.IsCodeOnly()) {
+    instructionOrExpression
+      .AddParameter(
+        parameter.GetType(),
+        parameter.GetDescription(),
+        "", // See below for adding the extra information
+        parameter.IsOptional()
+      )
+      // Manually add the "extra info" without relying on addParameter (or addCodeOnlyParameter)
+      // as these methods are prefixing the value passed with the extension namespace (this
+      // was done to ease extension declarations when dealing with object).
+      .SetParameterExtraInfo(parameter.GetExtraInfo());
+    instructionOrExpression.SetParameterLongDescription(
+      parameter.GetLongDescription()
+    );
+    instructionOrExpression.SetDefaultValue(parameter.GetDefaultValue());
+  } else {
+    instructionOrExpression.AddCodeOnlyParameter(
+      parameter.GetType(),
+      parameter.GetExtraInfo()
+    );
+  }
+};
+
 /**
  * Add to the instruction (action/condition) or expression the parameters
  * expected by the events function.
@@ -1210,34 +1247,9 @@ void MetadataDeclarationHelper::declareObjectInternalInstructions(
 void MetadataDeclarationHelper::declareEventsFunctionParameters(
   const gd::EventsFunctionsContainer& eventsFunctionsContainer,
   const gd::EventsFunction& eventsFunction,
-  gd::ParameterContainerMetadata& instructionOrExpression,
+  gd::InstructionOrExpressionMetadata& instructionOrExpression,
   const int userDefinedFirstParameterIndex
 ) {
-  auto& addParameter = [&instructionOrExpression](const ParameterMetadata& parameter) {
-    if (!parameter.IsCodeOnly()) {
-      instructionOrExpression
-        .AddParameter(
-          parameter.GetType(),
-          parameter.GetDescription(),
-          "", // See below for adding the extra information
-          parameter.IsOptional()
-        )
-        // Manually add the "extra info" without relying on addParameter (or addCodeOnlyParameter)
-        // as these methods are prefixing the value passed with the extension namespace (this
-        // was done to ease extension declarations when dealing with object).
-        .SetParameterExtraInfo(parameter.GetExtraInfo());
-      instructionOrExpression.SetParameterLongDescription(
-        parameter.GetLongDescription()
-      );
-      instructionOrExpression.SetDefaultValue(parameter.GetDefaultValue());
-    } else {
-      instructionOrExpression.AddCodeOnlyParameter(
-        parameter.GetType(),
-        parameter.GetExtraInfo()
-      );
-    }
-  };
-
   auto functionType = eventsFunction.GetFunctionType();
 
   bool hasGetterFunction = eventsFunctionsContainer.HasEventsFunctionNamed(
@@ -1246,8 +1258,8 @@ void MetadataDeclarationHelper::declareEventsFunctionParameters(
 
   // This is used instead of getParametersForEvents because the Value parameter
   // is already add by useStandardOperatorParameters.
-  auto& parameters = (functionType == gd::EventsFunction::ActionWithOperator &&
-  functionType == gd::EventsFunction::ActionWithOperator && hasGetterFunction
+  auto& parameters = (functionType == gd::EventsFunction::ActionWithOperator
+                     && hasGetterFunction
     ? eventsFunctionsContainer.GetEventsFunction(eventsFunction.GetGetterName())
     : eventsFunction
   ).GetParameters();
@@ -1255,26 +1267,16 @@ void MetadataDeclarationHelper::declareEventsFunctionParameters(
   for (size_t i = 0; i < userDefinedFirstParameterIndex && i < parameters.size(); i++)
   {
     const gd::ParameterMetadata& parameter = parameters.at(i);
-    addParameter(parameter);
+    AddParameter(instructionOrExpression, parameter);
   }
 
-  if (functionType == gd::EventsFunction::ExpressionAndCondition) {
-    auto& options = gd::ParameterOptions::MakeNewOptions();
-    auto& extraInfo = eventsFunction.GetExpressionType().GetExtraInfo();
-    if (!extraInfo.empty()) options.SetTypeExtraInfo(extraInfo);
-    // $FlowExpectedError[incompatible-cast]
-    instructionOrExpression.UseStandardParameters(
-      eventsFunction.GetExpressionType().GetName(),
-      options
-    );
-  } else if (functionType == gd::EventsFunction::ActionWithOperator) {
+  if (functionType == gd::EventsFunction::ActionWithOperator) {
     auto& options = gd::ParameterOptions::MakeNewOptions();
     if (hasGetterFunction) {
         auto& getterFunction = eventsFunctionsContainer.GetEventsFunction(eventsFunction.GetGetterName());
 
         auto& extraInfo = getterFunction.GetExpressionType().GetExtraInfo();
         if (!extraInfo.empty()) options.SetTypeExtraInfo(extraInfo);
-        // $FlowExpectedError[incompatible-cast]
         instructionOrExpression.UseStandardOperatorParameters(
         getterFunction.GetExpressionType().GetName(),
         options
@@ -1291,7 +1293,7 @@ void MetadataDeclarationHelper::declareEventsFunctionParameters(
   for (size_t i = userDefinedFirstParameterIndex; i < parameters.size(); i++)
   {
     const gd::ParameterMetadata& parameter = parameters.at(i);
-    addParameter(parameter);
+    AddParameter(instructionOrExpression, parameter);
   }
 
   // By convention, latest parameter is always the eventsFunctionContext of the calling function
@@ -1299,4 +1301,76 @@ void MetadataDeclarationHelper::declareEventsFunctionParameters(
   instructionOrExpression.AddCodeOnlyParameter("eventsFunctionContext", "");
 }
 
+/**
+ * Add to the instruction (action/condition) or expression the parameters
+ * expected by the events function.
+ */
+void MetadataDeclarationHelper::declareEventsFunctionParameters(
+  const gd::EventsFunctionsContainer& eventsFunctionsContainer,
+  const gd::EventsFunction& eventsFunction,
+  gd::MultipleInstructionMetadata& multipleInstructionMetadata,
+  const int userDefinedFirstParameterIndex
+) {
+  auto functionType = eventsFunction.GetFunctionType();
+
+  bool hasGetterFunction = eventsFunctionsContainer.HasEventsFunctionNamed(
+    eventsFunction.GetGetterName()
+  );
+
+  // This is used instead of getParametersForEvents because the Value parameter
+  // is already add by useStandardOperatorParameters.
+  auto& parameters = eventsFunction.GetParameters();
+  
+  for (size_t i = 0; i < userDefinedFirstParameterIndex && i < parameters.size(); i++)
+  {
+    const gd::ParameterMetadata& parameter = parameters.at(i);
+    AddParameter(multipleInstructionMetadata, parameter);
+  }
+
+  if (functionType == gd::EventsFunction::ExpressionAndCondition) {
+    auto& options = gd::ParameterOptions::MakeNewOptions();
+    auto& extraInfo = eventsFunction.GetExpressionType().GetExtraInfo();
+    if (!extraInfo.empty()) options.SetTypeExtraInfo(extraInfo);
+    multipleInstructionMetadata.UseStandardParameters(
+      eventsFunction.GetExpressionType().GetName(),
+      options
+    );
+  }
+
+  for (size_t i = userDefinedFirstParameterIndex; i < parameters.size(); i++)
+  {
+    const gd::ParameterMetadata& parameter = parameters.at(i);
+    AddParameter(multipleInstructionMetadata, parameter);
+  }
+
+  // By convention, latest parameter is always the eventsFunctionContext of the calling function
+  // (if any).
+  multipleInstructionMetadata.AddCodeOnlyParameter("eventsFunctionContext", "");
+}
+
+const gd::String& GetExtensionCodeNamespacePrefix(
+  const gd::EventsFunctionsExtension eventsFunctionsExtension
+) {
+  return "gdjs.evtsExt__" + EventsCodeNameMangler::GetMangledName(eventsFunctionsExtension.GetName());
+};
+
+/** Generate the namespace for a free function. */
+const gd::String& GetFreeFunctionCodeNamespace(
+  const gd::EventsFunction& eventsFunction,
+  const gd::String& codeNamespacePrefix
+) {
+  return codeNamespacePrefix + "__" + EventsCodeNameMangler::GetMangledName(eventsFunction.GetName());
+};
+
+const gd::String& GetFreeFunctionCodeName(
+  const EventsFunctionsExtension& eventsFunctionsExtension,
+  const EventsFunction& eventsFunction
+) {
+  return (
+    GetFreeFunctionCodeNamespace(
+      eventsFunction,
+      GetExtensionCodeNamespacePrefix(eventsFunctionsExtension)
+    ) + ".func"
+  );
+};
 }  // namespace gd

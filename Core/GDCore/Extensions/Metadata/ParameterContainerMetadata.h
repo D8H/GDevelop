@@ -88,6 +88,12 @@ class GD_CORE_API ParameterContainerMetadata {
 //   virtual ParameterContainerMetadata &SetRequiresBaseObjectCapability(
 //       const gd::String &capability) = 0;
 
+  /**
+   * Set that the instruction is private - it can't be used outside of the
+   * object/ behavior that it is attached too.
+   */
+  virtual ParameterContainerMetadata &SetPrivate() = 0;
+
  private:
 };
 
