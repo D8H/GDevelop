@@ -49,7 +49,7 @@ const gd::String& EventsCodeNameMangler::GetExternalEventsFunctionMangledName(
   return mangledExternalEventsNames[externalEventsName];
 }
 
-const gd::String& EventsCodeNameMangler::GetMangledName(
+gd::String EventsCodeNameMangler::GetMangledName(
     const gd::String &name) {
   gd::String partiallyMangledName = name;
   static const gd::String allowedCharacters =

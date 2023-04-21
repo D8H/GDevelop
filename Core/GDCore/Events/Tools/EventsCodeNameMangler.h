@@ -36,7 +36,7 @@ class GD_CORE_API EventsCodeNameMangler {
   const gd::String &GetExternalEventsFunctionMangledName(
       const gd::String &externalEventsName);
 
-  static const gd::String& GetMangledName(const gd::String &name);
+  static gd::String GetMangledName(const gd::String &name);
 
   static EventsCodeNameMangler *Get();
   static void DestroySingleton();

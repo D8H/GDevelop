@@ -146,31 +146,8 @@ class GD_CORE_API InstructionOrExpressionContainerMetadata {
       const gd::String& newConditionName,
       const gd::String& copiedConditionName) = 0;
 
-  /**
-   * \brief Create a new expression which is the duplicate of the specified one.
-   *
-   * Useful for handling a deprecated expression that is just a "copy" of the
-   * new one.
-   */
-  virtual gd::ExpressionMetadata& AddDuplicatedExpression(
-      const gd::String& newExpressionName,
-      const gd::String& copiedExpressionName) = 0;
-
-  /**
-   * \brief Create a new string expression which is the duplicate of the
-   * specified one.
-   *
-   * Useful for handling a deprecated string expression that is just a "copy" of
-   * the new one.
-   */
-  virtual gd::ExpressionMetadata& AddDuplicatedStrExpression(
-      const gd::String& newExpressionName,
-      const gd::String& copiedExpressionName) = 0;
-
   virtual InstructionOrExpressionContainerMetadata& SetFullName(const gd::String& fullname_) = 0;
-  virtual InstructionOrExpressionContainerMetadata& SetDefaultName(const gd::String& defaultName_) = 0;
   virtual InstructionOrExpressionContainerMetadata& SetDescription(const gd::String& description_) = 0;
-  virtual InstructionOrExpressionContainerMetadata& SetGroup(const gd::String& group_) = 0;
 
   /**
    * \brief Erase any existing include file and add the specified include.
@@ -183,13 +160,6 @@ class GD_CORE_API InstructionOrExpressionContainerMetadata {
    * \brief Add a file to the already existing include files.
    */
   virtual InstructionOrExpressionContainerMetadata& AddIncludeFile(const gd::String& includeFile) = 0;
-
-  /**
-   * \brief Add a file to the already existing required files.
-   * \note These files are required for the behavior to work,
-   * but they are not executable.
-   */
-  virtual InstructionOrExpressionContainerMetadata& AddRequiredFile(const gd::String& requiredFile) = 0;
 
   /**
    * Get the help path of the behavior, relative to the GDevelop documentation
@@ -208,9 +178,7 @@ class GD_CORE_API InstructionOrExpressionContainerMetadata {
 
   virtual const gd::String& GetName() const = 0;
   virtual const gd::String& GetFullName() const = 0;
-  virtual const gd::String& GetDefaultName() const = 0;
   virtual const gd::String& GetDescription() const = 0;
-  virtual const gd::String& GetGroup() const = 0;
   virtual const gd::String& GetIconFilename() const = 0;
 
   /**

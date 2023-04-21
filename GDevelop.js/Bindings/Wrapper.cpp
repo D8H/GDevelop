@@ -674,6 +674,11 @@ typedef ExtensionAndMetadata<ExpressionMetadata> ExtensionAndExpressionMetadata;
 #define STATIC_GetSharedPropertyExpressionName GetSharedPropertyExpressionName
 #define STATIC_GetSharedPropertyToggleActionName GetSharedPropertyToggleActionName
 
+#define STATIC_DeclareExtension DeclareExtension
+#define STATIC_GenerateFreeFunctionMetadata GenerateFreeFunctionMetadata
+#define STATIC_GenerateBehaviorMetadata GenerateBehaviorMetadata
+#define STATIC_GenerateObjectMetadata GenerateObjectMetadata
+
 #define STATIC_CopyAllResourcesTo CopyAllResourcesTo
 
 #define STATIC_IsExtensionLifecycleEventsFunction \

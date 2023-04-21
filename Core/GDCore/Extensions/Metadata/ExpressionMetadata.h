@@ -18,7 +18,6 @@ class Layout;
 }
 
 namespace gd {
-
 /**
  * \brief Information about how generate code for an expression
  */
@@ -28,79 +27,7 @@ class ExpressionCodeGenerationInformation {
       : staticFunction(false), hasCustomCodeGenerator(false){};
   virtual ~ExpressionCodeGenerationInformation(){};
 
-  /**
-   * \brief Set the function name which will be used when generating the code.
-   * \param functionName the name of the function to call
-   */
-  ExpressionCodeGenerationInformation& SetFunctionName(
-      const gd::String& functionName) {
-    functionCallName = functionName;
-    return *this;
-  }
-
-  /**
-   * \brief Set that the function is static
-   */
-  ExpressionCodeGenerationInformation& SetStatic() {
-    staticFunction = true;
-    return *this;
-  }
-
-  /**
-   * \brief Erase any existing include file and add the specified include.
-   */
-  ExpressionCodeGenerationInformation& SetIncludeFile(
-      const gd::String& includeFile) {
-    includeFiles.clear();
-    includeFiles.push_back(includeFile);
-    return *this;
-  }
-
-  /**
-   * \brief Add a file to the already existing include files.
-   */
-  ExpressionCodeGenerationInformation& AddIncludeFile(
-      const gd::String& includeFile) {
-    if (std::find(includeFiles.begin(), includeFiles.end(), includeFile) ==
-        includeFiles.end())
-      includeFiles.push_back(includeFile);
-
-    return *this;
-  }
-
-  /**
-   * \brief Get the files that must be included to use the instruction.
-   */
-  const std::vector<gd::String>& GetIncludeFiles() const {
-    return includeFiles;
-  };
-
-  /**
-   * \brief Set that the function must be generated using a custom code
-   * generator.
-   */
-  ExpressionCodeGenerationInformation& SetCustomCodeGenerator(
-      std::function<gd::String(const std::vector<gd::Expression>& parameters,
-                               gd::EventsCodeGenerator& codeGenerator,
-                               gd::EventsCodeGenerationContext& context)>
-          codeGenerator) {
-    hasCustomCodeGenerator = true;
-    customCodeGenerator = codeGenerator;
-    return *this;
-  }
-
-  ExpressionCodeGenerationInformation& RemoveCustomCodeGenerator() {
-    hasCustomCodeGenerator = false;
-    std::function<gd::String(const std::vector<gd::Expression>& parameters,
-                             gd::EventsCodeGenerator& codeGenerator,
-                             gd::EventsCodeGenerationContext& context)>
-        emptyFunction;
-    customCodeGenerator = emptyFunction;
-    return *this;
-  }
-
-  bool HasCustomCodeGenerator() const { return hasCustomCodeGenerator; }
-
+  // TODO Move these attributes to ExpressionMetadata.
   bool staticFunction;
   gd::String functionCallName;
   bool hasCustomCodeGenerator;
@@ -108,8 +35,6 @@ class ExpressionCodeGenerationInformation {
                            gd::EventsCodeGenerator& codeGenerator,
                            gd::EventsCodeGenerationContext& context)>
       customCodeGenerator;
-
- private:
   std::vector<gd::String> includeFiles;
 };
 
@@ -145,12 +70,12 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
   /**
    * \brief Set the expression as not shown in the IDE.
    */
-  ExpressionMetadata& SetHidden();
+  ExpressionMetadata& SetHidden() override;
 
   /**
    * \brief Set the group of the instruction in the IDE.
    */
-  ExpressionMetadata& SetGroup(const gd::String& str) {
+  ExpressionMetadata& SetGroup(const gd::String& str) override {
     group = str;
     return *this;
   }
@@ -159,13 +84,13 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
    * Get the help path of the expression, relative to the GDevelop documentation
    * root.
    */
-  const gd::String& GetHelpPath() const { return helpPath; }
+  const gd::String& GetHelpPath() const override { return helpPath; }
 
   /**
    * Set the help path of the expression, relative to the GDevelop documentation
    * root.
    */
-  ExpressionMetadata& SetHelpPath(const gd::String& path) {
+  ExpressionMetadata& SetHelpPath(const gd::String& path) override {
     helpPath = path;
     return *this;
   }
@@ -174,13 +99,13 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
    * Check if the instruction is private - it can't be used outside of the
    * object/ behavior that it is attached too.
    */
-  bool IsPrivate() const { return isPrivate; }
+  bool IsPrivate() const override { return isPrivate; }
 
   /**
    * Set that the instruction is private - it can't be used outside of the
    * object/ behavior that it is attached too.
    */
-  ExpressionMetadata& SetPrivate() {
+  ExpressionMetadata& SetPrivate() override {
     isPrivate = true;
     return *this;
   }
@@ -188,21 +113,21 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
   /**
    * Check if the instruction can be used in layouts or external events.
    */
-  bool IsRelevantForLayoutEvents() const {
+  bool IsRelevantForLayoutEvents() const override {
     return relevantContext == "Any" || relevantContext == "Layout";
   }
 
   /**
    * Check if the instruction can be used in function events.
    */
-  bool IsRelevantForFunctionEvents() const {
+  bool IsRelevantForFunctionEvents() const override {
     return relevantContext == "Any" || relevantContext == "Function";
   }
 
   /**
    * Check if the instruction can be used in asynchronous function events.
    */
-  bool IsRelevantForAsynchronousFunctionEvents() const {
+  bool IsRelevantForAsynchronousFunctionEvents() const override {
     return relevantContext == "Any" || relevantContext == "Function" ||
            relevantContext == "AsynchronousFunction";
   }
@@ -210,14 +135,14 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
   /**
    * Check if the instruction can be used in custom object events.
    */
-  bool IsRelevantForCustomObjectEvents() const {
+  bool IsRelevantForCustomObjectEvents() const override {
     return relevantContext == "Any" || relevantContext == "Object";
   }
 
   /**
    * Set that the instruction can be used in layouts or external events.
    */
-  ExpressionMetadata &SetRelevantForLayoutEventsOnly() {
+  ExpressionMetadata &SetRelevantForLayoutEventsOnly() override {
     relevantContext = "Layout";
     return *this;
   }
@@ -225,7 +150,7 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
   /**
    * Set that the instruction can be used in function events.
    */
-  ExpressionMetadata &SetRelevantForFunctionEventsOnly() {
+  ExpressionMetadata &SetRelevantForFunctionEventsOnly() override {
     relevantContext = "Function";
     return *this;
   }
@@ -233,7 +158,7 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
   /**
    * Set that the instruction can be used in asynchronous function events.
    */
-  ExpressionMetadata &SetRelevantForAsynchronousFunctionEventsOnly() {
+  ExpressionMetadata &SetRelevantForAsynchronousFunctionEventsOnly() override {
     relevantContext = "AsynchronousFunction";
     return *this;
   }
@@ -241,7 +166,7 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
   /**
    * Set that the instruction can be used in custom object events.
    */
-  ExpressionMetadata &SetRelevantForCustomObjectEventsOnly() {
+  ExpressionMetadata &SetRelevantForCustomObjectEventsOnly() override {
     relevantContext = "Object";
     return *this;
   }
@@ -306,49 +231,73 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
    * the editor can hide the expression as it does not apply to them.
    */
   ExpressionMetadata& SetRequiresBaseObjectCapability(
-      const gd::String& capability);
+      const gd::String& capability) override;
 
   /**
    * \brief Get the required specified capability for this (object) expression,
    * or an empty string if there is nothing specific required.
    */
-  const gd::String& GetRequiredBaseObjectCapability() const {
+  const gd::String& GetRequiredBaseObjectCapability() const override {
     return requiredBaseObjectCapability;
   };
 
+  bool IsShown() const { return shown; }
+  const gd::String& GetReturnType() const { return returnType; }
+  const gd::String& GetFullName() const override { return fullname; }
+  const gd::String& GetDescription() const override { return description; }
+  const gd::String& GetGroup() const override { return group; }
+  const gd::String& GetSmallIconFilename() const override { return smallIconFilename; }
+  const gd::ParameterMetadata& GetParameter(std::size_t id) const override {
+    return parameters[id];
+  };
+  gd::ParameterMetadata& GetParameter(std::size_t id) override {
+    return parameters[id];
+  };
+  std::size_t GetParametersCount() const override { return parameters.size(); };
+  const std::vector<gd::ParameterMetadata>& GetParameters() const override {
+    return parameters;
+  };
+
+  std::vector<gd::ParameterMetadata> parameters;
+
+  
   /**
-   * \brief Set the function that should be called when generating the source
-   * code from events.
+   * \brief Set the function name which will be used when generating the code.
    * \param functionName the name of the function to call
-   * \note Shortcut for `codeExtraInformation.SetFunctionName`.
    */
   ExpressionMetadata& SetFunctionName(
       const gd::String& functionName) override {
-    codeExtraInformation.SetFunctionName(functionName);
+    codeExtraInformation.functionCallName = functionName;
     return *this;
   }
 
   /**
-   * \brief Return the structure containing the information about code
-   * generation for the expression.
+   * \brief Set that the function is static
    */
-  ExpressionCodeGenerationInformation& GetCodeExtraInformation() {
-    return codeExtraInformation;
+  ExpressionMetadata& SetStatic() {
+    codeExtraInformation.staticFunction = true;
+    return *this;
   }
 
   /**
    * \brief Erase any existing include file and add the specified include.
    */
-  ExpressionMetadata &SetIncludeFile(const gd::String &includeFile) {
-    codeExtraInformation.SetIncludeFile(includeFile);
+  ExpressionMetadata& SetIncludeFile(
+      const gd::String& includeFile) {
+    codeExtraInformation.includeFiles.clear();
+    codeExtraInformation.includeFiles.push_back(includeFile);
     return *this;
   }
 
   /**
    * \brief Add a file to the already existing include files.
    */
-  ExpressionMetadata &AddIncludeFile(const gd::String &includeFile) {
-    codeExtraInformation.AddIncludeFile(includeFile);
+  ExpressionMetadata& AddIncludeFile(
+      const gd::String& includeFile) {
+    if (std::find(codeExtraInformation.includeFiles.begin(), codeExtraInformation.includeFiles.end(), includeFile) ==
+        codeExtraInformation.includeFiles.end())
+      codeExtraInformation.includeFiles.push_back(includeFile);
+
     return *this;
   }
 
@@ -356,29 +305,46 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
    * \brief Get the files that must be included to use the instruction.
    */
   const std::vector<gd::String>& GetIncludeFiles() const {
-    return codeExtraInformation.GetIncludeFiles();
+    return codeExtraInformation.includeFiles;
+  };
+
+  /**
+   * \brief Set that the function must be generated using a custom code
+   * generator.
+   */
+  ExpressionMetadata& SetCustomCodeGenerator(
+      std::function<gd::String(const std::vector<gd::Expression>& parameters,
+                               gd::EventsCodeGenerator& codeGenerator,
+                               gd::EventsCodeGenerationContext& context)>
+          codeGenerator) {
+    codeExtraInformation.hasCustomCodeGenerator = true;
+    codeExtraInformation.customCodeGenerator = codeGenerator;
+    return *this;
+  }
+
+  ExpressionMetadata& RemoveCustomCodeGenerator() {
+    codeExtraInformation.hasCustomCodeGenerator = false;
+    std::function<gd::String(const std::vector<gd::Expression>& parameters,
+                             gd::EventsCodeGenerator& codeGenerator,
+                             gd::EventsCodeGenerationContext& context)>
+        emptyFunction;
+    codeExtraInformation.customCodeGenerator = emptyFunction;
+    return *this;
+  }
+
+  bool HasCustomCodeGenerator() const { return codeExtraInformation.hasCustomCodeGenerator; }
+
+  /**
+   * \brief Return the structure containing the information about code
+   * generation for the expression.
+   * 
+   * \deprecated
+   */
+  ExpressionMetadata& GetCodeExtraInformation() {
+    return *this;
   }
 
   ExpressionCodeGenerationInformation codeExtraInformation;
-
-  bool IsShown() const { return shown; }
-  const gd::String& GetReturnType() const { return returnType; }
-  const gd::String& GetFullName() const { return fullname; }
-  const gd::String& GetDescription() const { return description; }
-  const gd::String& GetGroup() const { return group; }
-  const gd::String& GetSmallIconFilename() const { return smallIconFilename; }
-  const gd::ParameterMetadata& GetParameter(std::size_t id) const {
-    return parameters[id];
-  };
-  gd::ParameterMetadata& GetParameter(std::size_t id) {
-    return parameters[id];
-  };
-  std::size_t GetParametersCount() const { return parameters.size(); };
-  const std::vector<gd::ParameterMetadata>& GetParameters() const {
-    return parameters;
-  };
-
-  std::vector<gd::ParameterMetadata> parameters;
 
  private:
   gd::String returnType;

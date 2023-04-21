@@ -26,8 +26,6 @@ class SerializerElement;
 
 namespace gd {
 
-// TODO Create a property in the sub-classes instead of inheritance.
-
 /**
  * \brief Describe user-friendly information about an instruction (action or
  * condition), its parameters and the function name as well as other information
@@ -35,20 +33,20 @@ namespace gd {
  *
  * \ingroup Events
  */
-class GD_CORE_API ParameterContainerMetadata {
+class GD_CORE_API AbstractFunctionMetadata {
  public:
   /**
    * Construct an empty InstructionMetadata.
    * \warning Don't use this - only here to fullfil std::map requirements.
    */
-  ParameterContainerMetadata();
+  AbstractFunctionMetadata();
 
-  virtual ~ParameterContainerMetadata(){};
+  virtual ~AbstractFunctionMetadata(){};
 
   /**
    * \see gd::InstructionMetadata::AddParameter
    */
-  virtual ParameterContainerMetadata &AddParameter(
+  virtual AbstractFunctionMetadata &AddParameter(
       const gd::String &type,
       const gd::String &label,
       const gd::String &supplementaryInformation = "",
@@ -57,42 +55,42 @@ class GD_CORE_API ParameterContainerMetadata {
   /**
    * \see gd::InstructionMetadata::AddCodeOnlyParameter
    */
-  virtual ParameterContainerMetadata &AddCodeOnlyParameter(
+  virtual AbstractFunctionMetadata &AddCodeOnlyParameter(
       const gd::String &type, const gd::String &supplementaryInformation) = 0;
 
   /**
    * \see gd::InstructionMetadata::SetDefaultValue
    */
-  virtual ParameterContainerMetadata &SetDefaultValue(const gd::String &defaultValue) = 0;
+  virtual AbstractFunctionMetadata &SetDefaultValue(const gd::String &defaultValue) = 0;
 
   /**
    * \see gd::InstructionMetadata::SetParameterExtraInfo
    */
-  virtual ParameterContainerMetadata &SetParameterExtraInfo(
+  virtual AbstractFunctionMetadata &SetParameterExtraInfo(
       const gd::String &defaultValue) = 0;
 
   /**
    * \see gd::InstructionMetadata::SetParameterLongDescription
    */
-  virtual ParameterContainerMetadata &SetParameterLongDescription(
+  virtual AbstractFunctionMetadata &SetParameterLongDescription(
       const gd::String &longDescription) = 0;
 
   /**
    * \see gd::InstructionMetadata::SetHidden
    */
-  virtual ParameterContainerMetadata &SetHidden() = 0;
+  virtual AbstractFunctionMetadata &SetHidden() = 0;
 
 //   /**
 //    * \see gd::InstructionMetadata::SetRequiresBaseObjectCapability
 //    */
-//   virtual ParameterContainerMetadata &SetRequiresBaseObjectCapability(
+//   virtual AbstractFunctionMetadata &SetRequiresBaseObjectCapability(
 //       const gd::String &capability) = 0;
 
   /**
    * Set that the instruction is private - it can't be used outside of the
    * object/ behavior that it is attached too.
    */
-  virtual ParameterContainerMetadata &SetPrivate() = 0;
+  virtual AbstractFunctionMetadata &SetPrivate() = 0;
 
   /**
    * \brief Set the function that should be called when generating the source
@@ -100,7 +98,7 @@ class GD_CORE_API ParameterContainerMetadata {
    * \param functionName the name of the function to call
    * \note Shortcut for `codeExtraInformation.SetFunctionName`.
    */
-  virtual ParameterContainerMetadata& SetFunctionName(
+  virtual AbstractFunctionMetadata& SetFunctionName(
       const gd::String& functionName) = 0;
 
  private:

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "ParameterContainerMetadata.h"
+#include "AbstractFunctionMetadata.h"
 
 #include <algorithm>
 #include <functional>
@@ -35,7 +35,7 @@ namespace gd {
  *
  * \ingroup Events
  */
-class GD_CORE_API InstructionOrExpressionMetadata : public ParameterContainerMetadata {
+class GD_CORE_API InstructionOrExpressionMetadata : public AbstractFunctionMetadata {
  public:
   /**
    * Construct an empty InstructionMetadata.

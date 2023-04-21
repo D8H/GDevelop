@@ -162,7 +162,7 @@ class GD_CORE_API BehaviorMetadata : public InstructionOrExpressionContainerMeta
    * one.
    */
   gd::InstructionMetadata& AddDuplicatedAction(
-      const gd::String& newActionName, const gd::String& copiedActionName);
+      const gd::String& newActionName, const gd::String& copiedActionName) override;
 
   /**
    * \brief Create a new condition which is the duplicate of the specified one.
@@ -182,7 +182,7 @@ class GD_CORE_API BehaviorMetadata : public InstructionOrExpressionContainerMeta
    */
   gd::ExpressionMetadata& AddDuplicatedExpression(
       const gd::String& newExpressionName,
-      const gd::String& copiedExpressionName) override;
+      const gd::String& copiedExpressionName);
 
   /**
    * \brief Create a new string expression which is the duplicate of the
@@ -193,12 +193,12 @@ class GD_CORE_API BehaviorMetadata : public InstructionOrExpressionContainerMeta
    */
   gd::ExpressionMetadata& AddDuplicatedStrExpression(
       const gd::String& newExpressionName,
-      const gd::String& copiedExpressionName) override;
+      const gd::String& copiedExpressionName);
 
   BehaviorMetadata& SetFullName(const gd::String& fullname_) override;
-  BehaviorMetadata& SetDefaultName(const gd::String& defaultName_) override;
+  BehaviorMetadata& SetDefaultName(const gd::String& defaultName_);
   BehaviorMetadata& SetDescription(const gd::String& description_) override;
-  BehaviorMetadata& SetGroup(const gd::String& group_) override;
+  BehaviorMetadata& SetGroup(const gd::String& group_);
 
   /**
    * \brief Erase any existing include file and add the specified include.
@@ -217,7 +217,7 @@ class GD_CORE_API BehaviorMetadata : public InstructionOrExpressionContainerMeta
    * \note These files are required for the behavior to work,
    * but they are not executable.
    */
-  BehaviorMetadata& AddRequiredFile(const gd::String& requiredFile) override;
+  BehaviorMetadata& AddRequiredFile(const gd::String& requiredFile);
 
   /**
    * Get the help path of the behavior, relative to the GDevelop documentation
@@ -239,9 +239,9 @@ class GD_CORE_API BehaviorMetadata : public InstructionOrExpressionContainerMeta
 
   const gd::String& GetName() const override;
   const gd::String& GetFullName() const override { return fullname; }
-  const gd::String& GetDefaultName() const override { return defaultName; }
+  const gd::String& GetDefaultName() const { return defaultName; }
   const gd::String& GetDescription() const override { return description; }
-  const gd::String& GetGroup() const override { return group; }
+  const gd::String& GetGroup() const { return group; }
   const gd::String& GetIconFilename() const override { return iconFilename; }
 
   /**

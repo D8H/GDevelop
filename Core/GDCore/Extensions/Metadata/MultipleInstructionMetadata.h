@@ -21,7 +21,7 @@ namespace gd {
  *
  * \ingroup PlatformDefinition
  */
-class GD_CORE_API MultipleInstructionMetadata : public ParameterContainerMetadata {
+class GD_CORE_API MultipleInstructionMetadata : public AbstractFunctionMetadata {
  public:
   static MultipleInstructionMetadata WithExpressionAndCondition(
       gd::ExpressionMetadata &expression, gd::InstructionMetadata &condition) {
@@ -139,23 +139,23 @@ class GD_CORE_API MultipleInstructionMetadata : public ParameterContainerMetadat
   MultipleInstructionMetadata &SetFunctionName(const gd::String &functionName) override {
     if (expression) expression->SetFunctionName(functionName);
     if (condition) condition->SetFunctionName(functionName);
-    if (action) action->GetCodeExtraInformation().SetFunctionName(functionName);
+    if (action) action->SetFunctionName(functionName);
     return *this;
   }
 
   MultipleInstructionMetadata &SetGetter(const gd::String &getter) {
     if (expression) expression->SetFunctionName(getter);
     if (condition) condition->SetFunctionName(getter);
-    if (action) action->GetCodeExtraInformation().SetGetter(getter);
+    if (action) action->SetGetter(getter);
     return *this;
   }
 
   MultipleInstructionMetadata &SetIncludeFile(const gd::String &includeFile) {
     if (expression)
-      expression->GetCodeExtraInformation().SetIncludeFile(includeFile);
+      expression->SetIncludeFile(includeFile);
     if (condition)
-      condition->GetCodeExtraInformation().SetIncludeFile(includeFile);
-    if (action) action->GetCodeExtraInformation().SetIncludeFile(includeFile);
+      condition->SetIncludeFile(includeFile);
+    if (action) action->SetIncludeFile(includeFile);
     return *this;
   }
 
@@ -163,8 +163,8 @@ class GD_CORE_API MultipleInstructionMetadata : public ParameterContainerMetadat
     if (expression)
       expression->GetCodeExtraInformation().AddIncludeFile(includeFile);
     if (condition)
-      condition->GetCodeExtraInformation().AddIncludeFile(includeFile);
-    if (action) action->GetCodeExtraInformation().AddIncludeFile(includeFile);
+      condition->AddIncludeFile(includeFile);
+    if (action) action->AddIncludeFile(includeFile);
     return *this;
   }
 
@@ -175,8 +175,8 @@ class GD_CORE_API MultipleInstructionMetadata : public ParameterContainerMetadat
     if (expression)
       return expression->GetCodeExtraInformation().GetIncludeFiles();
     if (condition)
-      return condition->GetCodeExtraInformation().GetIncludeFiles();
-    if (action) return action->GetCodeExtraInformation().GetIncludeFiles();
+      return condition->GetIncludeFiles();
+    if (action) return action->GetIncludeFiles();
     // It can't actually happen.
     throw std::logic_error("no instruction metadata");
   }
@@ -184,7 +184,7 @@ class GD_CORE_API MultipleInstructionMetadata : public ParameterContainerMetadat
   /**
    * \see gd::InstructionMetadata::SetPrivate
    */
-  MultipleInstructionMetadata &SetPrivate() {
+  MultipleInstructionMetadata &SetPrivate() override {
     if (expression) expression->SetPrivate();
     if (condition) condition->SetPrivate();
     if (action) action->SetPrivate();

@@ -699,7 +699,7 @@ String GD_CORE_API operator+(String lhs, const char *rhs);
  */
 String GD_CORE_API operator+(const char *lhs, const String &rhs);
 
-String GD_CORE_API operator||(String lhs, const String &rhs);
+const String& GD_CORE_API operator||(const String &lhs, const String &rhs);
 
 String GD_CORE_API operator||(String lhs, const char *rhs);
 
