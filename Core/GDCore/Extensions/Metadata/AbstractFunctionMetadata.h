@@ -101,6 +101,22 @@ class GD_CORE_API AbstractFunctionMetadata {
   virtual AbstractFunctionMetadata& SetFunctionName(
       const gd::String& functionName) = 0;
 
+  /**
+   * \brief Erase any existing include file and add the specified include.
+   */
+  virtual AbstractFunctionMetadata& SetIncludeFile(
+      const gd::String& includeFile) = 0;
+
+  /**
+   * \brief Add a file to the already existing include files.
+   */
+  virtual AbstractFunctionMetadata& AddIncludeFile(
+      const gd::String& includeFile) = 0;
+
+  /**
+   * \brief Get the files that must be included to use the instruction.
+   */
+  virtual const std::vector<gd::String>& GetIncludeFiles() const = 0;
  private:
 };
 

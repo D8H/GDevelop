@@ -1720,12 +1720,10 @@ gd::String MetadataDeclarationHelper::GetFreeFunctionCodeName(
   const gd::EventsFunctionsExtension& eventsFunctionsExtension,
   const gd::EventsFunction& eventsFunction
 ) {
-  return (
-    GetFreeFunctionCodeNamespace(
+  return GetFreeFunctionCodeNamespace(
       eventsFunction,
       GetExtensionCodeNamespacePrefix(eventsFunctionsExtension)
-    ) + ".func"
-  );
+    ) + ".func";
 }
 
 /** Generate the namespace for a behavior function. */
@@ -1787,11 +1785,12 @@ gd::BehaviorMetadata& MetadataDeclarationHelper::GenerateBehaviorMetadata(
     eventsBasedBehavior
   );
 
+  gdjs::MetadataDeclarationHelper metadataDeclarationHelper;
   // Declare all the behavior functions
   for (size_t i = 0; i < eventsFunctionsContainer.GetEventsFunctionsCount(); i++) {
     auto& eventsFunction = eventsFunctionsContainer.GetEventsFunction(i);
 
-    auto& instructionOrExpression = DeclareBehaviorInstructionOrExpressionMetadata(
+    auto& instructionOrExpression = metadataDeclarationHelper.DeclareBehaviorInstructionOrExpressionMetadata(
       extension,
       behaviorMetadata,
       eventsBasedBehavior,
@@ -1837,11 +1836,12 @@ gd::ObjectMetadata& MetadataDeclarationHelper::GenerateObjectMetadata(
     eventsBasedObject
   );
 
+  gdjs::MetadataDeclarationHelper metadataDeclarationHelper;
   // Declare all the object functions
   for (size_t i = 0; i < eventsFunctionsContainer.GetEventsFunctionsCount(); i++) {
     auto& eventsFunction = eventsFunctionsContainer.GetEventsFunction(i);
 
-    auto& instructionOrExpression = DeclareObjectInstructionOrExpressionMetadata(
+    auto& instructionOrExpression = metadataDeclarationHelper.DeclareObjectInstructionOrExpressionMetadata(
       extension,
       objectMetadata,
       eventsBasedObject,

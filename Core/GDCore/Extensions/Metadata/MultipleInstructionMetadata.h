@@ -150,7 +150,7 @@ class GD_CORE_API MultipleInstructionMetadata : public AbstractFunctionMetadata 
     return *this;
   }
 
-  MultipleInstructionMetadata &SetIncludeFile(const gd::String &includeFile) {
+  MultipleInstructionMetadata &SetIncludeFile(const gd::String &includeFile) override {
     if (expression)
       expression->SetIncludeFile(includeFile);
     if (condition)
@@ -159,7 +159,7 @@ class GD_CORE_API MultipleInstructionMetadata : public AbstractFunctionMetadata 
     return *this;
   }
 
-  MultipleInstructionMetadata &AddIncludeFile(const gd::String &includeFile) {
+  MultipleInstructionMetadata &AddIncludeFile(const gd::String &includeFile) override {
     if (expression)
       expression->GetCodeExtraInformation().AddIncludeFile(includeFile);
     if (condition)
@@ -171,7 +171,7 @@ class GD_CORE_API MultipleInstructionMetadata : public AbstractFunctionMetadata 
   /**
    * \brief Get the files that must be included to use the instruction.
    */
-  const std::vector<gd::String> &GetIncludeFiles() const {
+  const std::vector<gd::String> &GetIncludeFiles() const override {
     if (expression)
       return expression->GetCodeExtraInformation().GetIncludeFiles();
     if (condition)

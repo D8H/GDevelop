@@ -1243,10 +1243,12 @@ interface AbstractFunctionMetadata {
     [Ref] AbstractFunctionMetadata SetPrivate();
 
     [Ref] AbstractFunctionMetadata SetFunctionName([Const] DOMString functionName);
+    [Ref] AbstractFunctionMetadata SetIncludeFile([Const] DOMString includeFile);
+    [Ref] AbstractFunctionMetadata AddIncludeFile([Const] DOMString includeFile);
+    [Const, Ref] VectorString GetIncludeFiles();
 };
 
 interface InstructionOrExpressionMetadata {
-    [Const, Ref] DOMString GetFullName();
 };
 InstructionOrExpressionMetadata implements AbstractFunctionMetadata;
 
@@ -3306,17 +3308,22 @@ interface MetadataDeclarationHelper {
   [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
   [Const, Ref] EventsFunction eventsFunction);
 
-[Ref] BehaviorMetadata GenerateBehaviorMetadata(
+[Ref] BehaviorMetadata STATIC_GenerateBehaviorMetadata(
   [Const, Ref] Project project,
   [Ref] PlatformExtension extension,
   [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
   [Const, Ref] EventsBasedBehavior eventsBasedBehavior,
   [Ref] MapStringString behaviorMethodMangledNames);
 
-[Ref] ObjectMetadata GenerateObjectMetadata(
+[Ref] ObjectMetadata STATIC_GenerateObjectMetadata(
   [Const, Ref] Project project,
   [Ref] PlatformExtension extension,
   [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
   [Const, Ref] EventsBasedObject eventsBasedObject,
   [Ref] MapStringString objectMethodMangledNames);
+
+[Const, Value] DOMString STATIC_GetFreeFunctionCodeName(
+  [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
+  [Const, Ref] EventsFunction eventsFunction
+);
 };

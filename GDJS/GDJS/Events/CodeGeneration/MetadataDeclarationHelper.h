@@ -56,7 +56,7 @@ gd::AbstractFunctionMetadata& GenerateFreeFunctionMetadata(
   const gd::EventsFunction& eventsFunction
 );
 
-gd::BehaviorMetadata& GenerateBehaviorMetadata(
+static gd::BehaviorMetadata& GenerateBehaviorMetadata(
   const gd::Project& project,
   gd::PlatformExtension& extension,
   const gd::EventsFunctionsExtension& eventsFunctionsExtension,
@@ -64,12 +64,17 @@ gd::BehaviorMetadata& GenerateBehaviorMetadata(
   std::map<gd::String, gd::String>& behaviorMethodMangledNames
 );
 
-gd::ObjectMetadata& GenerateObjectMetadata(
+static gd::ObjectMetadata& GenerateObjectMetadata(
   const gd::Project& project,
   gd::PlatformExtension& extension,
   const gd::EventsFunctionsExtension& eventsFunctionsExtension,
   const gd::EventsBasedObject& eventsBasedObject,
   std::map<gd::String, gd::String>& objectMethodMangledNames
+);
+
+static gd::String GetFreeFunctionCodeName(
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsFunction& eventsFunction
 );
 
 /**
@@ -326,11 +331,6 @@ static gd::String GetExtensionCodeNamespacePrefix(
 static gd::String GetFreeFunctionCodeNamespace(
   const gd::EventsFunction& eventsFunction,
   const gd::String& codeNamespacePrefix
-);
-
-static gd::String GetFreeFunctionCodeName(
-  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
-  const gd::EventsFunction& eventsFunction
 );
 
 /** Generate the namespace for a behavior function. */
