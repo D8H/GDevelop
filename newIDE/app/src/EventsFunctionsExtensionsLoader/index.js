@@ -2,21 +2,6 @@
 import { type I18n as I18nType } from '@lingui/core';
 import { mapVector, mapFor } from '../Utils/MapFor';
 import { caseSensitiveSlug } from '../Utils/CaseSensitiveSlug';
-import {
-  declareInstructionOrExpressionMetadata,
-  declareBehaviorInstructionOrExpressionMetadata,
-  declareObjectInstructionOrExpressionMetadata,
-  declareEventsFunctionParameters,
-  declareBehaviorMetadata,
-  declareObjectMetadata,
-  declareExtension,
-  isBehaviorLifecycleEventsFunction,
-  isObjectLifecycleEventsFunction,
-  isExtensionLifecycleEventsFunction,
-  declareBehaviorPropertiesInstructionAndExpressions,
-  declareObjectPropertiesInstructionAndExpressions,
-  declareObjectInternalInstructions,
-} from './MetadataDeclarationHelpers';
 
 const gd: libGDevelop = global.gd;
 
@@ -201,7 +186,7 @@ const generateEventsFunctionExtension = (
   options: OptionsForGeneration
 ): Promise<gdPlatformExtension> => {
   const extension = new gd.PlatformExtension();
-  declareExtension(extension, eventsFunctionsExtension);
+  gd.MetadataDeclarationHelper.declareExtension(extension, eventsFunctionsExtension);
 
   const codeNamespacePrefix =
     'gdjs.evtsExt__' + mangleName(eventsFunctionsExtension.getName());
@@ -283,7 +268,7 @@ const generateEventsFunctionExtensionMetadata = (
   options: Options
 ): gdPlatformExtension => {
   const extension = new gd.PlatformExtension();
-  declareExtension(extension, eventsFunctionsExtension);
+  gd.MetadataDeclarationHelper.declareExtension(extension, eventsFunctionsExtension);
 
   const codeNamespacePrefix =
     'gdjs.evtsExt__' + mangleName(eventsFunctionsExtension.getName());
@@ -328,6 +313,7 @@ const generateEventsFunctionExtensionMetadata = (
     }
   );
   // Generate all free functions
+  const metadataDeclarationHelper = new gd.MetadataDeclarationHelper();
   mapFor(0, eventsFunctionsExtension.getEventsFunctionsCount(), i => {
     const eventsFunction = eventsFunctionsExtension.getEventsFunctionAt(i);
     return generateFreeFunctionMetadata(
@@ -336,7 +322,8 @@ const generateEventsFunctionExtensionMetadata = (
       eventsFunctionsExtension,
       eventsFunction,
       options,
-      codeGenerationContext
+      codeGenerationContext,
+      metadataDeclarationHelper
     );
   });
 
@@ -352,18 +339,17 @@ const generateFreeFunction = (
   codeGenerationContext: CodeGenerationContext
 ): Promise<{
   functionFile: string,
-  functionMetadata:
-    | gdInstructionMetadata
-    | gdExpressionMetadata
-    | gdMultipleInstructionMetadata,
+  functionMetadata: gdAbstractFunctionMetadata,
 }> => {
+  const metadataDeclarationHelper = new gd.MetadataDeclarationHelper();
   const { functionFile, functionMetadata } = generateFreeFunctionMetadata(
     project,
     extension,
     eventsFunctionsExtension,
     eventsFunction,
     options,
-    codeGenerationContext
+    codeGenerationContext,
+    metadataDeclarationHelper
   );
 
   if (!options.skipCodeGeneration) {
@@ -425,54 +411,22 @@ const generateFreeFunctionMetadata = (
   eventsFunctionsExtension: gdEventsFunctionsExtension,
   eventsFunction: gdEventsFunction,
   options: Options,
-  codeGenerationContext: CodeGenerationContext
+  codeGenerationContext: CodeGenerationContext,
+  metadataDeclarationHelper: gdMetadataDeclarationHelper
 ): {
   functionFile: string,
-  functionMetadata:
-    | gdInstructionMetadata
-    | gdExpressionMetadata
-    | gdMultipleInstructionMetadata,
+  functionMetadata: gdAbstractFunctionMetadata,
 } => {
-  const instructionOrExpression = declareInstructionOrExpressionMetadata(
+  const instructionOrExpression = metadataDeclarationHelper.generateFreeFunctionMetadata(
+    project,
     extension,
     eventsFunctionsExtension,
-    eventsFunction
-  );
-  // By convention, first parameter is always the Runtime Scene.
-  instructionOrExpression.addCodeOnlyParameter('currentScene', '');
-  declareEventsFunctionParameters(
-    eventsFunctionsExtension,
-    eventsFunction,
-    instructionOrExpression,
-    0
-  );
-
-  // Hide "lifecycle" functions as they are called automatically by
-  // the game engine.
-  if (isExtensionLifecycleEventsFunction(eventsFunction.getName()))
-    instructionOrExpression.setHidden();
-
-  if (eventsFunction.isPrivate()) instructionOrExpression.setPrivate();
-
-  const codeNamespace = getFreeFunctionCodeNamespace(
-    eventsFunction,
-    codeGenerationContext.codeNamespacePrefix
-  );
-  // TODO Implement an helper function for free function names.
-  const functionName = codeNamespace + '.func';
-
+    eventsFunction);
+  const functionName = gd.MetadataDeclarationHelper.getFreeFunctionCodeName(eventsFunctionsExtension, eventsFunction);
   const functionFile = options.eventsFunctionCodeWriter.getIncludeFileFor(
     functionName
   );
   instructionOrExpression.setIncludeFile(functionFile);
-
-  if (
-    eventsFunction.isAsync() &&
-    typeof instructionOrExpression.setAsyncFunctionName === 'function'
-  )
-    //$FlowFixMe
-    instructionOrExpression.setAsyncFunctionName(functionName);
-  else instructionOrExpression.setFunctionName(functionName);
 
   // Always include the extension include files when using a free function.
   codeGenerationContext.extensionIncludeFiles.forEach(includeFile => {
@@ -565,12 +519,14 @@ function generateBehaviorMetadata(
   codeGenerationContext: CodeGenerationContext,
   behaviorMethodMangledNames?: gdMapStringString
 ): gdBehaviorMetadata {
-  const behaviorMetadata = declareBehaviorMetadata(
+  const behaviorMetadata = gd.MetadataDeclarationHelper.generateBehaviorMetadata(
+    project,
     extension,
-    eventsBasedBehavior
+    eventsFunctionsExtension,
+    eventsBasedBehavior,
+    behaviorMethodMangledNames
   );
-
-  const eventsFunctionsContainer = eventsBasedBehavior.getEventsFunctions();
+  
   const codeNamespace = getBehaviorFunctionCodeNamespace(
     eventsBasedBehavior,
     codeGenerationContext.codeNamespacePrefix
@@ -586,57 +542,6 @@ function generateBehaviorMetadata(
     behaviorMetadata.addIncludeFile(includeFile);
   });
 
-  // Declare the instructions/expressions for properties
-  declareBehaviorPropertiesInstructionAndExpressions(
-    options.i18n,
-    extension,
-    behaviorMetadata,
-    eventsBasedBehavior
-  );
-
-  // Declare all the behavior functions
-  mapFor(0, eventsFunctionsContainer.getEventsFunctionsCount(), i => {
-    const eventsFunction = eventsFunctionsContainer.getEventsFunctionAt(i);
-
-    const eventsFunctionMangledName = mangleName(eventsFunction.getName());
-    if (behaviorMethodMangledNames) {
-      behaviorMethodMangledNames.set(
-        eventsFunction.getName(),
-        eventsFunctionMangledName
-      );
-    }
-
-    const instructionOrExpression = declareBehaviorInstructionOrExpressionMetadata(
-      extension,
-      behaviorMetadata,
-      eventsBasedBehavior,
-      eventsFunction
-    );
-    declareEventsFunctionParameters(
-      eventsFunctionsContainer,
-      eventsFunction,
-      instructionOrExpression,
-      2
-    );
-
-    // Hide "lifecycle" methods as they are called automatically by
-    // the game engine.
-    if (isBehaviorLifecycleEventsFunction(eventsFunction.getName())) {
-      instructionOrExpression.setHidden();
-    }
-
-    if (eventsFunction.isPrivate()) instructionOrExpression.setPrivate();
-
-    instructionOrExpression.setIncludeFile(includeFile);
-
-    if (
-      eventsFunction.isAsync() &&
-      typeof instructionOrExpression.setAsyncFunctionName === 'function'
-    )
-      //$FlowFixMe
-      instructionOrExpression.setAsyncFunctionName(eventsFunctionMangledName);
-    else instructionOrExpression.setFunctionName(eventsFunctionMangledName);
-  });
   return behaviorMetadata;
 }
 
@@ -716,13 +621,13 @@ function generateObjectMetadata(
   codeGenerationContext: CodeGenerationContext,
   objectMethodMangledNames?: gdMapStringString
 ): gdObjectMetadata {
-  const objectMetadata = declareObjectMetadata(
-    options.i18n,
+  const objectMetadata = gd.MetadataDeclarationHelper.generateObjectMetadata(
+    project,
     extension,
-    eventsBasedObject
-  );
+    eventsFunctionsExtension,
+    eventsBasedObject,
+    objectMethodMangledNames);
 
-  const eventsFunctionsContainer = eventsBasedObject.getEventsFunctions();
   const codeNamespace = getObjectFunctionCodeNamespace(
     eventsBasedObject,
     codeGenerationContext.codeNamespacePrefix
@@ -737,64 +642,6 @@ function generateObjectMetadata(
   // Always include the extension include files when using an object.
   codeGenerationContext.extensionIncludeFiles.forEach(includeFile => {
     objectMetadata.addIncludeFile(includeFile);
-  });
-
-  // Declare the instructions/expressions for properties
-  declareObjectPropertiesInstructionAndExpressions(
-    options.i18n,
-    extension,
-    objectMetadata,
-    eventsBasedObject
-  );
-  declareObjectInternalInstructions(
-    options.i18n,
-    extension,
-    objectMetadata,
-    eventsBasedObject
-  );
-
-  // Declare all the object functions
-  mapFor(0, eventsFunctionsContainer.getEventsFunctionsCount(), i => {
-    const eventsFunction = eventsFunctionsContainer.getEventsFunctionAt(i);
-
-    const eventsFunctionMangledName = mangleName(eventsFunction.getName());
-    if (objectMethodMangledNames) {
-      objectMethodMangledNames.set(
-        eventsFunction.getName(),
-        eventsFunctionMangledName
-      );
-    }
-
-    const instructionOrExpression = declareObjectInstructionOrExpressionMetadata(
-      extension,
-      objectMetadata,
-      eventsBasedObject,
-      eventsFunction
-    );
-    declareEventsFunctionParameters(
-      eventsFunctionsContainer,
-      eventsFunction,
-      instructionOrExpression,
-      1
-    );
-
-    // Hide "lifecycle" methods as they are called automatically by
-    // the game engine.
-    if (isObjectLifecycleEventsFunction(eventsFunction.getName())) {
-      instructionOrExpression.setHidden();
-    }
-
-    if (eventsFunction.isPrivate()) instructionOrExpression.setPrivate();
-
-    instructionOrExpression.setIncludeFile(includeFile);
-
-    if (
-      eventsFunction.isAsync() &&
-      typeof instructionOrExpression.setAsyncFunctionName === 'function'
-    )
-      //$FlowFixMe
-      instructionOrExpression.setAsyncFunctionName(eventsFunctionMangledName);
-    else instructionOrExpression.setFunctionName(eventsFunctionMangledName);
   });
 
   return objectMetadata;
