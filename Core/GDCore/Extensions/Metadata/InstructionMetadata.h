@@ -35,7 +35,7 @@ namespace gd {
  *
  * \ingroup Events
  */
-class GD_CORE_API InstructionMetadata : public InstructionOrExpressionMetadata {
+class GD_CORE_API InstructionMetadata : public gd::InstructionOrExpressionMetadata {
  public:
   /**
    * Construct a new instruction metadata.
@@ -293,7 +293,7 @@ class GD_CORE_API InstructionMetadata : public InstructionOrExpressionMetadata {
    * \see ParameterMetadata
    */
   InstructionMetadata &UseStandardOperatorParameters(
-      const gd::String &type, const ParameterOptions &options) override;
+      const gd::String &type, const ParameterOptions &options);
 
   /**
    * \brief Add the default parameters for an instruction comparing the
@@ -303,7 +303,7 @@ class GD_CORE_API InstructionMetadata : public InstructionOrExpressionMetadata {
    * \see ParameterMetadata
    */
   InstructionMetadata &UseStandardRelationalOperatorParameters(
-      const gd::String &type, const ParameterOptions &options) override;
+      const gd::String &type, const ParameterOptions &options);
 
   /**
    * \brief Mark the instruction as an object instruction. Automatically called
@@ -480,7 +480,7 @@ class GD_CORE_API InstructionMetadata : public InstructionOrExpressionMetadata {
   /**
    * \brief Erase any existing include file and add the specified include.
    */
-  InstructionMetadata &SetIncludeFile(const gd::String &includeFile) {
+  InstructionMetadata &SetIncludeFile(const gd::String &includeFile) override {
     codeExtraInformation.includeFiles.clear();
     codeExtraInformation.includeFiles.push_back(includeFile);
     return *this;
@@ -489,7 +489,7 @@ class GD_CORE_API InstructionMetadata : public InstructionOrExpressionMetadata {
   /**
    * \brief Add a file to the already existing include files.
    */
-  InstructionMetadata &AddIncludeFile(const gd::String &includeFile) {
+  InstructionMetadata &AddIncludeFile(const gd::String &includeFile) override {
     if (std::find(codeExtraInformation.includeFiles.begin(), codeExtraInformation.includeFiles.end(), includeFile) ==
         codeExtraInformation.includeFiles.end())
       codeExtraInformation.includeFiles.push_back(includeFile);
@@ -500,7 +500,7 @@ class GD_CORE_API InstructionMetadata : public InstructionOrExpressionMetadata {
   /**
    * \brief Get the files that must be included to use the instruction.
    */
-  const std::vector<gd::String> &GetIncludeFiles() const {
+  const std::vector<gd::String> &GetIncludeFiles() const override {
     return codeExtraInformation.includeFiles;
   };
 

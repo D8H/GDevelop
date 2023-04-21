@@ -1229,23 +1229,26 @@ interface ParameterOptions {
 };
 
 interface AbstractFunctionMetadata {
-    void InstructionMetadata(); // For tests only.
-
-    [Ref] InstructionMetadata AddParameter([Const] DOMString type,
+    [Ref] AbstractFunctionMetadata AddParameter([Const] DOMString type,
                                         [Const] DOMString description,
                                         [Const] DOMString optionalObjectType,
                                         boolean parameterIsOptional);
-    [Ref] InstructionMetadata AddCodeOnlyParameter(
+    [Ref] AbstractFunctionMetadata AddCodeOnlyParameter(
         [Const] DOMString type, [Const] DOMString supplementaryInformation);
-    [Ref] InstructionMetadata SetDefaultValue([Const] DOMString defaultValue);
-    [Ref] InstructionMetadata SetParameterLongDescription([Const] DOMString longDescription);
-    [Ref] InstructionMetadata SetParameterExtraInfo([Const] DOMString extraInfo);
+    [Ref] AbstractFunctionMetadata SetDefaultValue([Const] DOMString defaultValue);
+    [Ref] AbstractFunctionMetadata SetParameterLongDescription([Const] DOMString longDescription);
+    [Ref] AbstractFunctionMetadata SetParameterExtraInfo([Const] DOMString extraInfo);
     
-    [Ref] InstructionMetadata SetHidden();
-    [Ref] InstructionMetadata SetPrivate();
+    [Ref] AbstractFunctionMetadata SetHidden();
+    [Ref] AbstractFunctionMetadata SetPrivate();
 
-    [Ref] InstructionMetadata SetFunctionName([Const] DOMString functionName);
+    [Ref] AbstractFunctionMetadata SetFunctionName([Const] DOMString functionName);
 };
+
+interface InstructionOrExpressionMetadata {
+    [Const, Ref] DOMString GetFullName();
+};
+InstructionOrExpressionMetadata implements AbstractFunctionMetadata;
 
 interface InstructionMetadata {
     void InstructionMetadata(); // For tests only.
@@ -1310,7 +1313,7 @@ interface InstructionMetadata {
     [Ref] InstructionMetadata AddIncludeFile([Const] DOMString includeFile);
     [Const, Ref] VectorString GetIncludeFiles();
 };
-InstructionMetadata implements AbstractFunctionMetadata;
+InstructionMetadata implements InstructionOrExpressionMetadata;
 
 interface ExpressionMetadata {
     void ExpressionMetadata(
@@ -1366,7 +1369,7 @@ interface ExpressionMetadata {
     [Ref] ExpressionMetadata AddIncludeFile([Const] DOMString includeFile);
     [Const, Ref] VectorString GetIncludeFiles();
 };
-ExpressionMetadata implements AbstractFunctionMetadata;
+ExpressionMetadata implements InstructionOrExpressionMetadata;
 
 interface MultipleInstructionMetadata {
     [Ref] MultipleInstructionMetadata AddParameter([Const] DOMString type,
@@ -3297,20 +3300,20 @@ interface MetadataDeclarationHelper {
     [Ref] PlatformExtension extension,
     [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension);
 
-[Ref] AbstractFunctionMetadata STATIC_GenerateFreeFunctionMetadata(
+[Ref] AbstractFunctionMetadata GenerateFreeFunctionMetadata(
   [Const, Ref] Project project,
   [Ref] PlatformExtension extension,
   [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
   [Const, Ref] EventsFunction eventsFunction);
 
-[Ref] BehaviorMetadata STATIC_GenerateBehaviorMetadata(
+[Ref] BehaviorMetadata GenerateBehaviorMetadata(
   [Const, Ref] Project project,
   [Ref] PlatformExtension extension,
   [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
   [Const, Ref] EventsBasedBehavior eventsBasedBehavior,
   [Ref] MapStringString behaviorMethodMangledNames);
 
-[Ref] ObjectMetadata STATIC_GenerateObjectMetadata(
+[Ref] ObjectMetadata GenerateObjectMetadata(
   [Const, Ref] Project project,
   [Ref] PlatformExtension extension,
   [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,

@@ -35,7 +35,7 @@ namespace gd {
  *
  * \ingroup Events
  */
-class GD_CORE_API InstructionOrExpressionMetadata : public AbstractFunctionMetadata {
+class GD_CORE_API InstructionOrExpressionMetadata : public gd::AbstractFunctionMetadata {
  public:
   /**
    * Construct an empty InstructionMetadata.
@@ -76,7 +76,7 @@ class GD_CORE_API InstructionOrExpressionMetadata : public AbstractFunctionMetad
    * Set that the instruction is private - it can't be used outside of the
    * object/ behavior that it is attached too.
    */
-  virtual InstructionOrExpressionMetadata &SetPrivate() override;
+  virtual InstructionOrExpressionMetadata &SetPrivate() override = 0;
 
   /**
    * Check if the instruction can be used in layouts or external events.
@@ -192,26 +192,6 @@ class GD_CORE_API InstructionOrExpressionMetadata : public AbstractFunctionMetad
    * \see AddParameter
    */
   virtual InstructionOrExpressionMetadata &SetParameterExtraInfo(const gd::String &extraInfo) override = 0;
-
-  /**
-   * \brief Add the default parameters for an instruction manipulating the
-   * specified type ("string", "number") with the default operators.
-   *
-   * \note The type "string" can be declined in several subtypes.
-   * \see ParameterMetadata
-   */
-  virtual InstructionOrExpressionMetadata &UseStandardOperatorParameters(
-      const gd::String &type, const ParameterOptions &options);
-
-  /**
-   * \brief Add the default parameters for an instruction comparing the
-   * specified type ("string", "number") with the default relational operators.
-   *
-   * \note The type "string" can be declined in several subtypes.
-   * \see ParameterMetadata
-   */
-  virtual InstructionOrExpressionMetadata &UseStandardRelationalOperatorParameters(
-      const gd::String &type, const ParameterOptions &options);
 
   /**
    * \brief Mark this (object) instruction as requiring the specified

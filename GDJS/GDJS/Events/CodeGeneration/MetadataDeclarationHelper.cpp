@@ -1,6 +1,6 @@
 /*
  * GDevelop Core
- * Copyright 2008-2016 Florian Rival (Florian.Rival@gmail.com). All rights
+ * Copyright 2008-2023 Florian Rival (Florian.Rival@gmail.com). All rights
  * reserved. This project is released under the MIT License.
  */
 #include "MetadataDeclarationHelper.h"
@@ -16,7 +16,7 @@
 #include "GDJS/Events/CodeGeneration/ObjectCodeGenerator.h"
 #include "GDCore/Events/Tools/EventsCodeNameMangler.h"
 
-namespace gd {
+namespace gdjs {
 
 /**
  * Declare an extension from an events based extension.
@@ -523,7 +523,8 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareExpressionMetada
     expressionAndCondition,
     0
   );
-  return expressionAndCondition;
+    expressionAndConditions.push_back(expressionAndCondition);
+    return *expressionAndConditions.end();
   }
   else {
     auto& expression = eventsFunction.GetExpressionType().IsNumber() ?
@@ -721,7 +722,7 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareBehaviorInstruct
   gd::BehaviorMetadata& behaviorMetadata,
   const gd::EventsBasedBehavior& eventsBasedBehavior,
   const gd::EventsFunction& eventsFunction,
-  std::unordered_map<gd::String, gd::String>& objectMethodMangledNames
+  std::map<gd::String, gd::String>& objectMethodMangledNames
 ) {
     auto eventsFunctionMangledName = EventsCodeNameMangler::GetMangledName(eventsFunction.GetName());
     objectMethodMangledNames[eventsFunction.GetName()] = eventsFunctionMangledName;
@@ -790,7 +791,8 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareBehaviorExpressi
       expressionAndCondition,
       2
     );
-    return expressionAndCondition;
+    expressionAndConditions.push_back(expressionAndCondition);
+    return *expressionAndConditions.end();
   }
   else {
     auto& expression = (eventsFunction.GetExpressionType().IsNumber()) ?
@@ -950,7 +952,7 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareObjectInstructio
   gd::ObjectMetadata& objectMetadata,
   const gd::EventsBasedObject& eventsBasedObject,
   const gd::EventsFunction& eventsFunction,
-  std::unordered_map<gd::String, gd::String>& objectMethodMangledNames
+  std::map<gd::String, gd::String>& objectMethodMangledNames
 ) {
     auto eventsFunctionMangledName = EventsCodeNameMangler::GetMangledName(eventsFunction.GetName());
     objectMethodMangledNames[eventsFunction.GetName()] = eventsFunctionMangledName;
@@ -1020,7 +1022,8 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareObjectExpression
       expressionAndCondition,
       1
     );
-    return expressionAndCondition;
+    expressionAndConditions.push_back(expressionAndCondition);
+    return *expressionAndConditions.end();
   }
   else {
     auto& expression = (eventsFunction.GetExpressionType().IsNumber()) ?
@@ -1196,9 +1199,9 @@ gd::String MetadataDeclarationHelper::UncapitalizedFirstLetter(const gd::String&
 
 void MetadataDeclarationHelper::DeclarePropertyInstructionAndExpression(
   gd::PlatformExtension& extension,
-  InstructionOrExpressionContainerMetadata& entityMetadata,
-  const AbstractEventsBasedEntity& eventsBasedEntity,
-  const NamedPropertyDescriptor& property,
+  gd::InstructionOrExpressionContainerMetadata& entityMetadata,
+  const gd::AbstractEventsBasedEntity& eventsBasedEntity,
+  const gd::NamedPropertyDescriptor& property,
   const gd::String& propertyLabel,
   const gd::String& expressionName,
   const gd::String& conditionName,
@@ -1525,7 +1528,7 @@ void MetadataDeclarationHelper::DeclareObjectInternalInstructions(
     .SetFunctionName("setRotationCenter");
 }
 
-void AddParameter(gd::AbstractFunctionMetadata& instructionOrExpression, const ParameterMetadata& parameter) {
+void AddParameter(gd::AbstractFunctionMetadata& instructionOrExpression, const gd::ParameterMetadata& parameter) {
   if (!parameter.IsCodeOnly()) {
     instructionOrExpression
       .AddParameter(
@@ -1557,7 +1560,7 @@ void AddParameter(gd::AbstractFunctionMetadata& instructionOrExpression, const P
 void MetadataDeclarationHelper::DeclareEventsFunctionParameters(
   const gd::EventsFunctionsContainer& eventsFunctionsContainer,
   const gd::EventsFunction& eventsFunction,
-  gd::InstructionOrExpressionMetadata& instructionOrExpression,
+  gd::ExpressionMetadata& expression,
   const int userDefinedFirstParameterIndex
 ) {
   auto functionType = eventsFunction.GetFunctionType();
@@ -1577,7 +1580,48 @@ void MetadataDeclarationHelper::DeclareEventsFunctionParameters(
   for (size_t i = 0; i < userDefinedFirstParameterIndex && i < parameters.size(); i++)
   {
     const gd::ParameterMetadata& parameter = parameters.at(i);
-    AddParameter(instructionOrExpression, parameter);
+    AddParameter(expression, parameter);
+  }
+
+  for (size_t i = userDefinedFirstParameterIndex; i < parameters.size(); i++)
+  {
+    const gd::ParameterMetadata& parameter = parameters.at(i);
+    AddParameter(expression, parameter);
+  }
+
+  // By convention, latest parameter is always the eventsFunctionContext of the calling function
+  // (if any).
+  expression.AddCodeOnlyParameter("eventsFunctionContext", "");
+}
+
+/**
+ * Add to the instruction (action/condition) or expression the parameters
+ * expected by the events function.
+ */
+void MetadataDeclarationHelper::DeclareEventsFunctionParameters(
+  const gd::EventsFunctionsContainer& eventsFunctionsContainer,
+  const gd::EventsFunction& eventsFunction,
+  gd::InstructionMetadata& instruction,
+  const int userDefinedFirstParameterIndex
+) {
+  auto functionType = eventsFunction.GetFunctionType();
+
+  bool hasGetterFunction = eventsFunctionsContainer.HasEventsFunctionNamed(
+    eventsFunction.GetGetterName()
+  );
+
+  // This is used instead of getParametersForEvents because the Value parameter
+  // is already add by useStandardOperatorParameters.
+  auto& parameters = (functionType == gd::EventsFunction::ActionWithOperator
+                     && hasGetterFunction
+    ? eventsFunctionsContainer.GetEventsFunction(eventsFunction.GetGetterName())
+    : eventsFunction
+  ).GetParameters();
+  
+  for (size_t i = 0; i < userDefinedFirstParameterIndex && i < parameters.size(); i++)
+  {
+    const gd::ParameterMetadata& parameter = parameters.at(i);
+    AddParameter(instruction, parameter);
   }
 
   if (functionType == gd::EventsFunction::ActionWithOperator) {
@@ -1587,13 +1631,13 @@ void MetadataDeclarationHelper::DeclareEventsFunctionParameters(
 
         auto& extraInfo = getterFunction.GetExpressionType().GetExtraInfo();
         if (!extraInfo.empty()) options.SetTypeExtraInfo(extraInfo);
-        instructionOrExpression.UseStandardOperatorParameters(
+        instruction.UseStandardOperatorParameters(
         getterFunction.GetExpressionType().GetName(),
         options
         );
     }
     else {
-        instructionOrExpression.UseStandardOperatorParameters(
+        instruction.UseStandardOperatorParameters(
         "string",
         options
         );
@@ -1603,12 +1647,12 @@ void MetadataDeclarationHelper::DeclareEventsFunctionParameters(
   for (size_t i = userDefinedFirstParameterIndex; i < parameters.size(); i++)
   {
     const gd::ParameterMetadata& parameter = parameters.at(i);
-    AddParameter(instructionOrExpression, parameter);
+    AddParameter(instruction, parameter);
   }
 
   // By convention, latest parameter is always the eventsFunctionContext of the calling function
   // (if any).
-  instructionOrExpression.AddCodeOnlyParameter("eventsFunctionContext", "");
+  instruction.AddCodeOnlyParameter("eventsFunctionContext", "");
 }
 
 /**
@@ -1673,8 +1717,8 @@ gd::String MetadataDeclarationHelper::GetFreeFunctionCodeNamespace(
 }
 
 gd::String MetadataDeclarationHelper::GetFreeFunctionCodeName(
-  const EventsFunctionsExtension& eventsFunctionsExtension,
-  const EventsFunction& eventsFunction
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsFunction& eventsFunction
 ) {
   return (
     GetFreeFunctionCodeNamespace(
@@ -1700,7 +1744,7 @@ gd::String MetadataDeclarationHelper::GetObjectFunctionCodeNamespace(
   return codeNamespacePrefix + "__" + EventsCodeNameMangler::GetMangledName(eventsBasedObject.GetName());
 }
 
-AbstractFunctionMetadata& MetadataDeclarationHelper::GenerateFreeFunctionMetadata(
+gd::AbstractFunctionMetadata& MetadataDeclarationHelper::GenerateFreeFunctionMetadata(
   const gd::Project& project,
   gd::PlatformExtension& extension,
   const gd::EventsFunctionsExtension& eventsFunctionsExtension,
@@ -1727,7 +1771,7 @@ gd::BehaviorMetadata& MetadataDeclarationHelper::GenerateBehaviorMetadata(
   gd::PlatformExtension& extension,
   const gd::EventsFunctionsExtension& eventsFunctionsExtension,
   const gd::EventsBasedBehavior& eventsBasedBehavior,
-  std::unordered_map<gd::String, gd::String>& behaviorMethodMangledNames
+  std::map<gd::String, gd::String>& behaviorMethodMangledNames
 ) {
   auto& behaviorMetadata = DeclareBehaviorMetadata(
     extension,
@@ -1772,7 +1816,7 @@ gd::ObjectMetadata& MetadataDeclarationHelper::GenerateObjectMetadata(
   gd::PlatformExtension& extension,
   const gd::EventsFunctionsExtension& eventsFunctionsExtension,
   const gd::EventsBasedObject& eventsBasedObject,
-  std::unordered_map<gd::String, gd::String>& objectMethodMangledNames
+  std::map<gd::String, gd::String>& objectMethodMangledNames
 ) {
   auto& objectMetadata = DeclareObjectMetadata(
     extension,

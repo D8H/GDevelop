@@ -44,7 +44,7 @@ class ExpressionCodeGenerationInformation {
  *
  * \ingroup Events
  */
-class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
+class GD_CORE_API ExpressionMetadata : public gd::InstructionOrExpressionMetadata {
  public:
   /**
    * Construct a new expression metadata.
@@ -283,7 +283,7 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
    * \brief Erase any existing include file and add the specified include.
    */
   ExpressionMetadata& SetIncludeFile(
-      const gd::String& includeFile) {
+      const gd::String& includeFile) override {
     codeExtraInformation.includeFiles.clear();
     codeExtraInformation.includeFiles.push_back(includeFile);
     return *this;
@@ -293,7 +293,7 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
    * \brief Add a file to the already existing include files.
    */
   ExpressionMetadata& AddIncludeFile(
-      const gd::String& includeFile) {
+      const gd::String& includeFile) override {
     if (std::find(codeExtraInformation.includeFiles.begin(), codeExtraInformation.includeFiles.end(), includeFile) ==
         codeExtraInformation.includeFiles.end())
       codeExtraInformation.includeFiles.push_back(includeFile);
@@ -304,7 +304,7 @@ class GD_CORE_API ExpressionMetadata : public InstructionOrExpressionMetadata {
   /**
    * \brief Get the files that must be included to use the instruction.
    */
-  const std::vector<gd::String>& GetIncludeFiles() const {
+  const std::vector<gd::String>& GetIncludeFiles() const override {
     return codeExtraInformation.includeFiles;
   };
 

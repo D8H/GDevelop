@@ -5,16 +5,15 @@
  */
 #pragma once
 
-#include "GDCore/IDE/Events/ArbitraryEventsWorker.h"
 #include "GDCore/String.h"
 #include <map>
 #include <memory>
 #include <vector>
 #include <functional>
-#include <unordered_map>
 
 namespace gd {
 class PlatformExtension;
+class Project;
 class EventsFunctionsExtension;
 class EventsBasedBehavior;
 class BehaviorMetadata;
@@ -30,10 +29,11 @@ class AbstractEventsBasedEntity;
 class NamedPropertyDescriptor;
 class ParameterMetadata;
 class InstructionMetadata;
+class ExpressionMetadata;
 class MultipleInstructionMetadata;
 } // namespace gd
 
-namespace gd {
+namespace gdjs {
 
 /**
  * \brief This file contains the logic to declare extension metadata from
@@ -43,8 +43,34 @@ namespace gd {
  *
  * \ingroup IDE
  */
-class GD_CORE_API MetadataDeclarationHelper {
+class MetadataDeclarationHelper {
 public:
+
+MetadataDeclarationHelper(){};
+virtual ~MetadataDeclarationHelper(){};
+
+gd::AbstractFunctionMetadata& GenerateFreeFunctionMetadata(
+  const gd::Project& project,
+  gd::PlatformExtension& extension,
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsFunction& eventsFunction
+);
+
+gd::BehaviorMetadata& GenerateBehaviorMetadata(
+  const gd::Project& project,
+  gd::PlatformExtension& extension,
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsBasedBehavior& eventsBasedBehavior,
+  std::map<gd::String, gd::String>& behaviorMethodMangledNames
+);
+
+gd::ObjectMetadata& GenerateObjectMetadata(
+  const gd::Project& project,
+  gd::PlatformExtension& extension,
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsBasedObject& eventsBasedObject,
+  std::map<gd::String, gd::String>& objectMethodMangledNames
+);
 
 /**
  * Declare an extension from an events based extension.
@@ -137,33 +163,7 @@ static void DeclareObjectInternalInstructions(
   const gd::EventsBasedObject& eventsBasedObject
 );
 
-static AbstractFunctionMetadata& GenerateFreeFunctionMetadata(
-  const gd::Project& project,
-  gd::PlatformExtension& extension,
-  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
-  const gd::EventsFunction& eventsFunction
-);
-
-static gd::BehaviorMetadata& GenerateBehaviorMetadata(
-  const gd::Project& project,
-  gd::PlatformExtension& extension,
-  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
-  const gd::EventsBasedBehavior& eventsBasedBehavior,
-  std::unordered_map<gd::String, gd::String>& behaviorMethodMangledNames
-);
-
-static gd::ObjectMetadata& GenerateObjectMetadata(
-  const gd::Project& project,
-  gd::PlatformExtension& extension,
-  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
-  const gd::EventsBasedObject& eventsBasedObject,
-  std::unordered_map<gd::String, gd::String>& objectMethodMangledNames
-);
-
-  virtual ~MetadataDeclarationHelper(){};
-
 private:
-  MetadataDeclarationHelper(){};
 
   static const gd::String defaultExtensionIconPath;
 
@@ -191,7 +191,7 @@ static void AddParameter(gd::AbstractFunctionMetadata& instructionOrExpression, 
  * Declare the instruction (action/condition) or expression for the given
  * (free) events function.
  */
-static gd::AbstractFunctionMetadata& DeclareInstructionOrExpressionMetadata(
+gd::AbstractFunctionMetadata& DeclareInstructionOrExpressionMetadata(
   gd::PlatformExtension& extension,
   const gd::EventsFunctionsExtension& eventsFunctionsExtension,
   const gd::EventsFunction& eventsFunction
@@ -201,7 +201,7 @@ static gd::AbstractFunctionMetadata& DeclareInstructionOrExpressionMetadata(
  * Declare the instruction (action/condition) or expression for the given
  * (free) events function.
  */
-static gd::AbstractFunctionMetadata& DeclareExpressionMetadata(
+gd::AbstractFunctionMetadata& DeclareExpressionMetadata(
   gd::PlatformExtension& extension,
   const gd::EventsFunctionsExtension& eventsFunctionsExtension,
   const gd::EventsFunction& eventsFunction
@@ -221,19 +221,19 @@ static gd::InstructionMetadata& DeclareInstructionMetadata(
  * Declare the instruction (action/condition) or expression for the given
  * behavior events function.
  */
-static gd::AbstractFunctionMetadata& DeclareBehaviorInstructionOrExpressionMetadata(
+gd::AbstractFunctionMetadata& DeclareBehaviorInstructionOrExpressionMetadata(
   gd::PlatformExtension& extension,
   gd::BehaviorMetadata& behaviorMetadata,
   const gd::EventsBasedBehavior& eventsBasedBehavior,
   const gd::EventsFunction& eventsFunction,
-  std::unordered_map<gd::String, gd::String>& objectMethodMangledNames
+  std::map<gd::String, gd::String>& objectMethodMangledNames
 );
 
 /**
  * Declare the instruction (action/condition) or expression for the given
  * behavior events function.
  */
-static gd::AbstractFunctionMetadata& DeclareBehaviorExpressionMetadata(
+gd::AbstractFunctionMetadata& DeclareBehaviorExpressionMetadata(
   gd::PlatformExtension& extension,
   gd::BehaviorMetadata& behaviorMetadata,
   const gd::EventsBasedBehavior& eventsBasedBehavior,
@@ -255,19 +255,19 @@ static gd::InstructionMetadata& DeclareBehaviorInstructionMetadata(
  * Declare the instruction (action/condition) or expression for the given
  * object events function.
  */
-static gd::AbstractFunctionMetadata& DeclareObjectInstructionOrExpressionMetadata(
+gd::AbstractFunctionMetadata& DeclareObjectInstructionOrExpressionMetadata(
   gd::PlatformExtension& extension,
   gd::ObjectMetadata& objectMetadata,
   const gd::EventsBasedObject& eventsBasedObject,
   const gd::EventsFunction& eventsFunction,
-  std::unordered_map<gd::String, gd::String>& objectMethodMangledNames
+  std::map<gd::String, gd::String>& objectMethodMangledNames
 );
 
 /**
  * Declare the instruction (action/condition) or expression for the given
  * object events function.
  */
-static gd::AbstractFunctionMetadata& DeclareObjectExpressionMetadata(
+gd::AbstractFunctionMetadata& DeclareObjectExpressionMetadata(
   gd::PlatformExtension& extension,
   gd::ObjectMetadata& objectMetadata,
   const gd::EventsBasedObject& eventsBasedObject,
@@ -292,7 +292,18 @@ static gd::InstructionMetadata& DeclareObjectInstructionMetadata(
 static void DeclareEventsFunctionParameters(
   const gd::EventsFunctionsContainer& eventsFunctionsContainer,
   const gd::EventsFunction& eventsFunction,
-  gd::InstructionOrExpressionMetadata& instructionOrExpression,
+  gd::ExpressionMetadata& expression,
+  const int userDefinedFirstParameterIndex
+);
+
+/**
+ * Add to the instruction (action/condition) or expression the parameters
+ * expected by the events function.
+ */
+static void DeclareEventsFunctionParameters(
+  const gd::EventsFunctionsContainer& eventsFunctionsContainer,
+  const gd::EventsFunction& eventsFunction,
+  gd::InstructionMetadata& instruction,
   const int userDefinedFirstParameterIndex
 );
 
@@ -318,8 +329,8 @@ static gd::String GetFreeFunctionCodeNamespace(
 );
 
 static gd::String GetFreeFunctionCodeName(
-  const EventsFunctionsExtension& eventsFunctionsExtension,
-  const EventsFunction& eventsFunction
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsFunction& eventsFunction
 );
 
 /** Generate the namespace for a behavior function. */
@@ -345,6 +356,9 @@ static gd::String GetStringifiedExtraInfo(const gd::PropertyDescriptor& property
 
 static gd::String UncapitalizedFirstLetter(const gd::String& string);
 
+
+  std::vector<gd::MultipleInstructionMetadata> expressionAndConditions;
+
 };
 
-} // namespace gd
+} // namespace gdjs
