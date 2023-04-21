@@ -77,10 +77,10 @@ class GD_CORE_API ParameterContainerMetadata {
   virtual ParameterContainerMetadata &SetParameterLongDescription(
       const gd::String &longDescription) = 0;
 
-//   /**
-//    * \see gd::InstructionMetadata::SetHidden
-//    */
-//   virtual ParameterContainerMetadata &SetHidden() = 0;
+  /**
+   * \see gd::InstructionMetadata::SetHidden
+   */
+  virtual ParameterContainerMetadata &SetHidden() = 0;
 
 //   /**
 //    * \see gd::InstructionMetadata::SetRequiresBaseObjectCapability
@@ -93,6 +93,15 @@ class GD_CORE_API ParameterContainerMetadata {
    * object/ behavior that it is attached too.
    */
   virtual ParameterContainerMetadata &SetPrivate() = 0;
+
+  /**
+   * \brief Set the function that should be called when generating the source
+   * code from events.
+   * \param functionName the name of the function to call
+   * \note Shortcut for `codeExtraInformation.SetFunctionName`.
+   */
+  virtual ParameterContainerMetadata& SetFunctionName(
+      const gd::String& functionName) = 0;
 
  private:
 };

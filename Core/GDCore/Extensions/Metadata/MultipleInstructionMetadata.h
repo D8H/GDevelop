@@ -106,7 +106,7 @@ class GD_CORE_API MultipleInstructionMetadata : public ParameterContainerMetadat
   /**
    * \see gd::InstructionMetadata::SetHidden
    */
-  MultipleInstructionMetadata &SetHidden() {
+  MultipleInstructionMetadata &SetHidden() override {
     if (expression) expression->SetHidden();
     if (condition) condition->SetHidden();
     if (action) action->SetHidden();
@@ -136,7 +136,7 @@ class GD_CORE_API MultipleInstructionMetadata : public ParameterContainerMetadat
     return *this;
   }
 
-  MultipleInstructionMetadata &SetFunctionName(const gd::String &functionName) {
+  MultipleInstructionMetadata &SetFunctionName(const gd::String &functionName) override {
     if (expression) expression->SetFunctionName(functionName);
     if (condition) condition->SetFunctionName(functionName);
     if (action) action->GetCodeExtraInformation().SetFunctionName(functionName);

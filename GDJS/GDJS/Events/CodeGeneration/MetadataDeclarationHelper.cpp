@@ -473,27 +473,75 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareInstructionOrE
   const gd::EventsFunctionsExtension& eventsFunctionsExtension,
   const gd::EventsFunction& eventsFunction
 ) {
+  const gd::String&  functionName = GetFreeFunctionCodeName(eventsFunctionsExtension, eventsFunction);
+
+    if (eventsFunction.IsExpression()) {
+    auto& expression = declareExpressionMetadata(
+      extension,
+      eventsFunctionsExtension,
+      eventsFunction
+    );
+
+    expression.SetFunctionName(functionName);
+
+    return expression;
+    }
+    else {
+      auto& instruction = declareInstructionMetadata(
+      extension,
+      eventsFunctionsExtension,
+      eventsFunction
+    );
+
+    if (eventsFunction.IsAsync()) {
+      instruction.SetAsyncFunctionName(functionName);
+    }
+    else {
+      instruction.SetFunctionName(functionName);
+    }
+
+    return instruction;
+    }
+}
+
+/**
+ * Declare the instruction (action/condition) or expression for the given
+ * (free) events function.
+ */
+gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareExpressionMetadata(
+  gd::PlatformExtension& extension,
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsFunction& eventsFunction
+) {
   auto functionType = eventsFunction.GetFunctionType();
   if (functionType == gd::EventsFunction::Expression) {
-    if (eventsFunction.GetExpressionType().IsNumber()) {
-      return extension.AddExpression(
+    auto& expression = eventsFunction.GetExpressionType().IsNumber() ?
+      extension.AddExpression(
+        eventsFunction.GetName(),
+        eventsFunction.GetFullName() || eventsFunction.GetName(),
+        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
+        eventsFunction.GetGroup(),
+        GetExtensionIconUrl(extension)
+      )
+    :
+      extension.AddStrExpression(
         eventsFunction.GetName(),
         eventsFunction.GetFullName() || eventsFunction.GetName(),
         eventsFunction.GetDescription() || eventsFunction.GetFullName(),
         eventsFunction.GetGroup(),
         GetExtensionIconUrl(extension)
       );
-    } else {
-      return extension.AddStrExpression(
-        eventsFunction.GetName(),
-        eventsFunction.GetFullName() || eventsFunction.GetName(),
-        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
-        eventsFunction.GetGroup(),
-        GetExtensionIconUrl(extension)
-      );
-    }
+  // By convention, first parameter is always the Runtime Scene.
+  expression.AddCodeOnlyParameter("currentScene", "");
+  declareEventsFunctionParameters(
+    eventsFunctionsExtension,
+    eventsFunction,
+    expression,
+    0
+  );
+  return expression;
   } else if (functionType == gd::EventsFunction::ExpressionAndCondition) {
-    return extension.AddExpressionAndCondition(
+    auto& expressionAndCondition = extension.AddExpressionAndCondition(
       gd::ValueTypeMetadata::GetPrimitiveValueType(
         eventsFunction.GetExpressionType().GetName()
       ),
@@ -506,7 +554,49 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareInstructionOrE
       eventsFunction.GetGroup(),
       GetExtensionIconUrl(extension)
     );
-  } else if (functionType == gd::EventsFunction::ActionWithOperator) {
+  // By convention, first parameter is always the Runtime Scene.
+  expressionAndCondition.AddCodeOnlyParameter("currentScene", "");
+  declareEventsFunctionParameters(
+    eventsFunctionsExtension,
+    eventsFunction,
+    expressionAndCondition,
+    0
+  );
+  return expressionAndCondition;
+  }
+}
+
+/**
+ * Declare the instruction (action/condition) or expression for the given
+ * (free) events function.
+ */
+gd::InstructionMetadata& MetadataDeclarationHelper::declareInstructionMetadata(
+  gd::PlatformExtension& extension,
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsFunction& eventsFunction
+) {
+  auto functionType = eventsFunction.GetFunctionType();
+  if (functionType == gd::EventsFunction::Condition) {
+    auto& action =  extension.AddCondition(
+      eventsFunction.GetName(),
+      eventsFunction.GetFullName() || eventsFunction.GetName(),
+      eventsFunction.GetDescription() || eventsFunction.GetFullName(),
+      eventsFunction.GetSentence(),
+      eventsFunction.GetGroup(),
+      GetExtensionIconUrl(extension),
+      GetExtensionIconUrl(extension)
+    );
+  // By convention, first parameter is always the Runtime Scene.
+  action.AddCodeOnlyParameter("currentScene", "");
+  declareEventsFunctionParameters(
+    eventsFunctionsExtension,
+    eventsFunction,
+    action,
+    0
+  );
+  return action;
+  }
+  else if (functionType == gd::EventsFunction::ActionWithOperator) {
     if (eventsFunctionsExtension.HasEventsFunctionNamed(
       eventsFunction.GetGetterName()
     )) {
@@ -538,6 +628,14 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareInstructionOrE
         .SetGetter(
           GetFreeFunctionCodeName(eventsFunctionsExtension, getterFunction)
         );
+  // By convention, first parameter is always the Runtime Scene.
+  action.AddCodeOnlyParameter("currentScene", "");
+  declareEventsFunctionParameters(
+    eventsFunctionsExtension,
+    eventsFunction,
+    action,
+    0
+  );
     return action;
     }
     else {
@@ -552,20 +650,18 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareInstructionOrE
       GetExtensionIconUrl(extension),
       GetExtensionIconUrl(extension)
     );
+  // By convention, first parameter is always the Runtime Scene.
+  action.AddCodeOnlyParameter("currentScene", "");
+  declareEventsFunctionParameters(
+    eventsFunctionsExtension,
+    eventsFunction,
+    action,
+    0
+  );
     return action;
     }
-  } else if (functionType == gd::EventsFunction::Condition) {
-    return extension.AddCondition(
-      eventsFunction.GetName(),
-      eventsFunction.GetFullName() || eventsFunction.GetName(),
-      eventsFunction.GetDescription() || eventsFunction.GetFullName(),
-      eventsFunction.GetSentence(),
-      eventsFunction.GetGroup(),
-      GetExtensionIconUrl(extension),
-      GetExtensionIconUrl(extension)
-    );
   } else {
-    return extension.AddAction(
+    auto& action = extension.AddAction(
       eventsFunction.GetName(),
       eventsFunction.GetFullName() || eventsFunction.GetName(),
       eventsFunction.GetDescription() || eventsFunction.GetFullName(),
@@ -574,6 +670,15 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareInstructionOrE
       GetExtensionIconUrl(extension),
       GetExtensionIconUrl(extension)
     );
+  // By convention, first parameter is always the Runtime Scene.
+  action.AddCodeOnlyParameter("currentScene", "");
+  declareEventsFunctionParameters(
+    eventsFunctionsExtension,
+    eventsFunction,
+    action,
+    0
+  );
+  return action;
   }
 }
 
@@ -615,33 +720,56 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareBehaviorInstru
   gd::PlatformExtension& extension,
   gd::BehaviorMetadata& behaviorMetadata,
   const gd::EventsBasedBehavior& eventsBasedBehavior,
+  const gd::EventsFunction& eventsFunction,
+  std::unordered_map<gd::String, gd::String>& objectMethodMangledNames
+) {
+    auto& eventsFunctionMangledName = EventsCodeNameMangler::GetMangledName(eventsFunction.GetName());
+    objectMethodMangledNames[eventsFunction.GetName()] = eventsFunctionMangledName;
+
+    if (eventsFunction.IsExpression()) {
+    auto& expression = declareBehaviorExpressionMetadata(
+      extension,
+      behaviorMetadata,
+      eventsBasedBehavior,
+      eventsFunction
+    );
+
+    expression.SetFunctionName(eventsFunctionMangledName);
+
+    return expression;
+    }
+    else {
+      auto& instruction = declareBehaviorInstructionMetadata(
+      extension,
+      behaviorMetadata,
+      eventsBasedBehavior,
+      eventsFunction
+    );
+
+    if (eventsFunction.IsAsync()) {
+      instruction.SetAsyncFunctionName(eventsFunctionMangledName);
+    }
+    else {
+      instruction.SetFunctionName(eventsFunctionMangledName);
+    }
+
+    return instruction;
+    }
+}
+
+/**
+ * Declare the instruction (action/condition) or expression for the given
+ * behavior events function.
+ */
+gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareBehaviorExpressionMetadata(
+  gd::PlatformExtension& extension,
+  gd::BehaviorMetadata& behaviorMetadata,
+  const gd::EventsBasedBehavior& eventsBasedBehavior,
   const gd::EventsFunction& eventsFunction
 ) {
   auto functionType = eventsFunction.GetFunctionType();
-  if (functionType == gd::EventsFunction::Expression) {
-    if (eventsFunction.GetExpressionType().IsNumber()) {
-      return behaviorMetadata.AddExpression(
-        eventsFunction.GetName(),
-        eventsFunction.GetFullName() || eventsFunction.GetName(),
-        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
-        eventsFunction.GetGroup() ||
-          eventsBasedBehavior.GetFullName() ||
-          eventsBasedBehavior.GetName(),
-        GetExtensionIconUrl(extension)
-      );
-    } else {
-      return behaviorMetadata.AddStrExpression(
-        eventsFunction.GetName(),
-        eventsFunction.GetFullName() || eventsFunction.GetName(),
-        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
-        eventsFunction.GetGroup() ||
-          eventsBasedBehavior.GetFullName() ||
-          eventsBasedBehavior.GetName(),
-        GetExtensionIconUrl(extension)
-      );
-    }
-  } else if (functionType == gd::EventsFunction::ExpressionAndCondition) {
-    return behaviorMetadata.AddExpressionAndCondition(
+  if (functionType == gd::EventsFunction::ExpressionAndCondition) {
+    auto& expressionAndCondition = behaviorMetadata.AddExpressionAndCondition(
       gd::ValueTypeMetadata::GetPrimitiveValueType(
         eventsFunction.GetExpressionType().GetName()
       ),
@@ -656,6 +784,78 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareBehaviorInstru
         eventsBasedBehavior.GetName(),
       GetExtensionIconUrl(extension)
     );
+    declareEventsFunctionParameters(
+      eventsBasedBehavior.GetEventsFunctions(),
+      eventsFunction,
+      expressionAndCondition,
+      2
+    );
+    return expressionAndCondition;
+  }
+  else {
+    auto& expression = (eventsFunction.GetExpressionType().IsNumber()) ?
+       behaviorMetadata.AddExpression(
+        eventsFunction.GetName(),
+        eventsFunction.GetFullName() || eventsFunction.GetName(),
+        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
+        eventsFunction.GetGroup() ||
+          eventsBasedBehavior.GetFullName() ||
+          eventsBasedBehavior.GetName(),
+        GetExtensionIconUrl(extension)
+      )
+    :
+      behaviorMetadata.AddStrExpression(
+        eventsFunction.GetName(),
+        eventsFunction.GetFullName() || eventsFunction.GetName(),
+        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
+        eventsFunction.GetGroup() ||
+          eventsBasedBehavior.GetFullName() ||
+          eventsBasedBehavior.GetName(),
+        GetExtensionIconUrl(extension)
+      );
+    declareEventsFunctionParameters(
+      eventsBasedBehavior.GetEventsFunctions(),
+      eventsFunction,
+      expression,
+      2
+    );
+    return expression;
+    }
+}
+
+/**
+ * Declare the instruction (action/condition) or expression for the given
+ * behavior events function.
+ */
+gd::InstructionMetadata& MetadataDeclarationHelper::declareBehaviorInstructionMetadata(
+  gd::PlatformExtension& extension,
+  gd::BehaviorMetadata& behaviorMetadata,
+  const gd::EventsBasedBehavior& eventsBasedBehavior,
+  const gd::EventsFunction& eventsFunction
+) {
+  auto functionType = eventsFunction.GetFunctionType();
+  if (functionType == gd::EventsFunction::Condition) {
+    // Use the new "scoped" way to declare an instruction, because
+    // we want to prevent any conflict between free functions and
+    // behaviors (that can totally have functions with the same name).
+    auto& condition = behaviorMetadata.AddScopedCondition(
+      eventsFunction.GetName(),
+      eventsFunction.GetFullName() || eventsFunction.GetName(),
+      eventsFunction.GetDescription() || eventsFunction.GetFullName(),
+      eventsFunction.GetSentence(),
+      eventsFunction.GetGroup() ||
+        eventsBasedBehavior.GetFullName() ||
+        eventsBasedBehavior.GetName(),
+      GetExtensionIconUrl(extension),
+      GetExtensionIconUrl(extension)
+    );
+    declareEventsFunctionParameters(
+      eventsBasedBehavior.GetEventsFunctions(),
+      eventsFunction,
+      condition,
+      2
+    );
+    return condition;
   } else if (functionType == gd::EventsFunction::ActionWithOperator) {
     auto& eventsFunctionsContainer = eventsBasedBehavior.GetEventsFunctions();
     if (eventsFunctionsContainer.HasEventsFunctionNamed(
@@ -687,7 +887,14 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareBehaviorInstru
             )
             )
             .SetGetter(getterFunction.GetName());
-        return action;
+
+    declareEventsFunctionParameters(
+      eventsBasedBehavior.GetEventsFunctions(),
+      eventsFunction,
+      action,
+      2
+    );
+    return action;
     }
     else {
         auto& action = behaviorMetadata.AddScopedAction(
@@ -700,28 +907,20 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareBehaviorInstru
         GetExtensionIconUrl(extension),
         GetExtensionIconUrl(extension)
         );
-        return action;
-    }
-  } else if (functionType == gd::EventsFunction::Condition) {
-    // Use the new "scoped" way to declare an instruction, because
-    // we want to prevent any conflict between free functions and
-    // behaviors (that can totally have functions with the same name).
-    return behaviorMetadata.AddScopedCondition(
-      eventsFunction.GetName(),
-      eventsFunction.GetFullName() || eventsFunction.GetName(),
-      eventsFunction.GetDescription() || eventsFunction.GetFullName(),
-      eventsFunction.GetSentence(),
-      eventsFunction.GetGroup() ||
-        eventsBasedBehavior.GetFullName() ||
-        eventsBasedBehavior.GetName(),
-      GetExtensionIconUrl(extension),
-      GetExtensionIconUrl(extension)
+            
+    declareEventsFunctionParameters(
+      eventsBasedBehavior.GetEventsFunctions(),
+      eventsFunction,
+      action,
+      2
     );
+    return action;
+    }
   } else {
     // Use the new "scoped" way to declare an instruction, because
     // we want to prevent any conflict between free functions and
     // behaviors (that can totally have functions with the same name).
-    return behaviorMetadata.AddScopedAction(
+    auto& action = behaviorMetadata.AddScopedAction(
       eventsFunction.GetName(),
       eventsFunction.GetFullName() || eventsFunction.GetName(),
       eventsFunction.GetDescription() || eventsFunction.GetFullName(),
@@ -732,6 +931,14 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareBehaviorInstru
       GetExtensionIconUrl(extension),
       GetExtensionIconUrl(extension)
     );
+            
+    declareEventsFunctionParameters(
+      eventsBasedBehavior.GetEventsFunctions(),
+      eventsFunction,
+      action,
+      2
+    );
+    return action;
   }
 }
 
@@ -743,33 +950,56 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareObjectInstruct
   gd::PlatformExtension& extension,
   gd::ObjectMetadata& objectMetadata,
   const gd::EventsBasedObject& eventsBasedObject,
+  const gd::EventsFunction& eventsFunction,
+  std::unordered_map<gd::String, gd::String>& objectMethodMangledNames
+) {
+    auto& eventsFunctionMangledName = EventsCodeNameMangler::GetMangledName(eventsFunction.GetName());
+    objectMethodMangledNames[eventsFunction.GetName()] = eventsFunctionMangledName;
+
+    if (eventsFunction.IsExpression()) {
+    auto& expression = declareObjectExpressionMetadata(
+      extension,
+      objectMetadata,
+      eventsBasedObject,
+      eventsFunction
+    );
+
+    expression.SetFunctionName(eventsFunctionMangledName);
+
+    return expression;
+    }
+    else {
+      auto& instruction = declareObjectInstructionMetadata(
+      extension,
+      objectMetadata,
+      eventsBasedObject,
+      eventsFunction
+    );
+
+    if (eventsFunction.IsAsync()) {
+      instruction.SetAsyncFunctionName(eventsFunctionMangledName);
+    }
+    else {
+      instruction.SetFunctionName(eventsFunctionMangledName);
+    }
+
+    return instruction;
+    }
+}
+
+/**
+ * Declare the instruction (action/condition) or expression for the given
+ * object events function.
+ */
+gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareObjectExpressionMetadata(
+  gd::PlatformExtension& extension,
+  gd::ObjectMetadata& objectMetadata,
+  const gd::EventsBasedObject& eventsBasedObject,
   const gd::EventsFunction& eventsFunction
 ) {
   auto functionType = eventsFunction.GetFunctionType();
-  if (functionType == gd::EventsFunction::Expression) {
-    if (eventsFunction.GetExpressionType().IsNumber()) {
-      return objectMetadata.AddExpression(
-        eventsFunction.GetName(),
-        eventsFunction.GetFullName() || eventsFunction.GetName(),
-        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
-        eventsFunction.GetGroup() ||
-          eventsBasedObject.GetFullName() ||
-          eventsBasedObject.GetName(),
-        GetExtensionIconUrl(extension)
-      );
-    } else {
-      return objectMetadata.AddStrExpression(
-        eventsFunction.GetName(),
-        eventsFunction.GetFullName() || eventsFunction.GetName(),
-        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
-        eventsFunction.GetGroup() ||
-          eventsBasedObject.GetFullName() ||
-          eventsBasedObject.GetName(),
-        GetExtensionIconUrl(extension)
-      );
-    }
-  } else if (functionType == gd::EventsFunction::ExpressionAndCondition) {
-    return objectMetadata.AddExpressionAndCondition(
+  if (functionType == gd::EventsFunction::ExpressionAndCondition) {
+    auto& expressionAndCondition = objectMetadata.AddExpressionAndCondition(
       gd::ValueTypeMetadata::GetPrimitiveValueType(
         eventsFunction.GetExpressionType().GetName()
       ),
@@ -784,6 +1014,81 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareObjectInstruct
         eventsBasedObject.GetName(),
       GetExtensionIconUrl(extension)
     );
+    
+    declareEventsFunctionParameters(
+      eventsBasedObject.GetEventsFunctions(),
+      eventsFunction,
+      expressionAndCondition,
+      1
+    );
+    return expressionAndCondition;
+  }
+  else {
+    auto& expression = (eventsFunction.GetExpressionType().IsNumber()) ?
+      objectMetadata.AddExpression(
+        eventsFunction.GetName(),
+        eventsFunction.GetFullName() || eventsFunction.GetName(),
+        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
+        eventsFunction.GetGroup() ||
+          eventsBasedObject.GetFullName() ||
+          eventsBasedObject.GetName(),
+        GetExtensionIconUrl(extension)
+      )
+    :
+      objectMetadata.AddStrExpression(
+        eventsFunction.GetName(),
+        eventsFunction.GetFullName() || eventsFunction.GetName(),
+        eventsFunction.GetDescription() || eventsFunction.GetFullName(),
+        eventsFunction.GetGroup() ||
+          eventsBasedObject.GetFullName() ||
+          eventsBasedObject.GetName(),
+        GetExtensionIconUrl(extension)
+      );
+    
+    declareEventsFunctionParameters(
+      eventsBasedObject.GetEventsFunctions(),
+      eventsFunction,
+      expression,
+      1
+    );
+      return expression;
+  }
+}
+
+/**
+ * Declare the instruction (action/condition) or expression for the given
+ * object events function.
+ */
+gd::InstructionMetadata& MetadataDeclarationHelper::declareObjectInstructionMetadata(
+  gd::PlatformExtension& extension,
+  gd::ObjectMetadata& objectMetadata,
+  const gd::EventsBasedObject& eventsBasedObject,
+  const gd::EventsFunction& eventsFunction
+) {
+  auto functionType = eventsFunction.GetFunctionType();
+  if (functionType == gd::EventsFunction::Condition) {
+    // Use the new "scoped" way to declare an instruction, because
+    // we want to prevent any conflict between free functions and
+    // objects (that can totally have functions with the same name).
+    auto& condition = objectMetadata.AddScopedCondition(
+      eventsFunction.GetName(),
+      eventsFunction.GetFullName() || eventsFunction.GetName(),
+      eventsFunction.GetDescription() || eventsFunction.GetFullName(),
+      eventsFunction.GetSentence(),
+      eventsFunction.GetGroup() ||
+        eventsBasedObject.GetFullName() ||
+        eventsBasedObject.GetName(),
+      GetExtensionIconUrl(extension),
+      GetExtensionIconUrl(extension)
+    );
+    
+    declareEventsFunctionParameters(
+      eventsBasedObject.GetEventsFunctions(),
+      eventsFunction,
+      condition,
+      1
+    );
+    return condition;
   } else if (functionType == gd::EventsFunction::ActionWithOperator) {
     auto& eventsFunctionsContainer = eventsBasedObject.GetEventsFunctions();
     if (eventsFunctionsContainer.HasEventsFunctionNamed(
@@ -814,6 +1119,13 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareObjectInstruct
           )
         )
         .SetGetter(getterFunction.GetName());
+
+    declareEventsFunctionParameters(
+      eventsBasedObject.GetEventsFunctions(),
+      eventsFunction,
+      action,
+      1
+    );
       return action;
     }
     else {
@@ -828,28 +1140,20 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareObjectInstruct
       GetExtensionIconUrl(extension),
       GetExtensionIconUrl(extension)
     );
+        
+    declareEventsFunctionParameters(
+      eventsBasedObject.GetEventsFunctions(),
+      eventsFunction,
+      action,
+      1
+    );
       return action;
     }
-  } else if (functionType == gd::EventsFunction::Condition) {
-    // Use the new "scoped" way to declare an instruction, because
-    // we want to prevent any conflict between free functions and
-    // objects (that can totally have functions with the same name).
-    return objectMetadata.AddScopedCondition(
-      eventsFunction.GetName(),
-      eventsFunction.GetFullName() || eventsFunction.GetName(),
-      eventsFunction.GetDescription() || eventsFunction.GetFullName(),
-      eventsFunction.GetSentence(),
-      eventsFunction.GetGroup() ||
-        eventsBasedObject.GetFullName() ||
-        eventsBasedObject.GetName(),
-      GetExtensionIconUrl(extension),
-      GetExtensionIconUrl(extension)
-    );
   } else {
     // Use the new "scoped" way to declare an instruction, because
     // we want to prevent any conflict between free functions and
     // objects (that can totally have functions with the same name).
-    return objectMetadata.AddScopedAction(
+    auto& action = objectMetadata.AddScopedAction(
       eventsFunction.GetName(),
       eventsFunction.GetFullName() || eventsFunction.GetName(),
       eventsFunction.GetDescription() || eventsFunction.GetFullName(),
@@ -860,6 +1164,14 @@ gd::ParameterContainerMetadata& MetadataDeclarationHelper::declareObjectInstruct
       GetExtensionIconUrl(extension),
       GetExtensionIconUrl(extension)
     );
+
+    declareEventsFunctionParameters(
+      eventsBasedObject.GetEventsFunctions(),
+      eventsFunction,
+      action,
+      1
+    );
+    return action;
   }
 }
 
@@ -1348,21 +1660,21 @@ void MetadataDeclarationHelper::declareEventsFunctionParameters(
   multipleInstructionMetadata.AddCodeOnlyParameter("eventsFunctionContext", "");
 }
 
-const gd::String& GetExtensionCodeNamespacePrefix(
+const gd::String& MetadataDeclarationHelper::GetExtensionCodeNamespacePrefix(
   const gd::EventsFunctionsExtension eventsFunctionsExtension
 ) {
   return "gdjs.evtsExt__" + EventsCodeNameMangler::GetMangledName(eventsFunctionsExtension.GetName());
-};
+}
 
 /** Generate the namespace for a free function. */
-const gd::String& GetFreeFunctionCodeNamespace(
+const gd::String& MetadataDeclarationHelper::GetFreeFunctionCodeNamespace(
   const gd::EventsFunction& eventsFunction,
   const gd::String& codeNamespacePrefix
 ) {
   return codeNamespacePrefix + "__" + EventsCodeNameMangler::GetMangledName(eventsFunction.GetName());
-};
+}
 
-const gd::String& GetFreeFunctionCodeName(
+const gd::String& MetadataDeclarationHelper::GetFreeFunctionCodeName(
   const EventsFunctionsExtension& eventsFunctionsExtension,
   const EventsFunction& eventsFunction
 ) {
@@ -1372,5 +1684,139 @@ const gd::String& GetFreeFunctionCodeName(
       GetExtensionCodeNamespacePrefix(eventsFunctionsExtension)
     ) + ".func"
   );
+}
+
+/** Generate the namespace for a behavior function. */
+const gd::String& MetadataDeclarationHelper::GetBehaviorFunctionCodeNamespace(
+  const gd::EventsBasedBehavior& eventsBasedBehavior,
+  const gd::String& codeNamespacePrefix
+) {
+  return codeNamespacePrefix + "__" + EventsCodeNameMangler::GetMangledName(eventsBasedBehavior.GetName());
+}
+
+/** Generate the namespace for an object function. */
+const gd::String& MetadataDeclarationHelper::GetObjectFunctionCodeNamespace(
+  const gd::EventsBasedObject& eventsBasedObject,
+  const gd::String& codeNamespacePrefix
+) {
+  return codeNamespacePrefix + "__" + EventsCodeNameMangler::GetMangledName(eventsBasedObject.GetName());
+}
+
+ParameterContainerMetadata& MetadataDeclarationHelper::generateFreeFunctionMetadata(
+  const gd::Project& project,
+  gd::PlatformExtension& extension,
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsFunction& eventsFunction
+) {
+  auto& instructionOrExpression = declareInstructionOrExpressionMetadata(
+    extension,
+    eventsFunctionsExtension,
+    eventsFunction
+  );
+
+  // Hide "lifecycle" functions as they are called automatically by
+  // the game engine.
+  if (isExtensionLifecycleEventsFunction(eventsFunction.GetName()))
+    instructionOrExpression.SetHidden();
+
+  if (eventsFunction.IsPrivate()) instructionOrExpression.SetPrivate();
+
+  return instructionOrExpression;
 };
+
+gd::BehaviorMetadata& MetadataDeclarationHelper::generateBehaviorMetadata(
+  const gd::Project& project,
+  gd::PlatformExtension& extension,
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsBasedBehavior& eventsBasedBehavior,
+  std::unordered_map<gd::String, gd::String>& behaviorMethodMangledNames
+) {
+  auto& behaviorMetadata = declareBehaviorMetadata(
+    extension,
+    eventsBasedBehavior
+  );
+
+  auto& eventsFunctionsContainer = eventsBasedBehavior.GetEventsFunctions();
+
+  // Declare the instructions/expressions for properties
+  declareBehaviorPropertiesInstructionAndExpressions(
+    extension,
+    behaviorMetadata,
+    eventsBasedBehavior
+  );
+
+  // Declare all the behavior functions
+  for (size_t i = 0; i < eventsFunctionsContainer.GetEventsFunctionsCount(); i++) {
+    auto& eventsFunction = eventsFunctionsContainer.GetEventsFunction(i);
+
+    auto& instructionOrExpression = declareBehaviorInstructionOrExpressionMetadata(
+      extension,
+      behaviorMetadata,
+      eventsBasedBehavior,
+      eventsFunction,
+      behaviorMethodMangledNames
+    );
+
+    // Hide "lifecycle" methods as they are called automatically by
+    // the game engine.
+    if (isBehaviorLifecycleEventsFunction(eventsFunction.GetName())) {
+      instructionOrExpression.SetHidden();
+    }
+
+    if (eventsFunction.IsPrivate()) instructionOrExpression.SetPrivate();
+  }
+
+  return behaviorMetadata;
+}
+
+gd::ObjectMetadata& MetadataDeclarationHelper::generateObjectMetadata(
+  const gd::Project& project,
+  gd::PlatformExtension& extension,
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension,
+  const gd::EventsBasedObject& eventsBasedObject,
+  std::unordered_map<gd::String, gd::String>& objectMethodMangledNames
+) {
+  auto& objectMetadata = declareObjectMetadata(
+    extension,
+    eventsBasedObject
+  );
+
+  auto& eventsFunctionsContainer = eventsBasedObject.GetEventsFunctions();
+
+  // Declare the instructions/expressions for properties
+  declareObjectPropertiesInstructionAndExpressions(
+    extension,
+    objectMetadata,
+    eventsBasedObject
+  );
+  declareObjectInternalInstructions(
+    extension,
+    objectMetadata,
+    eventsBasedObject
+  );
+
+  // Declare all the object functions
+  for (size_t i = 0; i < eventsFunctionsContainer.GetEventsFunctionsCount(); i++) {
+    auto& eventsFunction = eventsFunctionsContainer.GetEventsFunction(i);
+
+    auto& instructionOrExpression = declareObjectInstructionOrExpressionMetadata(
+      extension,
+      objectMetadata,
+      eventsBasedObject,
+      eventsFunction,
+      objectMethodMangledNames
+    );
+
+    // Hide "lifecycle" methods as they are called automatically by
+    // the game engine.
+    if (isObjectLifecycleEventsFunction(eventsFunction.GetName())) {
+      instructionOrExpression.SetHidden();
+    }
+
+    if (eventsFunction.IsPrivate()) instructionOrExpression.SetPrivate();
+  }
+
+  return objectMetadata;
+}
+
 }  // namespace gd

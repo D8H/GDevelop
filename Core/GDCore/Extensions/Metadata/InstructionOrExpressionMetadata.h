@@ -123,7 +123,7 @@ class GD_CORE_API InstructionOrExpressionMetadata : public ParameterContainerMet
    *
    * Used mainly when an instruction is deprecated.
    */
-  virtual InstructionOrExpressionMetadata &SetHidden() = 0;
+  virtual InstructionOrExpressionMetadata &SetHidden() override = 0;
 
   /**
    * \brief Set the group of the instruction in the IDE.
@@ -235,7 +235,7 @@ class GD_CORE_API InstructionOrExpressionMetadata : public ParameterContainerMet
    * \note Shortcut for `codeExtraInformation.SetFunctionName`.
    */
   virtual InstructionOrExpressionMetadata& SetFunctionName(
-      const gd::String& functionName) = 0;
+      const gd::String& functionName) override = 0;
 
  private:
 };
