@@ -684,7 +684,7 @@ typedef ExtensionAndMetadata<ExpressionMetadata> ExtensionAndExpressionMetadata;
 #define STATIC_IsBehaviorLifecycleEventsFunction IsBehaviorLifecycleEventsFunction
 #define STATIC_IsObjectLifecycleEventsFunction IsObjectLifecycleEventsFunction
 #define STATIC_IsExtensionLifecycleEventsFunction IsExtensionLifecycleEventsFunction
-
+#define STATIC_ShiftSentenceParamIndexes ShiftSentenceParamIndexes
 
 #define STATIC_CopyAllResourcesTo CopyAllResourcesTo
 

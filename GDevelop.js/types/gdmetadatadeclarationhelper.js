@@ -8,6 +8,7 @@ declare class gdMetadataDeclarationHelper {
   static isBehaviorLifecycleEventsFunction(functionName: string): boolean;
   static isObjectLifecycleEventsFunction(functionName: string): boolean;
   static isExtensionLifecycleEventsFunction(functionName: string): boolean;
+  static shiftSentenceParamIndexes(sentence: string, offset: number): string;
   delete(): void;
   ptr: number;
 };

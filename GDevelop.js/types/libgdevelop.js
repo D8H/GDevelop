@@ -119,7 +119,6 @@ declare class libGDevelop {
   InstructionSentenceFormatter: Class<gdInstructionSentenceFormatter>;
   ParameterOptions: Class<gdParameterOptions>;
   AbstractFunctionMetadata: Class<gdAbstractFunctionMetadata>;
-  InstructionOrExpressionMetadata: Class<gdInstructionOrExpressionMetadata>;
   InstructionMetadata: Class<gdInstructionMetadata>;
   ExpressionMetadata: Class<gdExpressionMetadata>;
   MultipleInstructionMetadata: Class<gdMultipleInstructionMetadata>;

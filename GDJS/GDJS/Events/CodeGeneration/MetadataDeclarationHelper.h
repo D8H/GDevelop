@@ -22,7 +22,6 @@ class ObjectMetadata;
 class EventsFunction;
 class PropertyDescriptor;
 class EventsFunctionsContainer;
-class InstructionOrExpressionMetadata;
 class AbstractFunctionMetadata;
 class InstructionOrExpressionContainerMetadata;
 class AbstractEventsBasedEntity;
@@ -102,6 +101,11 @@ static bool IsObjectLifecycleEventsFunction(const gd::String& functionName);
  * that will be called automatically by the game engine.
  */
 static bool IsExtensionLifecycleEventsFunction(const gd::String& functionName);
+
+static gd::String ShiftSentenceParamIndexes(
+  const gd::String& sentence,
+  const int offset
+);
 
 private:
 
@@ -346,11 +350,6 @@ static gd::String GetObjectFunctionCodeNamespace(
 );
 
 static gd::String RemoveTrailingDot(const gd::String& description);
-
-static gd::String ShiftSentenceParamIndexes(
-  const gd::String& sentence,
-  const int offset
-);
 
 static gd::String GetStringifiedExtraInfo(const gd::PropertyDescriptor& property);
 
