@@ -35,12 +35,7 @@ namespace gd {
  */
 class GD_CORE_API AbstractFunctionMetadata {
  public:
-  /**
-   * Construct an empty InstructionMetadata.
-   * \warning Don't use this - only here to fullfil std::map requirements.
-   */
-  AbstractFunctionMetadata();
-
+  AbstractFunctionMetadata() {};
   virtual ~AbstractFunctionMetadata(){};
 
   /**
@@ -80,17 +75,31 @@ class GD_CORE_API AbstractFunctionMetadata {
    */
   virtual AbstractFunctionMetadata &SetHidden() = 0;
 
-//   /**
-//    * \see gd::InstructionMetadata::SetRequiresBaseObjectCapability
-//    */
-//   virtual AbstractFunctionMetadata &SetRequiresBaseObjectCapability(
-//       const gd::String &capability) = 0;
-
   /**
    * Set that the instruction is private - it can't be used outside of the
    * object/ behavior that it is attached too.
    */
   virtual AbstractFunctionMetadata &SetPrivate() = 0;
+
+  /**
+   * Set that the instruction can be used in layouts or external events.
+   */
+  virtual AbstractFunctionMetadata &SetRelevantForLayoutEventsOnly() = 0;
+
+  /**
+   * Set that the instruction can be used in function events.
+   */
+  virtual AbstractFunctionMetadata &SetRelevantForFunctionEventsOnly() = 0;
+
+  /**
+   * Set that the instruction can be used in asynchronous function events.
+   */
+  virtual AbstractFunctionMetadata &SetRelevantForAsynchronousFunctionEventsOnly() = 0;
+
+  /**
+   * Set that the instruction can be used in custom object events.
+   */
+  virtual AbstractFunctionMetadata &SetRelevantForCustomObjectEventsOnly() = 0;
 
   /**
    * \brief Set the function that should be called when generating the source
@@ -116,7 +125,8 @@ class GD_CORE_API AbstractFunctionMetadata {
   /**
    * \brief Get the files that must be included to use the instruction.
    */
-  virtual const std::vector<gd::String>& GetIncludeFiles() const = 0;
+  virtual const std::vector<gd::String>& GetIncludeFiles() const { throw std::logic_error("abstract function"); };
+
  private:
 };
 

@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "InstructionOrExpressionMetadata.h"
+#include "AbstractFunctionMetadata.h"
 
 #include <functional>
 #include <memory>
@@ -44,7 +44,7 @@ class ExpressionCodeGenerationInformation {
  *
  * \ingroup Events
  */
-class GD_CORE_API ExpressionMetadata : public gd::InstructionOrExpressionMetadata {
+class GD_CORE_API ExpressionMetadata : public gd::AbstractFunctionMetadata {
  public:
   /**
    * Construct a new expression metadata.
@@ -75,7 +75,7 @@ class GD_CORE_API ExpressionMetadata : public gd::InstructionOrExpressionMetadat
   /**
    * \brief Set the group of the instruction in the IDE.
    */
-  ExpressionMetadata& SetGroup(const gd::String& str) override {
+  ExpressionMetadata& SetGroup(const gd::String& str) {
     group = str;
     return *this;
   }
@@ -84,13 +84,13 @@ class GD_CORE_API ExpressionMetadata : public gd::InstructionOrExpressionMetadat
    * Get the help path of the expression, relative to the GDevelop documentation
    * root.
    */
-  const gd::String& GetHelpPath() const override { return helpPath; }
+  const gd::String& GetHelpPath() const { return helpPath; }
 
   /**
    * Set the help path of the expression, relative to the GDevelop documentation
    * root.
    */
-  ExpressionMetadata& SetHelpPath(const gd::String& path) override {
+  ExpressionMetadata& SetHelpPath(const gd::String& path) {
     helpPath = path;
     return *this;
   }
@@ -99,7 +99,7 @@ class GD_CORE_API ExpressionMetadata : public gd::InstructionOrExpressionMetadat
    * Check if the instruction is private - it can't be used outside of the
    * object/ behavior that it is attached too.
    */
-  bool IsPrivate() const override { return isPrivate; }
+  bool IsPrivate() const { return isPrivate; }
 
   /**
    * Set that the instruction is private - it can't be used outside of the
@@ -113,21 +113,21 @@ class GD_CORE_API ExpressionMetadata : public gd::InstructionOrExpressionMetadat
   /**
    * Check if the instruction can be used in layouts or external events.
    */
-  bool IsRelevantForLayoutEvents() const override {
+  bool IsRelevantForLayoutEvents() const {
     return relevantContext == "Any" || relevantContext == "Layout";
   }
 
   /**
    * Check if the instruction can be used in function events.
    */
-  bool IsRelevantForFunctionEvents() const override {
+  bool IsRelevantForFunctionEvents() const {
     return relevantContext == "Any" || relevantContext == "Function";
   }
 
   /**
    * Check if the instruction can be used in asynchronous function events.
    */
-  bool IsRelevantForAsynchronousFunctionEvents() const override {
+  bool IsRelevantForAsynchronousFunctionEvents() const {
     return relevantContext == "Any" || relevantContext == "Function" ||
            relevantContext == "AsynchronousFunction";
   }
@@ -135,7 +135,7 @@ class GD_CORE_API ExpressionMetadata : public gd::InstructionOrExpressionMetadat
   /**
    * Check if the instruction can be used in custom object events.
    */
-  bool IsRelevantForCustomObjectEvents() const override {
+  bool IsRelevantForCustomObjectEvents() const {
     return relevantContext == "Any" || relevantContext == "Object";
   }
 
@@ -231,30 +231,30 @@ class GD_CORE_API ExpressionMetadata : public gd::InstructionOrExpressionMetadat
    * the editor can hide the expression as it does not apply to them.
    */
   ExpressionMetadata& SetRequiresBaseObjectCapability(
-      const gd::String& capability) override;
+      const gd::String& capability);
 
   /**
    * \brief Get the required specified capability for this (object) expression,
    * or an empty string if there is nothing specific required.
    */
-  const gd::String& GetRequiredBaseObjectCapability() const override {
+  const gd::String& GetRequiredBaseObjectCapability() const {
     return requiredBaseObjectCapability;
   };
 
   bool IsShown() const { return shown; }
   const gd::String& GetReturnType() const { return returnType; }
-  const gd::String& GetFullName() const override { return fullname; }
-  const gd::String& GetDescription() const override { return description; }
-  const gd::String& GetGroup() const override { return group; }
-  const gd::String& GetSmallIconFilename() const override { return smallIconFilename; }
-  const gd::ParameterMetadata& GetParameter(std::size_t id) const override {
+  const gd::String& GetFullName() const { return fullname; }
+  const gd::String& GetDescription() const { return description; }
+  const gd::String& GetGroup() const { return group; }
+  const gd::String& GetSmallIconFilename() const { return smallIconFilename; }
+  const gd::ParameterMetadata& GetParameter(std::size_t id) const {
     return parameters[id];
   };
-  gd::ParameterMetadata& GetParameter(std::size_t id) override {
+  gd::ParameterMetadata& GetParameter(std::size_t id) {
     return parameters[id];
   };
-  std::size_t GetParametersCount() const override { return parameters.size(); };
-  const std::vector<gd::ParameterMetadata>& GetParameters() const override {
+  std::size_t GetParametersCount() const { return parameters.size(); };
+  const std::vector<gd::ParameterMetadata>& GetParameters() const {
     return parameters;
   };
 

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "InstructionOrExpressionMetadata.h"
+#include "AbstractFunctionMetadata.h"
 
 #include <algorithm>
 #include <functional>
@@ -35,7 +35,7 @@ namespace gd {
  *
  * \ingroup Events
  */
-class GD_CORE_API InstructionMetadata : public gd::InstructionOrExpressionMetadata {
+class GD_CORE_API InstructionMetadata : public gd::AbstractFunctionMetadata {
  public:
   /**
    * Construct a new instruction metadata.
@@ -57,33 +57,33 @@ class GD_CORE_API InstructionMetadata : public gd::InstructionOrExpressionMetada
 
   virtual ~InstructionMetadata(){};
 
-  const gd::String &GetFullName() const override { return fullname; }
-  const gd::String &GetDescription() const override { return description; }
+  const gd::String &GetFullName() const { return fullname; }
+  const gd::String &GetDescription() const { return description; }
   const gd::String &GetSentence() const { return sentence; }
-  const gd::String &GetGroup() const override { return group; }
-  ParameterMetadata &GetParameter(size_t i) override { return parameters[i]; }
-  const ParameterMetadata &GetParameter(size_t i) const override {
+  const gd::String &GetGroup() const { return group; }
+  ParameterMetadata &GetParameter(size_t i) { return parameters[i]; }
+  const ParameterMetadata &GetParameter(size_t i) const {
     return parameters[i];
   }
-  size_t GetParametersCount() const override { return parameters.size(); }
-  const std::vector<ParameterMetadata> &GetParameters() const override {
+  size_t GetParametersCount() const { return parameters.size(); }
+  const std::vector<ParameterMetadata> &GetParameters() const {
     return parameters;
   }
   const gd::String &GetIconFilename() const { return iconFilename; }
-  const gd::String &GetSmallIconFilename() const override { return smallIconFilename; }
+  const gd::String &GetSmallIconFilename() const { return smallIconFilename; }
   bool CanHaveSubInstructions() const { return canHaveSubInstructions; }
 
   /**
    * Get the help path of the instruction, relative to the GDevelop
    * documentation root.
    */
-  const gd::String &GetHelpPath() const override { return helpPath; }
+  const gd::String &GetHelpPath() const { return helpPath; }
 
   /**
    * Set the help path of the instruction, relative to the GDevelop
    * documentation root.
    */
-  InstructionMetadata &SetHelpPath(const gd::String &path) override {
+  InstructionMetadata &SetHelpPath(const gd::String &path) {
     helpPath = path;
     return *this;
   }
@@ -92,7 +92,7 @@ class GD_CORE_API InstructionMetadata : public gd::InstructionOrExpressionMetada
    * Check if the instruction is private - it can't be used outside of the
    * object/ behavior that it is attached too.
    */
-  bool IsPrivate() const override { return isPrivate; }
+  bool IsPrivate() const { return isPrivate; }
 
   /**
    * Set that the instruction is private - it can't be used outside of the
@@ -106,21 +106,21 @@ class GD_CORE_API InstructionMetadata : public gd::InstructionOrExpressionMetada
   /**
    * Check if the instruction can be used in layouts or external events.
    */
-  bool IsRelevantForLayoutEvents() const override {
+  bool IsRelevantForLayoutEvents() const {
     return relevantContext == "Any" || relevantContext == "Layout";
   }
 
   /**
    * Check if the instruction can be used in function events.
    */
-  bool IsRelevantForFunctionEvents() const override {
+  bool IsRelevantForFunctionEvents() const {
     return relevantContext == "Any" || relevantContext == "Function";
   }
 
   /**
    * Check if the instruction can be used in asynchronous function events.
    */
-  bool IsRelevantForAsynchronousFunctionEvents() const override {
+  bool IsRelevantForAsynchronousFunctionEvents() const {
     return relevantContext == "Any" || relevantContext == "Function" ||
            relevantContext == "AsynchronousFunction";
   }
@@ -128,7 +128,7 @@ class GD_CORE_API InstructionMetadata : public gd::InstructionOrExpressionMetada
   /**
    * Check if the instruction can be used in custom object events.
    */
-  bool IsRelevantForCustomObjectEvents() const override {
+  bool IsRelevantForCustomObjectEvents() const {
     return relevantContext == "Any" || relevantContext == "Object";
   }
 
@@ -202,7 +202,7 @@ class GD_CORE_API InstructionMetadata : public gd::InstructionOrExpressionMetada
   /**
    * \brief Set the group of the instruction in the IDE.
    */
-  InstructionMetadata &SetGroup(const gd::String &str) override {
+  InstructionMetadata &SetGroup(const gd::String &str) {
     group = str;
     return *this;
   }
@@ -340,13 +340,13 @@ class GD_CORE_API InstructionMetadata : public gd::InstructionOrExpressionMetada
    * instruction as it does not apply to them.
    */
   InstructionMetadata &SetRequiresBaseObjectCapability(
-      const gd::String &capability) override;
+      const gd::String &capability);
 
   /**
    * \brief Get the required specified capability for this (object) instruction,
    * or an empty string if there is nothing specific required.
    */
-  const gd::String &GetRequiredBaseObjectCapability() const override {
+  const gd::String &GetRequiredBaseObjectCapability() const {
     return requiredBaseObjectCapability;
   }
 

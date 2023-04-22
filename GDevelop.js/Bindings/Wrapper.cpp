@@ -18,7 +18,6 @@
 #include <GDCore/Extensions/Metadata/MetadataProvider.h>
 #include <GDCore/Extensions/Metadata/MultipleInstructionMetadata.h>
 #include <GDCore/Extensions/Metadata/AbstractFunctionMetadata.h>
-#include <GDCore/Extensions/Metadata/InstructionOrExpressionMetadata.h>
 #include <GDCore/Extensions/Metadata/ParameterOptions.h>
 #include <GDCore/Extensions/Metadata/ParameterMetadataTools.h>
 #include <GDCore/Extensions/Platform.h>

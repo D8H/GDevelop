@@ -219,6 +219,42 @@ class GD_CORE_API MultipleInstructionMetadata : public AbstractFunctionMetadata 
   }
 
   /**
+   * Set that the instruction can be used in layouts or external events.
+   */
+  MultipleInstructionMetadata &SetRelevantForLayoutEventsOnly() override {
+    if (condition) condition->SetRelevantForLayoutEventsOnly();
+    if (action) action->SetRelevantForLayoutEventsOnly();
+    return *this;
+  }
+
+  /**
+   * Set that the instruction can be used in function events.
+   */
+  MultipleInstructionMetadata &SetRelevantForFunctionEventsOnly() override {
+    if (condition) condition->SetRelevantForFunctionEventsOnly();
+    if (action) action->SetRelevantForFunctionEventsOnly();
+    return *this;
+  }
+
+  /**
+   * Set that the instruction can be used in asynchronous function events.
+   */
+  MultipleInstructionMetadata &SetRelevantForAsynchronousFunctionEventsOnly() override {
+    if (condition) condition->SetRelevantForAsynchronousFunctionEventsOnly();
+    if (action) action->SetRelevantForAsynchronousFunctionEventsOnly();
+    return *this;
+  }
+
+  /**
+   * Set that the instruction can be used in custom object events.
+   */
+  MultipleInstructionMetadata &SetRelevantForCustomObjectEventsOnly() override {
+    if (condition) condition->SetRelevantForCustomObjectEventsOnly();
+    if (action) action->SetRelevantForCustomObjectEventsOnly();
+    return *this;
+  }
+
+  /**
    * \brief Don't use, only here to fulfill Emscripten bindings requirements.
    */
   MultipleInstructionMetadata()
