@@ -3292,6 +3292,8 @@ interface JsCodeEvent {
 
 [Prefix="gdjs::"]
 interface MetadataDeclarationHelper {
+    void MetadataDeclarationHelper();
+    
     void STATIC_DeclareExtension(
         [Ref] PlatformExtension extension,
         [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension);
