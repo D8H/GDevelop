@@ -288,28 +288,36 @@ const generateEventsFunctionExtensionMetadata = (
   mapVector(
     eventsFunctionsExtension.getEventsBasedBehaviors(),
     eventsBasedBehavior => {
-      return generateBehaviorMetadata(
+      const behaviorMethodMangledNames = new gd.MapStringString();
+      generateBehaviorMetadata(
         project,
         extension,
         eventsFunctionsExtension,
         eventsBasedBehavior,
         options,
-        codeGenerationContext
+        codeGenerationContext,
+        behaviorMethodMangledNames
       );
+      behaviorMethodMangledNames.delete();
+      return;
     }
   );
   // Generate all objects and their functions
   mapVector(
     eventsFunctionsExtension.getEventsBasedObjects(),
     eventsBasedObject => {
-      return generateObjectMetadata(
+      const objectMethodMangledNames = new gd.MapStringString();
+      generateObjectMetadata(
         project,
         extension,
         eventsFunctionsExtension,
         eventsBasedObject,
         options,
-        codeGenerationContext
+        codeGenerationContext,
+        objectMethodMangledNames
       );
+      objectMethodMangledNames.delete();
+      return;
     }
   );
   // Generate all free functions
@@ -326,6 +334,7 @@ const generateEventsFunctionExtensionMetadata = (
       metadataDeclarationHelper
     );
   });
+  metadataDeclarationHelper.delete();
 
   return extension;
 };
@@ -337,12 +346,9 @@ const generateFreeFunction = (
   eventsFunction: gdEventsFunction,
   options: OptionsForGeneration,
   codeGenerationContext: CodeGenerationContext
-): Promise<{
-  functionFile: string,
-  functionMetadata: gdAbstractFunctionMetadata,
-}> => {
+): Promise<void> => {
   const metadataDeclarationHelper = new gd.MetadataDeclarationHelper();
-  const { functionFile, functionMetadata } = generateFreeFunctionMetadata(
+  const { functionMetadata } = generateFreeFunctionMetadata(
     project,
     extension,
     eventsFunctionsExtension,
@@ -384,24 +390,19 @@ const generateFreeFunction = (
 
     includeFiles.delete();
     eventsFunctionsExtensionCodeGenerator.delete();
+    metadataDeclarationHelper.delete();
 
     // TODO Implement an helper function for free function names.
     const functionName = codeNamespace + '.func';
     return options.eventsFunctionCodeWriter
       .writeFunctionCode(functionName, code)
-      .then(() => ({
-        functionFile: functionFile,
-        functionMetadata: functionMetadata,
-      }));
+      .then(() => {});
   } else {
     // Skip code generation if no events function writer is provided.
     // This is the case during the "first pass", where all events functions extensions
     // are loaded as extensions but not code generated, as events in functions could
     // themselves be using functions that are not yet available in extensions.
-    return Promise.resolve({
-      functionFile,
-      functionMetadata,
-    });
+    return Promise.resolve();
   }
 };
 
@@ -517,7 +518,7 @@ function generateBehaviorMetadata(
   eventsBasedBehavior: gdEventsBasedBehavior,
   options: Options,
   codeGenerationContext: CodeGenerationContext,
-  behaviorMethodMangledNames?: gdMapStringString
+  behaviorMethodMangledNames: gdMapStringString
 ): gdBehaviorMetadata {
   const behaviorMetadata = gd.MetadataDeclarationHelper.generateBehaviorMetadata(
     project,
@@ -619,7 +620,7 @@ function generateObjectMetadata(
   eventsBasedObject: gdEventsBasedObject,
   options: Options,
   codeGenerationContext: CodeGenerationContext,
-  objectMethodMangledNames?: gdMapStringString
+  objectMethodMangledNames: gdMapStringString
 ): gdObjectMetadata {
   const objectMetadata = gd.MetadataDeclarationHelper.generateObjectMetadata(
     project,

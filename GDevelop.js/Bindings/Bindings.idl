@@ -3298,32 +3298,35 @@ interface JsCodeEvent {
 
 [Prefix="gdjs::"]
 interface MetadataDeclarationHelper {
-  void STATIC_DeclareExtension(
-    [Ref] PlatformExtension extension,
-    [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension);
+    void STATIC_DeclareExtension(
+        [Ref] PlatformExtension extension,
+        [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension);
 
-[Ref] AbstractFunctionMetadata GenerateFreeFunctionMetadata(
-  [Const, Ref] Project project,
-  [Ref] PlatformExtension extension,
-  [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
-  [Const, Ref] EventsFunction eventsFunction);
+    [Ref] AbstractFunctionMetadata GenerateFreeFunctionMetadata(
+        [Const, Ref] Project project,
+        [Ref] PlatformExtension extension,
+        [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
+        [Const, Ref] EventsFunction eventsFunction);
 
-[Ref] BehaviorMetadata STATIC_GenerateBehaviorMetadata(
-  [Const, Ref] Project project,
-  [Ref] PlatformExtension extension,
-  [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
-  [Const, Ref] EventsBasedBehavior eventsBasedBehavior,
-  [Ref] MapStringString behaviorMethodMangledNames);
+    [Ref] BehaviorMetadata STATIC_GenerateBehaviorMetadata(
+        [Const, Ref] Project project,
+        [Ref] PlatformExtension extension,
+        [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
+        [Const, Ref] EventsBasedBehavior eventsBasedBehavior,
+        [Ref] MapStringString behaviorMethodMangledNames);
 
-[Ref] ObjectMetadata STATIC_GenerateObjectMetadata(
-  [Const, Ref] Project project,
-  [Ref] PlatformExtension extension,
-  [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
-  [Const, Ref] EventsBasedObject eventsBasedObject,
-  [Ref] MapStringString objectMethodMangledNames);
+    [Ref] ObjectMetadata STATIC_GenerateObjectMetadata(
+        [Const, Ref] Project project,
+        [Ref] PlatformExtension extension,
+        [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
+        [Const, Ref] EventsBasedObject eventsBasedObject,
+        [Ref] MapStringString objectMethodMangledNames);
 
-[Const, Value] DOMString STATIC_GetFreeFunctionCodeName(
-  [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
-  [Const, Ref] EventsFunction eventsFunction
-);
+    [Const, Value] DOMString STATIC_GetFreeFunctionCodeName(
+        [Const, Ref] EventsFunctionsExtension eventsFunctionsExtension,
+        [Const, Ref] EventsFunction eventsFunction);
+
+    boolean STATIC_IsBehaviorLifecycleEventsFunction([Const] DOMString functionName);
+    boolean STATIC_IsObjectLifecycleEventsFunction([Const] DOMString functionName);
+    boolean STATIC_IsExtensionLifecycleEventsFunction([Const] DOMString functionName);
 };

@@ -86,16 +86,6 @@ static void DeclareExtension(
 );
 
 /**
- * Declare the dependencies of an extension from an events based extension.
- */
-static void DeclareExtensionDependencies(
-  gd::PlatformExtension& extension,
-  const gd::EventsFunctionsExtension& eventsFunctionsExtension
-);
-
-static const gd::String& GetExtensionIconUrl(gd::PlatformExtension& extension);
-
-/**
  * Check if the name of the function is the name of a lifecycle function (for events-based behaviors),
  * that will be called automatically by the game engine.
  */
@@ -112,6 +102,18 @@ static bool IsObjectLifecycleEventsFunction(const gd::String& functionName);
  * that will be called automatically by the game engine.
  */
 static bool IsExtensionLifecycleEventsFunction(const gd::String& functionName);
+
+private:
+
+static const gd::String& GetExtensionIconUrl(gd::PlatformExtension& extension);
+
+/**
+ * Declare the dependencies of an extension from an events based extension.
+ */
+static void DeclareExtensionDependencies(
+  gd::PlatformExtension& extension,
+  const gd::EventsFunctionsExtension& eventsFunctionsExtension
+);
 
 static void DeclarePropertyInstructionAndExpression(
   gd::PlatformExtension& extension,
@@ -167,8 +169,6 @@ static void DeclareObjectInternalInstructions(
   gd::ObjectMetadata& objectMetadata,
   const gd::EventsBasedObject& eventsBasedObject
 );
-
-private:
 
   static const gd::String defaultExtensionIconPath;
 
