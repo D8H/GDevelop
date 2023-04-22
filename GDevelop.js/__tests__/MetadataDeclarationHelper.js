@@ -5,7 +5,6 @@ describe('MetadataDeclarationHelper.shiftSentenceParamIndexes', () => {
   beforeAll((done) =>
     initializeGDevelopJs().then((module) => {
       gd = module;
-      makeTestExtensions(gd);
       done();
     })
   );

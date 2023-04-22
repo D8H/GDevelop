@@ -15,6 +15,7 @@
 #include "GDJS/Events/CodeGeneration/BehaviorCodeGenerator.h"
 #include "GDJS/Events/CodeGeneration/ObjectCodeGenerator.h"
 #include "GDCore/Events/Tools/EventsCodeNameMangler.h"
+#include <regex>
 
 namespace gdjs {
 
@@ -671,46 +672,32 @@ gd::InstructionMetadata& MetadataDeclarationHelper::DeclareInstructionMetadata(
 }
 
 gd::String MetadataDeclarationHelper::ShiftSentenceParamIndexes(
-  const gd::String& sentence,
+  const gd::String& sentence_,
   const int offset
 ) {
-return sentence;
+  const std::string& sentence = sentence_.Raw();
+  const std::regex paramRegex("_PARAM(\\d+)_");
 
+  auto words_begin =
+      std::sregex_iterator(sentence.begin(), sentence.end(), paramRegex);
+  auto words_end = std::sregex_iterator();
 
+  if (words_begin == words_end) {
+    return sentence_;
+  }
+  gd::String shiftedSentence = "";
+  std::smatch paramMatch;
+  for (std::sregex_iterator i = words_begin; i != words_end; ++i)
+  {
+    paramMatch = *i;
 
+    shiftedSentence += gd::String::FromUTF8(paramMatch.prefix().str());
+    int parameterIndex = std::stoi(paramMatch[1]);
+    shiftedSentence += "_PARAM" + gd::String::From(parameterIndex + offset) + "_";
+  }
+  shiftedSentence += gd::String::FromUTF8(paramMatch.suffix().str());
 
-// TODO
-
-
-
-
-
-
-
-  // auto& parameterIndexesStrings = sentence.match(/_PARAM\d+_/g);
-  // if (!parameterIndexesStrings) {
-  //   return sentence;
-  // }
-  // auto& parameterIndexes = parameterIndexesStrings.map(indexString =>
-  //   Number.parseInt(
-  //     indexString.substring("_PARAM".length, indexString.length - "_".length)
-  //   )
-  // );
-  // auto& sentenceElements = sentence.split(/_PARAM\d+_/);
-  // gd::String shiftedSentence = "";
-  // for (size_t index = 0; index < parameterIndexes.length; index++) {
-  //   shiftedSentence +=
-  //     sentenceElements[index] +
-  //     "_PARAM" +
-  //     (parameterIndexes[index] + offset) +
-  //     "_";
-  // }
-  // auto& sentenceIsEndingWithAnElement =
-  //   sentenceElements.length > parameterIndexes.length;
-  // if (sentenceIsEndingWithAnElement) {
-  //   shiftedSentence += sentenceElements[sentenceElements.length - 1];
-  // }
-  // return shiftedSentence;
+  return shiftedSentence;
 }
 
 /**
