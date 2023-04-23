@@ -353,7 +353,8 @@ static gd::String RemoveTrailingDot(const gd::String& description);
 
 static gd::String GetStringifiedExtraInfo(const gd::PropertyDescriptor& property);
 
-static gd::String UncapitalizedFirstLetter(const gd::String& string);
+static gd::String CapitalizeFirstLetter(const gd::String& string);
+static gd::String UncapitalizeFirstLetter(const gd::String& string);
 
 
   std::vector<gd::MultipleInstructionMetadata> expressionAndConditions;

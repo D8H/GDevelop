@@ -125,7 +125,7 @@ class GD_CORE_API AbstractFunctionMetadata {
   /**
    * \brief Get the files that must be included to use the instruction.
    */
-  virtual const std::vector<gd::String>& GetIncludeFiles() const { throw std::logic_error("abstract function"); };
+  virtual const std::vector<gd::String>& GetIncludeFiles() const = 0;
 
  private:
 };

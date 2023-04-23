@@ -512,7 +512,7 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareExpressionMetada
       RemoveTrailingDot(eventsFunction.GetDescription()) ||
         eventsFunction.GetFullName(),
       // An operator and an operand are inserted before user parameters.
-      ShiftSentenceParamIndexes(eventsFunction.GetSentence(), 2),
+      ShiftSentenceParamIndexes(CapitalizeFirstLetter(eventsFunction.GetSentence()), 2),
       eventsFunction.GetGroup(),
       GetExtensionIconUrl(extension)
     );
@@ -766,7 +766,7 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareBehaviorExpressi
       RemoveTrailingDot(eventsFunction.GetDescription()) ||
         eventsFunction.GetFullName(),
       // An operator and an operand are inserted before user parameters.
-      ShiftSentenceParamIndexes(eventsFunction.GetSentence(), 2),
+      ShiftSentenceParamIndexes(CapitalizeFirstLetter(eventsFunction.GetSentence()), 2),
       eventsFunction.GetGroup() ||
         eventsBasedBehavior.GetFullName() ||
         eventsBasedBehavior.GetName(),
@@ -996,7 +996,7 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareObjectExpression
       RemoveTrailingDot(eventsFunction.GetDescription()) ||
         eventsFunction.GetFullName(),
       // An operator and an operand are inserted before user parameters.
-      ShiftSentenceParamIndexes(eventsFunction.GetSentence(), 2),
+      ShiftSentenceParamIndexes(CapitalizeFirstLetter(eventsFunction.GetSentence()), 2),
       eventsFunction.GetGroup() ||
         eventsBasedObject.GetFullName() ||
         eventsBasedObject.GetName(),
@@ -1178,10 +1178,16 @@ gd::String MetadataDeclarationHelper::GetStringifiedExtraInfo(const gd::Property
   return stringifiedExtraInfo;
 }
 
-gd::String MetadataDeclarationHelper::UncapitalizedFirstLetter(const gd::String& string) {
+gd::String MetadataDeclarationHelper::UncapitalizeFirstLetter(const gd::String& string) {
   return string.size() < 1
     ? string
     : string.substr(0, 1).LowerCase() + string.substr(1);
+}
+
+gd::String MetadataDeclarationHelper::CapitalizeFirstLetter(const gd::String& string) {
+  return string.size() < 1
+    ? string
+    : string.substr(0, 1).UpperCase() + string.substr(1);
 }
 
 void MetadataDeclarationHelper::DeclarePropertyInstructionAndExpression(
@@ -1204,7 +1210,7 @@ void MetadataDeclarationHelper::DeclarePropertyInstructionAndExpression(
 ) {
   auto& propertyType = property.GetType();
 
-  auto uncapitalizedLabel = UncapitalizedFirstLetter(
+  auto uncapitalizedLabel = UncapitalizeFirstLetter(
     property.GetLabel() || property.GetName()
   );
   if (propertyType == "Boolean") {
@@ -1515,7 +1521,7 @@ void MetadataDeclarationHelper::DeclareObjectInternalInstructions(
     .SetFunctionName("setRotationCenter");
 }
 
-void AddParameter(gd::AbstractFunctionMetadata& instructionOrExpression, const gd::ParameterMetadata& parameter) {
+void MetadataDeclarationHelper::AddParameter(gd::AbstractFunctionMetadata& instructionOrExpression, const gd::ParameterMetadata& parameter) {
   if (!parameter.IsCodeOnly()) {
     instructionOrExpression
       .AddParameter(

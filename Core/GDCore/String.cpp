@@ -691,11 +691,6 @@ const String& GD_CORE_API operator||(const String& lhs, const String &rhs)
     return lhs.empty() ? rhs : lhs;
 }
 
-// String GD_CORE_API operator||(String lhs, const String &rhs)
-// {
-//     return lhs.empty() ? rhs : lhs;
-// }
-
 String GD_CORE_API operator||(String lhs, const char *rhs)
 {
     return lhs.empty() ? rhs : lhs;
