@@ -447,7 +447,7 @@ bool MetadataDeclarationHelper::IsExtensionLifecycleEventsFunction(const gd::Str
 }
 
 gd::String MetadataDeclarationHelper::RemoveTrailingDot(const gd::String& description) {
-  return description[description.size()] == '.'
+  return description[description.length() - 1] == '.'
     ? description.substr(0, description.length() - 1)
     : description;
 }
@@ -525,7 +525,7 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareExpressionMetada
     0
   );
     expressionAndConditions.push_back(expressionAndCondition);
-    return *expressionAndConditions.end();
+    return expressionAndConditions.back();
   }
   else {
     auto& expression = eventsFunction.GetExpressionType().IsNumber() ?
@@ -779,7 +779,7 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareBehaviorExpressi
       2
     );
     expressionAndConditions.push_back(expressionAndCondition);
-    return *expressionAndConditions.end();
+    return expressionAndConditions.back();
   }
   else {
     auto& expression = (eventsFunction.GetExpressionType().IsNumber()) ?
@@ -1010,7 +1010,7 @@ gd::AbstractFunctionMetadata& MetadataDeclarationHelper::DeclareObjectExpression
       1
     );
     expressionAndConditions.push_back(expressionAndCondition);
-    return *expressionAndConditions.end();
+    return expressionAndConditions.back();
   }
   else {
     auto& expression = (eventsFunction.GetExpressionType().IsNumber()) ?
