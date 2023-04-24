@@ -1311,6 +1311,7 @@ interface InstructionMetadata {
     [Ref] InstructionMetadata AddIncludeFile([Const] DOMString includeFile);
     [Const, Ref] VectorString GetIncludeFiles();
 };
+InstructionMetadata implements AbstractFunctionMetadata;
 
 interface ExpressionMetadata {
     void ExpressionMetadata(
@@ -1366,6 +1367,7 @@ interface ExpressionMetadata {
     [Ref] ExpressionMetadata AddIncludeFile([Const] DOMString includeFile);
     [Const, Ref] VectorString GetIncludeFiles();
 };
+ExpressionMetadata implements AbstractFunctionMetadata;
 
 interface MultipleInstructionMetadata {
     [Ref] MultipleInstructionMetadata AddParameter([Const] DOMString type,
@@ -1394,7 +1396,7 @@ interface MultipleInstructionMetadata {
     [Ref] MultipleInstructionMetadata MarkAsComplex();
     [Ref] MultipleInstructionMetadata SetPrivate();
 };
-//MultipleInstructionMetadata implements AbstractFunctionMetadata;
+MultipleInstructionMetadata implements AbstractFunctionMetadata;
 
 interface DependencyMetadata {
     void DependencyMetadata();

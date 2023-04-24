@@ -22,7 +22,7 @@ class Layout;
 class EventsCodeGenerator;
 class EventsCodeGenerationContext;
 class SerializerElement;
-}  // namespace gd
+} // namespace gd
 
 namespace gd {
 
@@ -34,41 +34,42 @@ namespace gd {
  * \ingroup Events
  */
 class GD_CORE_API AbstractFunctionMetadata {
- public:
-  AbstractFunctionMetadata() {};
+public:
+  AbstractFunctionMetadata(){};
   virtual ~AbstractFunctionMetadata(){};
 
   /**
    * \see gd::InstructionMetadata::AddParameter
    */
-  virtual AbstractFunctionMetadata &AddParameter(
-      const gd::String &type,
-      const gd::String &label,
-      const gd::String &supplementaryInformation = "",
-      bool parameterIsOptional = false) = 0;
+  virtual AbstractFunctionMetadata &
+  AddParameter(const gd::String &type, const gd::String &label,
+               const gd::String &supplementaryInformation = "",
+               bool parameterIsOptional = false) = 0;
 
   /**
    * \see gd::InstructionMetadata::AddCodeOnlyParameter
    */
-  virtual AbstractFunctionMetadata &AddCodeOnlyParameter(
-      const gd::String &type, const gd::String &supplementaryInformation) = 0;
+  virtual AbstractFunctionMetadata &
+  AddCodeOnlyParameter(const gd::String &type,
+                       const gd::String &supplementaryInformation) = 0;
 
   /**
    * \see gd::InstructionMetadata::SetDefaultValue
    */
-  virtual AbstractFunctionMetadata &SetDefaultValue(const gd::String &defaultValue) = 0;
+  virtual AbstractFunctionMetadata &
+  SetDefaultValue(const gd::String &defaultValue) = 0;
 
   /**
    * \see gd::InstructionMetadata::SetParameterExtraInfo
    */
-  virtual AbstractFunctionMetadata &SetParameterExtraInfo(
-      const gd::String &defaultValue) = 0;
+  virtual AbstractFunctionMetadata &
+  SetParameterExtraInfo(const gd::String &defaultValue) = 0;
 
   /**
    * \see gd::InstructionMetadata::SetParameterLongDescription
    */
-  virtual AbstractFunctionMetadata &SetParameterLongDescription(
-      const gd::String &longDescription) = 0;
+  virtual AbstractFunctionMetadata &
+  SetParameterLongDescription(const gd::String &longDescription) = 0;
 
   /**
    * \see gd::InstructionMetadata::SetHidden
@@ -94,7 +95,8 @@ class GD_CORE_API AbstractFunctionMetadata {
   /**
    * Set that the instruction can be used in asynchronous function events.
    */
-  virtual AbstractFunctionMetadata &SetRelevantForAsynchronousFunctionEventsOnly() = 0;
+  virtual AbstractFunctionMetadata &
+  SetRelevantForAsynchronousFunctionEventsOnly() = 0;
 
   /**
    * Set that the instruction can be used in custom object events.
@@ -107,28 +109,27 @@ class GD_CORE_API AbstractFunctionMetadata {
    * \param functionName the name of the function to call
    * \note Shortcut for `codeExtraInformation.SetFunctionName`.
    */
-  virtual AbstractFunctionMetadata& SetFunctionName(
-      const gd::String& functionName) = 0;
+  virtual AbstractFunctionMetadata &
+  SetFunctionName(const gd::String &functionName) = 0;
 
   /**
    * \brief Erase any existing include file and add the specified include.
    */
-  virtual AbstractFunctionMetadata& SetIncludeFile(
-      const gd::String& includeFile) = 0;
+  virtual AbstractFunctionMetadata &
+  SetIncludeFile(const gd::String &includeFile) = 0;
 
   /**
    * \brief Add a file to the already existing include files.
    */
-  virtual AbstractFunctionMetadata& AddIncludeFile(
-      const gd::String& includeFile) = 0;
+  virtual AbstractFunctionMetadata &
+  AddIncludeFile(const gd::String &includeFile) = 0;
 
   /**
    * \brief Get the files that must be included to use the instruction.
    */
-  virtual const std::vector<gd::String>& GetIncludeFiles() const = 0;
+  virtual const std::vector<gd::String> &GetIncludeFiles() const = 0;
 
- private:
+private:
 };
 
-}  // namespace gd
-
+} // namespace gd

@@ -161,7 +161,9 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
     const isABehaviorLifecycleEventsFunction =
       !!eventsBasedBehavior &&
       !eventsBasedObject &&
-      gd.MetadataDeclarationHelper.isBehaviorLifecycleEventsFunction(eventsFunction.getName());
+      gd.MetadataDeclarationHelper.isBehaviorLifecycleEventsFunction(
+        eventsFunction.getName()
+      );
     if (isABehaviorLifecycleEventsFunction) {
       return (
         <EmptyMessage>
@@ -177,7 +179,9 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
     const isAnObjectLifecycleEventsFunction =
       !!eventsBasedObject &&
       !eventsBasedBehavior &&
-      gd.MetadataDeclarationHelper.isObjectLifecycleEventsFunction(eventsFunction.getName());
+      gd.MetadataDeclarationHelper.isObjectLifecycleEventsFunction(
+        eventsFunction.getName()
+      );
     if (isAnObjectLifecycleEventsFunction) {
       return (
         <EmptyMessage>
@@ -192,7 +196,9 @@ export default class EventsFunctionPropertiesEditor extends React.Component<
     const isAnExtensionLifecycleEventsFunction =
       !eventsBasedBehavior &&
       !eventsBasedObject &&
-      gd.MetadataDeclarationHelper.isExtensionLifecycleEventsFunction(eventsFunction.getName());
+      gd.MetadataDeclarationHelper.isExtensionLifecycleEventsFunction(
+        eventsFunction.getName()
+      );
     if (isAnExtensionLifecycleEventsFunction) {
       return (
         <Column noMargin>

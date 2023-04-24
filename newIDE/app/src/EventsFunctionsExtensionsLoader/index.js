@@ -186,7 +186,10 @@ const generateEventsFunctionExtension = (
   options: OptionsForGeneration
 ): Promise<gdPlatformExtension> => {
   const extension = new gd.PlatformExtension();
-  gd.MetadataDeclarationHelper.declareExtension(extension, eventsFunctionsExtension);
+  gd.MetadataDeclarationHelper.declareExtension(
+    extension,
+    eventsFunctionsExtension
+  );
 
   const codeNamespacePrefix =
     'gdjs.evtsExt__' + mangleName(eventsFunctionsExtension.getName());
@@ -268,7 +271,10 @@ const generateEventsFunctionExtensionMetadata = (
   options: Options
 ): gdPlatformExtension => {
   const extension = new gd.PlatformExtension();
-  gd.MetadataDeclarationHelper.declareExtension(extension, eventsFunctionsExtension);
+  gd.MetadataDeclarationHelper.declareExtension(
+    extension,
+    eventsFunctionsExtension
+  );
 
   const codeNamespacePrefix =
     'gdjs.evtsExt__' + mangleName(eventsFunctionsExtension.getName());
@@ -422,8 +428,12 @@ const generateFreeFunctionMetadata = (
     project,
     extension,
     eventsFunctionsExtension,
-    eventsFunction);
-  const functionName = gd.MetadataDeclarationHelper.getFreeFunctionCodeName(eventsFunctionsExtension, eventsFunction);
+    eventsFunction
+  );
+  const functionName = gd.MetadataDeclarationHelper.getFreeFunctionCodeName(
+    eventsFunctionsExtension,
+    eventsFunction
+  );
   const functionFile = options.eventsFunctionCodeWriter.getIncludeFileFor(
     functionName
   );
@@ -527,7 +537,7 @@ function generateBehaviorMetadata(
     eventsBasedBehavior,
     behaviorMethodMangledNames
   );
-  
+
   const codeNamespace = getBehaviorFunctionCodeNamespace(
     eventsBasedBehavior,
     codeGenerationContext.codeNamespacePrefix
@@ -627,7 +637,8 @@ function generateObjectMetadata(
     extension,
     eventsFunctionsExtension,
     eventsBasedObject,
-    objectMethodMangledNames);
+    objectMethodMangledNames
+  );
 
   const codeNamespace = getObjectFunctionCodeNamespace(
     eventsBasedObject,

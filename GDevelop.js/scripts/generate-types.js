@@ -296,24 +296,6 @@ type ParticleEmitterObject_RendererType = 0 | 1 | 2`
       'declare class gdGroupEvent extends gdBaseEvent {',
       'types/gdgroupevent.js'
     );
-    shell.sed(
-      '-i',
-      'declare class gdInstructionMetadata {',
-      'declare class gdInstructionMetadata extends gdAbstractFunctionMetadata {',
-      'types/gdinstructionmetadata.js'
-    );
-    shell.sed(
-      '-i',
-      'declare class gdExpressionMetadata {',
-      'declare class gdExpressionMetadata extends gdAbstractFunctionMetadata {',
-      'types/gdexpressionmetadata.js'
-    );
-    shell.sed(
-      '-i',
-      'declare class gdMultipleInstructionMetadata {',
-      'declare class gdMultipleInstructionMetadata extends gdAbstractFunctionMetadata {',
-      'types/gdmultipleinstructionmetadata.js'
-    );
     [
       'BaseEvent',
       'StandardEvent',

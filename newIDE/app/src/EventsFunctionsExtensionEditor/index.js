@@ -313,7 +313,9 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
       );
       return;
     }
-    if (gd.MetadataDeclarationHelper.isExtensionLifecycleEventsFunction(newName)) {
+    if (
+      gd.MetadataDeclarationHelper.isExtensionLifecycleEventsFunction(newName)
+    ) {
       showWarningBox(
         i18n._(
           t`This name is reserved for a lifecycle function of the extension. Choose another name for your function.`
@@ -352,7 +354,9 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
       );
       return done(false);
     }
-    if (gd.MetadataDeclarationHelper.isBehaviorLifecycleEventsFunction(newName)) {
+    if (
+      gd.MetadataDeclarationHelper.isBehaviorLifecycleEventsFunction(newName)
+    ) {
       showWarningBox(
         i18n._(
           t`This name is reserved for a lifecycle method of the behavior. Choose another name for your custom function.`

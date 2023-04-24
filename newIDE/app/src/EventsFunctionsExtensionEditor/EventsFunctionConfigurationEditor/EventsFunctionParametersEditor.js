@@ -223,7 +223,9 @@ export default class EventsFunctionParametersEditor extends React.Component<
 
     const isABehaviorLifecycleEventsFunction =
       !!eventsBasedBehavior &&
-      gd.MetadataDeclarationHelper.isBehaviorLifecycleEventsFunction(eventsFunction.getName());
+      gd.MetadataDeclarationHelper.isBehaviorLifecycleEventsFunction(
+        eventsFunction.getName()
+      );
     if (isABehaviorLifecycleEventsFunction) {
       return (
         <EmptyMessage>
@@ -237,7 +239,9 @@ export default class EventsFunctionParametersEditor extends React.Component<
     }
     const isAnExtensionLifecycleEventsFunction =
       !eventsBasedBehavior &&
-      gd.MetadataDeclarationHelper.isExtensionLifecycleEventsFunction(eventsFunction.getName());
+      gd.MetadataDeclarationHelper.isExtensionLifecycleEventsFunction(
+        eventsFunction.getName()
+      );
     if (isAnExtensionLifecycleEventsFunction) {
       return (
         <Column noMargin>
