@@ -46,6 +46,9 @@ class GD_CORE_API EventsCodeNameMangler {
   virtual ~EventsCodeNameMangler(){};
   static EventsCodeNameMangler *_singleton;
 
+  // This method is inlined to avoid to copy the returned string.
+  static inline gd::String GetMangledNameWithForbiddenUnderscore(const gd::String &name);
+
   std::unordered_map<gd::String, gd::String>
       mangledObjectNames;  ///< Memoized results of mangling for objects
   std::unordered_map<gd::String, gd::String>

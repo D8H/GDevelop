@@ -45,6 +45,39 @@ describe('MetadataDeclarationHelper', () => {
     project.delete();
   });
 
+  it('can create metadata for free actions with an underscore', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension(
+      'MyExtension',
+      0
+    );
+    const eventFunction = eventExtension.insertNewEventsFunction(
+      'My_Function',
+      0
+    );
+    eventFunction.setFunctionType(gd.EventsFunction.Action);
+
+    const metadataDeclarationHelper = new gd.MetadataDeclarationHelper();
+    metadataDeclarationHelper.generateFreeFunctionMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventFunction
+    );
+    metadataDeclarationHelper.delete();
+
+    expect(extension.getAllActions().has('My_Function')).toBe(true);
+    const action = extension.getAllActions().get('My_Function');
+    expect(action.getFunctionName()).toBe(
+      'gdjs.evtsExt__MyExtension__My_Function.func'
+    );
+
+    extension.delete();
+    project.delete();
+  });
+
   it('can create metadata for free conditions', () => {
     const extension = new gd.PlatformExtension();
     const project = new gd.Project();
@@ -501,6 +534,14 @@ describe('MetadataDeclarationHelper', () => {
     const eventBehavior = eventExtension
       .getEventsBasedBehaviors()
       .insertNew('MyBehavior', 0);
+
+    // Required behavior don't generate any instruction.
+    // It covers a mutant from "continue" to "return".
+    const requiredBehavior = eventBehavior
+      .getPropertyDescriptors()
+      .insertNew('RequiredBehavior', 0);
+    requiredBehavior.setType('Behavior');
+
     const property = eventBehavior
       .getPropertyDescriptors()
       .insertNew('Value', 0);
@@ -605,6 +646,14 @@ describe('MetadataDeclarationHelper', () => {
     const eventBehavior = eventExtension
       .getEventsBasedBehaviors()
       .insertNew('MyBehavior', 0);
+
+    // Required behaviors don't generate any instruction.
+    // It covers a mutant from "continue" to "return".
+    const requiredBehavior = eventBehavior
+      .getPropertyDescriptors()
+      .insertNew('RequiredBehavior', 0);
+    requiredBehavior.setType('Behavior');
+
     const property = eventBehavior
       .getPropertyDescriptors()
       .insertNew('Value', 0);

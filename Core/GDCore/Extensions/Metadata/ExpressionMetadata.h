@@ -271,6 +271,13 @@ class GD_CORE_API ExpressionMetadata : public gd::AbstractFunctionMetadata {
     return *this;
   }
 
+
+  /**
+   * \brief Return the name of the function which will be called in the generated code.
+   */
+  const gd::String &GetFunctionName() {
+    return codeExtraInformation.functionCallName;
+  }
   /**
    * \brief Set that the function is static
    */

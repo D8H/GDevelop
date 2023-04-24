@@ -31,6 +31,7 @@ declare class gdExpressionMetadata extends gdAbstractFunctionMetadata {
   getRequiredBaseObjectCapability(): string;
   getCodeExtraInformation(): gdExpressionMetadata;
   setFunctionName(functionName: string): gdExpressionMetadata;
+  getFunctionName(): string;
   setStatic(): gdExpressionMetadata;
   setIncludeFile(includeFile: string): gdExpressionMetadata;
   addIncludeFile(includeFile: string): gdExpressionMetadata;

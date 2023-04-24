@@ -1029,7 +1029,7 @@ void MetadataDeclarationHelper::
     auto &propertyType = property->GetType();
     if (propertyType == "Behavior") {
       // Required behaviors don't need accessors and mutators.
-      return;
+      continue;
     }
 
     auto &propertyName = property->GetName();

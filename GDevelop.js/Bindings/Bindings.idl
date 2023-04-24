@@ -1304,6 +1304,8 @@ interface InstructionMetadata {
     
     [Ref] InstructionMetadata SetFunctionName([Const] DOMString functionName_);
     [Ref] InstructionMetadata SetAsyncFunctionName([Const] DOMString functionName_);
+    [Const, Ref] DOMString GetFunctionName();
+    [Const, Ref] DOMString GetAsyncFunctionName();
     [Ref] InstructionMetadata SetManipulatedType([Const] DOMString type_);
     [Ref] InstructionMetadata SetGetter([Const] DOMString getter);
     [Ref] InstructionMetadata SetMutators([Const, Ref] MapStringString mutators);
@@ -1362,6 +1364,7 @@ interface ExpressionMetadata {
     [Ref] ExpressionMetadata GetCodeExtraInformation();
     
     [Ref] ExpressionMetadata SetFunctionName([Const] DOMString functionName);
+    [Const, Ref] DOMString GetFunctionName();
     [Ref] ExpressionMetadata SetStatic();
     [Ref] ExpressionMetadata SetIncludeFile([Const] DOMString includeFile);
     [Ref] ExpressionMetadata AddIncludeFile([Const] DOMString includeFile);

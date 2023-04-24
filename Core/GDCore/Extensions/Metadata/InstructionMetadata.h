@@ -429,6 +429,21 @@ class GD_CORE_API InstructionMetadata : public gd::AbstractFunctionMetadata {
     return *this;
   }
 
+  /**
+   * Return the name of the function which will be called in the generated code.
+   */
+  const gd::String &GetFunctionName() {
+    return codeExtraInformation.functionCallName;
+  }
+
+  /**
+   * Return the name of the function, doing asynchronous work, which will be
+   * called in the generated code. This function should return an asynchronous
+   * task (i.e: `gdjs.AsyncTask` in the JavaScript runtime).
+   */
+  const gd::String &GetAsyncFunctionName() {
+    return codeExtraInformation.asyncFunctionCallName;
+  }
 
 /**
  * \brief Declare if the instruction being declared is somewhat manipulating

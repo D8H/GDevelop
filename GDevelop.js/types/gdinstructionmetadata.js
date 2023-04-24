@@ -44,6 +44,8 @@ declare class gdInstructionMetadata extends gdAbstractFunctionMetadata {
   getCodeExtraInformation(): gdInstructionMetadata;
   setFunctionName(functionName_: string): gdInstructionMetadata;
   setAsyncFunctionName(functionName_: string): gdInstructionMetadata;
+  getFunctionName(): string;
+  getAsyncFunctionName(): string;
   setManipulatedType(type_: string): gdInstructionMetadata;
   setGetter(getter: string): gdInstructionMetadata;
   setMutators(mutators: gdMapStringString): gdInstructionMetadata;
