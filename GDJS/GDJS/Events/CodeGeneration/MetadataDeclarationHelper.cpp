@@ -1231,7 +1231,7 @@ void MetadataDeclarationHelper::DeclarePropertyInstructionAndExpression(
         actionName,
         propertyLabel,
         _("Update the property value for") + " \"" + uncapitalizedLabel + _("\"."),
-        _("Set property value for") + uncapitalizedLabel + " " + _("of _PARAM0_ to") + " _PARAM" + gd::String::From(valueParameterIndex) + "_",
+        _("Set property value for") + " " + uncapitalizedLabel + " " + _("of _PARAM0_ to") + " _PARAM" + gd::String::From(valueParameterIndex) + "_",
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension),
         GetExtensionIconUrl(extension)
@@ -1264,8 +1264,8 @@ void MetadataDeclarationHelper::DeclarePropertyInstructionAndExpression(
         gd::ValueTypeMetadata::ConvertPropertyTypeToValueType(propertyType),
         expressionName,
         propertyLabel,
-        _("the property value for the "),
-        _("the property value for the "),
+        _("the property value for the") + " " + uncapitalizedLabel,
+        _("the property value for the") + " " + uncapitalizedLabel,
         eventsBasedEntity.GetFullName() || eventsBasedEntity.GetName(),
         GetExtensionIconUrl(extension)
       );

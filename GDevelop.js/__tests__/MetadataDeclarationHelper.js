@@ -162,6 +162,15 @@ describe('MetadataDeclarationHelper', () => {
     project.delete();
   });
 
+  const checkBehaviorDefaultParameters = (instructionOrExpression) => {
+    expect(instructionOrExpression.getParameter(0).getType()).toBe("object");
+    expect(instructionOrExpression.getParameter(1).getType()).toBe("behavior");
+    expect(instructionOrExpression.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+    const last = instructionOrExpression.getParametersCount() - 1;
+    expect(instructionOrExpression.getParameter(last).getType()).toBe("eventsFunctionContext");
+    expect(instructionOrExpression.getParameter(last).isCodeOnly()).toBe(true);
+  }
+
   it('can create metadata for behavior actions', () => {
     const extension = new gd.PlatformExtension();
     const project = new gd.Project();
@@ -173,6 +182,10 @@ describe('MetadataDeclarationHelper', () => {
     eventFunction.setFullName("My function");
     eventFunction.setDescription("My function description.");
     eventFunction.setSentence("My function sentence");
+    gd.WholeProjectRefactorer.ensureBehaviorEventsFunctionsProperParameters(
+      eventExtension,
+      eventBehavior
+    );
 
     const behaviorMethodMangledNames = new gd.MapStringString();
     gd.MetadataDeclarationHelper.generateBehaviorMetadata(
@@ -186,11 +199,15 @@ describe('MetadataDeclarationHelper', () => {
     expect(extension.getBehaviorsTypes().size()).toBe(1);
     expect(extension.getBehaviorsTypes().at(0)).toBe("MyBehavior");
     const behaviorMetadata = extension.getBehaviorMetadata("MyBehavior");
+
     expect(behaviorMetadata.getAllActions().has("MyBehavior::MyFunction")).toBe(true);
     const action = behaviorMetadata.getAllActions().get("MyBehavior::MyFunction");
     expect(action.getFullName()).toBe("My function");
     expect(action.getDescription()).toBe("My function description.");
     expect(action.getSentence()).toBe("My function sentence");
+
+    expect(action.getParametersCount()).toBe(3);
+    checkBehaviorDefaultParameters(action);
 
     extension.delete();
     project.delete();
@@ -207,6 +224,10 @@ describe('MetadataDeclarationHelper', () => {
     eventFunction.setFullName("My function");
     eventFunction.setDescription("My function description.");
     eventFunction.setSentence("My function sentence");
+    gd.WholeProjectRefactorer.ensureBehaviorEventsFunctionsProperParameters(
+      eventExtension,
+      eventBehavior
+    );
 
     const behaviorMethodMangledNames = new gd.MapStringString();
     gd.MetadataDeclarationHelper.generateBehaviorMetadata(
@@ -220,11 +241,15 @@ describe('MetadataDeclarationHelper', () => {
     expect(extension.getBehaviorsTypes().size()).toBe(1);
     expect(extension.getBehaviorsTypes().at(0)).toBe("MyBehavior");
     const behaviorMetadata = extension.getBehaviorMetadata("MyBehavior");
+
     expect(behaviorMetadata.getAllConditions().has("MyBehavior::MyFunction")).toBe(true);
     const condition = behaviorMetadata.getAllConditions().get("MyBehavior::MyFunction");
     expect(condition.getFullName()).toBe("My function");
     expect(condition.getDescription()).toBe("My function description.");
     expect(condition.getSentence()).toBe("My function sentence");
+
+    expect(condition.getParametersCount()).toBe(3);
+    checkBehaviorDefaultParameters(condition);
 
     extension.delete();
     project.delete();
@@ -240,6 +265,10 @@ describe('MetadataDeclarationHelper', () => {
     eventFunction.setFunctionType(gd.EventsFunction.Expression);
     eventFunction.setFullName("My function");
     eventFunction.setDescription("My function description.");
+    gd.WholeProjectRefactorer.ensureBehaviorEventsFunctionsProperParameters(
+      eventExtension,
+      eventBehavior
+    );
 
     const behaviorMethodMangledNames = new gd.MapStringString();
     gd.MetadataDeclarationHelper.generateBehaviorMetadata(
@@ -253,10 +282,14 @@ describe('MetadataDeclarationHelper', () => {
     expect(extension.getBehaviorsTypes().size()).toBe(1);
     expect(extension.getBehaviorsTypes().at(0)).toBe("MyBehavior");
     const behaviorMetadata = extension.getBehaviorMetadata("MyBehavior");
+
     expect(behaviorMetadata.getAllExpressions().has("MyFunction")).toBe(true);
     const expression = behaviorMetadata.getAllExpressions().get("MyFunction");
     expect(expression.getFullName()).toBe("My function");
     expect(expression.getDescription()).toBe("My function description.");
+    
+    expect(expression.getParametersCount()).toBe(3);
+    checkBehaviorDefaultParameters(expression);
 
     extension.delete();
     project.delete();
@@ -295,12 +328,413 @@ describe('MetadataDeclarationHelper', () => {
     const expression = behaviorMetadata.getAllExpressions().get("Value");
     expect(expression.getFullName()).toBe("Some value");
     expect(expression.getDescription()).toBe("Return some value.");
+
+    expect(expression.getParametersCount()).toBe(3);
+    checkBehaviorDefaultParameters(expression);
     
     expect(behaviorMetadata.getAllConditions().has("MyBehavior::Value")).toBe(true);
     const condition = behaviorMetadata.getAllConditions().get("MyBehavior::Value");
     expect(condition.getFullName()).toBe("Some value");
     expect(condition.getDescription()).toBe("Compare some value.");
     expect(condition.getSentence()).toBe("Some value of _PARAM0_ _PARAM2_ _PARAM3_");
+
+    expect(condition.getParametersCount()).toBe(5);
+    checkBehaviorDefaultParameters(condition);
+    expect(condition.getParameter(2).getType()).toBe("relationalOperator");
+    expect(condition.getParameter(3).getType()).toBe("expression");
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for behavior ActionWithOperator', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventBehavior = eventExtension.getEventsBasedBehaviors().insertNew("MyBehavior", 0);
+
+    const getter = eventBehavior.getEventsFunctions().insertNewEventsFunction("Value", 0);
+    getter.setFunctionType(gd.EventsFunction.ExpressionAndCondition);
+    getter.setFullName("Some value");
+    getter.setDescription("some value.");
+    getter.setSentence("some value");
+
+    const eventFunction = eventBehavior.getEventsFunctions().insertNewEventsFunction("SetValue", 0);
+    eventFunction.setFunctionType(gd.EventsFunction.ActionWithOperator);
+    eventFunction.setGetterName("Value");
+
+    gd.WholeProjectRefactorer.ensureBehaviorEventsFunctionsProperParameters(
+      eventExtension,
+      eventBehavior
+    );
+
+    const behaviorMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateBehaviorMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventBehavior,
+      behaviorMethodMangledNames);
+    behaviorMethodMangledNames.delete();
+    
+    expect(extension.getBehaviorsTypes().size()).toBe(1);
+    expect(extension.getBehaviorsTypes().at(0)).toBe("MyBehavior");
+    const behaviorMetadata = extension.getBehaviorMetadata("MyBehavior");
+
+    expect(behaviorMetadata.getAllActions().has("MyBehavior::SetValue")).toBe(true);
+    const action = behaviorMetadata.getAllActions().get("MyBehavior::SetValue");
+    expect(action.getFullName()).toBe("Some value");
+    expect(action.getDescription()).toBe("Change some value.");
+    expect(action.getSentence()).toBe("Change some value of _PARAM0_: _PARAM2_ _PARAM3_");
+
+    expect(action.getParametersCount()).toBe(5);
+    checkBehaviorDefaultParameters(action);
+    expect(action.getParameter(2).getType()).toBe("operator");
+    expect(action.getParameter(3).getType()).toBe("expression");
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for behavior string property functions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventBehavior = eventExtension.getEventsBasedBehaviors().insertNew("MyBehavior", 0);
+    const property = eventBehavior.getPropertyDescriptors().insertNew("Value", 0);
+    property.setLabel("Some value");
+
+    const behaviorMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateBehaviorMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventBehavior,
+      behaviorMethodMangledNames);
+    behaviorMethodMangledNames.delete();
+    
+    expect(extension.getBehaviorsTypes().size()).toBe(1);
+    expect(extension.getBehaviorsTypes().at(0)).toBe("MyBehavior");
+    const behaviorMetadata = extension.getBehaviorMetadata("MyBehavior");
+
+    expect(behaviorMetadata.getAllActions().has("MyBehavior::SetPropertyValue")).toBe(true);
+    const action = behaviorMetadata.getAllActions().get("MyBehavior::SetPropertyValue");
+    expect(action.getFullName()).toBe("Some value property");
+    expect(action.getDescription()).toBe("Change the property value for the some value.");
+    expect(action.getSentence()).toBe("Change the property value for the some value of _PARAM0_: _PARAM2_ _PARAM3_");
+    expect(action.isHidden()).toBe(false);
+    expect(action.isPrivate()).toBe(true);
+
+    expect(action.getParametersCount()).toBe(4);
+    expect(action.getParameter(0).getType()).toBe("object");
+    expect(action.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(action.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(action.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+    expect(action.getParameter(2).getType()).toBe("operator");
+    expect(action.getParameter(3).getType()).toBe("string");
+
+    expect(behaviorMetadata.getAllConditions().has("MyBehavior::PropertyValue")).toBe(true);
+    const condition = behaviorMetadata.getAllConditions().get("MyBehavior::PropertyValue");
+    expect(condition.getFullName()).toBe("Some value property");
+    expect(condition.getDescription()).toBe("Compare the property value for the some value.");
+    // TODO Check why does it starts with a lower case.
+    expect(condition.getSentence()).toBe("the property value for the some value of _PARAM0_ _PARAM2_ _PARAM3_");
+    expect(condition.isHidden()).toBe(false);
+    expect(condition.isPrivate()).toBe(true);
+
+    expect(condition.getParametersCount()).toBe(4);
+    expect(condition.getParameter(0).getType()).toBe("object");
+    expect(condition.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(condition.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(condition.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+    expect(condition.getParameter(2).getType()).toBe("relationalOperator");
+    expect(condition.getParameter(3).getType()).toBe("string");
+
+    expect(behaviorMetadata.getAllStrExpressions().has("PropertyValue")).toBe(true);
+    const expression = behaviorMetadata.getAllStrExpressions().get("PropertyValue");
+    expect(expression.getFullName()).toBe("Some value property");
+    expect(expression.getDescription()).toBe("Return the property value for the some value.");
+    expect(expression.isPrivate()).toBe(true);
+
+    expect(expression.getParametersCount()).toBe(2);
+    expect(expression.getParameter(0).getType()).toBe("object");
+    expect(expression.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(expression.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(condition.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for behavior boolean property functions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventBehavior = eventExtension.getEventsBasedBehaviors().insertNew("MyBehavior", 0);
+    const property = eventBehavior.getPropertyDescriptors().insertNew("Value", 0);
+    property.setLabel("Some value");
+    property.setType("Boolean");
+
+    const behaviorMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateBehaviorMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventBehavior,
+      behaviorMethodMangledNames);
+    behaviorMethodMangledNames.delete();
+    
+    expect(extension.getBehaviorsTypes().size()).toBe(1);
+    expect(extension.getBehaviorsTypes().at(0)).toBe("MyBehavior");
+    const behaviorMetadata = extension.getBehaviorMetadata("MyBehavior");
+
+    expect(behaviorMetadata.getAllActions().has("MyBehavior::SetPropertyValue")).toBe(true);
+    const action = behaviorMetadata.getAllActions().get("MyBehavior::SetPropertyValue");
+    expect(action.getFullName()).toBe("Some value property");
+    expect(action.getDescription()).toBe("Update the property value for \"some value\".");
+    expect(action.getSentence()).toBe("Set property value for some value of _PARAM0_ to _PARAM2_");
+    expect(action.isHidden()).toBe(false);
+    expect(action.isPrivate()).toBe(true);
+
+    expect(action.getParametersCount()).toBe(3);
+    expect(action.getParameter(0).getType()).toBe("object");
+    expect(action.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(action.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(action.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+    expect(action.getParameter(2).getType()).toBe("yesorno");
+
+    expect(behaviorMetadata.getAllConditions().has("MyBehavior::PropertyValue")).toBe(true);
+    const condition = behaviorMetadata.getAllConditions().get("MyBehavior::PropertyValue");
+    expect(condition.getFullName()).toBe("Some value property");
+    expect(condition.getDescription()).toBe("Check the property value for some value.");
+    // TODO Check why does it starts with a lower case.
+    expect(condition.getSentence()).toBe("Property some value of _PARAM0_ is true");
+    expect(condition.isHidden()).toBe(false);
+    expect(condition.isPrivate()).toBe(true);
+
+    expect(condition.getParametersCount()).toBe(2);
+    expect(condition.getParameter(0).getType()).toBe("object");
+    expect(condition.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(condition.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(condition.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for behavior string shared property functions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventBehavior = eventExtension.getEventsBasedBehaviors().insertNew("MyBehavior", 0);
+    const property = eventBehavior.getSharedPropertyDescriptors().insertNew("Value", 0);
+    property.setLabel("Some value");
+
+    const behaviorMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateBehaviorMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventBehavior,
+      behaviorMethodMangledNames);
+    behaviorMethodMangledNames.delete();
+    
+    expect(extension.getBehaviorsTypes().size()).toBe(1);
+    expect(extension.getBehaviorsTypes().at(0)).toBe("MyBehavior");
+    const behaviorMetadata = extension.getBehaviorMetadata("MyBehavior");
+
+    expect(behaviorMetadata.getAllActions().has("MyBehavior::SetSharedPropertyValue")).toBe(true);
+    const action = behaviorMetadata.getAllActions().get("MyBehavior::SetSharedPropertyValue");
+    expect(action.getFullName()).toBe("Some value shared property");
+    expect(action.getDescription()).toBe("Change the property value for the some value.");
+    expect(action.getSentence()).toBe("Change the property value for the some value of _PARAM0_: _PARAM2_ _PARAM3_");
+    expect(action.isHidden()).toBe(false);
+    expect(action.isPrivate()).toBe(true);
+
+    expect(action.getParametersCount()).toBe(4);
+    expect(action.getParameter(0).getType()).toBe("object");
+    expect(action.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(action.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(action.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+    expect(action.getParameter(2).getType()).toBe("operator");
+    expect(action.getParameter(3).getType()).toBe("string");
+
+    expect(behaviorMetadata.getAllConditions().has("MyBehavior::SharedPropertyValue")).toBe(true);
+    const condition = behaviorMetadata.getAllConditions().get("MyBehavior::SharedPropertyValue");
+    expect(condition.getFullName()).toBe("Some value shared property");
+    expect(condition.getDescription()).toBe("Compare the property value for the some value.");
+    // TODO Check why does it starts with a lower case.
+    expect(condition.getSentence()).toBe("the property value for the some value of _PARAM0_ _PARAM2_ _PARAM3_");
+    expect(condition.isHidden()).toBe(false);
+    expect(condition.isPrivate()).toBe(true);
+
+    expect(condition.getParametersCount()).toBe(4);
+    expect(condition.getParameter(0).getType()).toBe("object");
+    expect(condition.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(condition.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(condition.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+    expect(condition.getParameter(2).getType()).toBe("relationalOperator");
+    expect(condition.getParameter(3).getType()).toBe("string");
+
+    expect(behaviorMetadata.getAllStrExpressions().has("SharedPropertyValue")).toBe(true);
+    const expression = behaviorMetadata.getAllStrExpressions().get("SharedPropertyValue");
+    expect(expression.getFullName()).toBe("Some value shared property");
+    expect(expression.getDescription()).toBe("Return the property value for the some value.");
+    expect(expression.isPrivate()).toBe(true);
+
+    expect(expression.getParametersCount()).toBe(2);
+    expect(expression.getParameter(0).getType()).toBe("object");
+    expect(expression.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(expression.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(condition.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for behavior boolean shared property functions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventBehavior = eventExtension.getEventsBasedBehaviors().insertNew("MyBehavior", 0);
+    const property = eventBehavior.getSharedPropertyDescriptors().insertNew("Value", 0);
+    property.setLabel("Some value");
+    property.setType("Boolean");
+
+    const behaviorMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateBehaviorMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventBehavior,
+      behaviorMethodMangledNames);
+    behaviorMethodMangledNames.delete();
+    
+    expect(extension.getBehaviorsTypes().size()).toBe(1);
+    expect(extension.getBehaviorsTypes().at(0)).toBe("MyBehavior");
+    const behaviorMetadata = extension.getBehaviorMetadata("MyBehavior");
+
+    expect(behaviorMetadata.getAllActions().has("MyBehavior::SetSharedPropertyValue")).toBe(true);
+    const action = behaviorMetadata.getAllActions().get("MyBehavior::SetSharedPropertyValue");
+    expect(action.getFullName()).toBe("Some value shared property");
+    expect(action.getDescription()).toBe("Update the property value for \"some value\".");
+    expect(action.getSentence()).toBe("Set property value for some value of _PARAM0_ to _PARAM2_");
+    expect(action.isHidden()).toBe(false);
+    expect(action.isPrivate()).toBe(true);
+
+    expect(action.getParametersCount()).toBe(3);
+    expect(action.getParameter(0).getType()).toBe("object");
+    expect(action.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(action.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(action.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+    expect(action.getParameter(2).getType()).toBe("yesorno");
+
+    expect(behaviorMetadata.getAllConditions().has("MyBehavior::SharedPropertyValue")).toBe(true);
+    const condition = behaviorMetadata.getAllConditions().get("MyBehavior::SharedPropertyValue");
+    expect(condition.getFullName()).toBe("Some value shared property");
+    expect(condition.getDescription()).toBe("Check the property value for some value.");
+    // TODO Check why does it starts with a lower case.
+    expect(condition.getSentence()).toBe("Property some value of _PARAM0_ is true");
+    expect(condition.isHidden()).toBe(false);
+    expect(condition.isPrivate()).toBe(true);
+
+    expect(condition.getParametersCount()).toBe(2);
+    expect(condition.getParameter(0).getType()).toBe("object");
+    expect(condition.getParameter(1).getType()).toBe("behavior");
+    // TODO Check if there is actually no extension prefix.
+    expect(condition.getParameter(1).getExtraInfo()).toBe("MyBehavior");
+    //expect(condition.getParameter(1).getExtraInfo()).toBe("MyExtension::MyBehavior");
+
+    extension.delete();
+    project.delete();
+  });
+
+  const checkObjectDefaultParameters = (instructionOrExpression) => {
+    expect(instructionOrExpression.getParameter(0).getType()).toBe("object");
+    const last = instructionOrExpression.getParametersCount() - 1;
+    expect(instructionOrExpression.getParameter(last).getType()).toBe("eventsFunctionContext");
+    expect(instructionOrExpression.getParameter(last).isCodeOnly()).toBe(true);
+  }
+
+  const expectArray = (actualValues) => ({ toContainAll: (expectedValues) => {
+    expectedValues.forEach(expectedValue => expect(actualValues).toContain(expectedValue));
+    // This expectation is inverted but it allows to get missing values.
+    actualValues.forEach(actualValue => expect(expectedValues).toContain(actualValue));
+  }});
+
+  it('can create metadata for object default instructions and expressions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventObject = eventExtension.getEventsBasedObjects().insertNew("MyObject", 0);
+
+    const objectMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateObjectMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventObject,
+      objectMethodMangledNames);
+    objectMethodMangledNames.delete();
+    
+    expect(extension.getExtensionObjectsTypes().size()).toBe(1);
+    expect(extension.getExtensionObjectsTypes().at(0)).toBe('MyObject');
+    const objectMetadata = extension.getObjectMetadata('MyObject');
+
+    expectArray(objectMetadata.getAllActions().keys().toJSArray()).toContainAll([
+      // Private
+      'MyObject::SetRotationCenter',
+      // Public
+      'MyObject::Width',
+      'Width',
+      'MyObject::Height',
+      'Height',
+      'MyObject::Scale',
+      'Scale',
+      'MyObject::SetScaleX',
+      'MyObject::SetScaleY',
+      'MyObject::FlipX',
+      'FlipX',
+      'MyObject::FlipY',
+      'FlipY',
+      'MyObject::SetOpacity',
+    ]);
+    expect(objectMetadata.getAllActions().get("MyObject::SetRotationCenter").isPrivate()).toBe(true);
+
+    expectArray(
+      objectMetadata.getAllConditions().keys().toJSArray()
+    ).toContainAll([
+      'MyObject::ScaleX',
+      'MyObject::ScaleY',
+      'MyObject::FlippedX',
+      'FlippedX',
+      'MyObject::FlippedY',
+      'FlippedY',
+      'MyObject::Opacity',
+    ]);
+
+    expectArray(
+      objectMetadata.getAllExpressions().keys().toJSArray()
+    ).toContainAll(['ScaleX', 'ScaleY', 'Opacity']);
+
+    expectArray(
+      objectMetadata.getAllStrExpressions().keys().toJSArray()
+    ).toContainAll([]);
 
     extension.delete();
     project.delete();
@@ -317,6 +751,10 @@ describe('MetadataDeclarationHelper', () => {
     eventFunction.setFullName("My function");
     eventFunction.setDescription("My function description.");
     eventFunction.setSentence("My function sentence");
+    gd.WholeProjectRefactorer.ensureObjectEventsFunctionsProperParameters(
+      eventExtension,
+      eventObject
+    );
 
     const objectMethodMangledNames = new gd.MapStringString();
     gd.MetadataDeclarationHelper.generateObjectMetadata(
@@ -330,11 +768,327 @@ describe('MetadataDeclarationHelper', () => {
     expect(extension.getExtensionObjectsTypes().size()).toBe(1);
     expect(extension.getExtensionObjectsTypes().at(0)).toBe("MyObject");
     const objectMetadata = extension.getObjectMetadata("MyObject");
+
     expect(objectMetadata.getAllActions().has("MyObject::MyFunction")).toBe(true);
     const action = objectMetadata.getAllActions().get("MyObject::MyFunction");
     expect(action.getFullName()).toBe("My function");
     expect(action.getDescription()).toBe("My function description.");
     expect(action.getSentence()).toBe("My function sentence");
+
+    expect(action.getParametersCount()).toBe(2);
+    checkObjectDefaultParameters(action);
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for object conditions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventObject = eventExtension.getEventsBasedObjects().insertNew("MyObject", 0);
+    const eventFunction = eventObject.getEventsFunctions().insertNewEventsFunction("MyFunction", 0);
+    eventFunction.setFunctionType(gd.EventsFunction.Condition);
+    eventFunction.setFullName("My function");
+    eventFunction.setDescription("My function description.");
+    eventFunction.setSentence("My function sentence");
+    gd.WholeProjectRefactorer.ensureObjectEventsFunctionsProperParameters(
+      eventExtension,
+      eventObject
+    );
+
+    const objectMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateObjectMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventObject,
+      objectMethodMangledNames);
+    objectMethodMangledNames.delete();
+    
+    expect(extension.getExtensionObjectsTypes().size()).toBe(1);
+    expect(extension.getExtensionObjectsTypes().at(0)).toBe("MyObject");
+    const objectMetadata = extension.getObjectMetadata("MyObject");
+
+    expect(objectMetadata.getAllConditions().has("MyObject::MyFunction")).toBe(true);
+    const condition = objectMetadata.getAllConditions().get("MyObject::MyFunction");
+    expect(condition.getFullName()).toBe("My function");
+    expect(condition.getDescription()).toBe("My function description.");
+    expect(condition.getSentence()).toBe("My function sentence");
+
+    expect(condition.getParametersCount()).toBe(2);
+    checkObjectDefaultParameters(condition);
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for object expressions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventObject = eventExtension.getEventsBasedObjects().insertNew("MyObject", 0);
+    const eventFunction = eventObject.getEventsFunctions().insertNewEventsFunction("MyFunction", 0);
+    eventFunction.setFunctionType(gd.EventsFunction.Expression);
+    eventFunction.setFullName("My function");
+    eventFunction.setDescription("My function description.");
+    gd.WholeProjectRefactorer.ensureObjectEventsFunctionsProperParameters(
+      eventExtension,
+      eventObject
+    );
+
+    const objectMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateObjectMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventObject,
+      objectMethodMangledNames);
+    objectMethodMangledNames.delete();
+    
+    expect(extension.getExtensionObjectsTypes().size()).toBe(1);
+    expect(extension.getExtensionObjectsTypes().at(0)).toBe("MyObject");
+    const objectMetadata = extension.getObjectMetadata("MyObject");
+
+    expect(objectMetadata.getAllExpressions().has("MyFunction")).toBe(true);
+    const expression = objectMetadata.getAllExpressions().get("MyFunction");
+    expect(expression.getFullName()).toBe("My function");
+    expect(expression.getDescription()).toBe("My function description.");
+    
+    expect(expression.getParametersCount()).toBe(2);
+    checkObjectDefaultParameters(expression);
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for object ExpressionAndConditions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventObject = eventExtension.getEventsBasedObjects().insertNew("MyObject", 0);
+    const eventFunction = eventObject.getEventsFunctions().insertNewEventsFunction("Value", 0);
+    eventFunction.setFunctionType(gd.EventsFunction.ExpressionAndCondition);
+    eventFunction.setFullName("Some value");
+    eventFunction.setDescription("some value.");
+    eventFunction.setSentence("some value");
+    gd.WholeProjectRefactorer.ensureObjectEventsFunctionsProperParameters(
+      eventExtension,
+      eventObject
+    );
+
+    const objectMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateObjectMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventObject,
+      objectMethodMangledNames);
+    objectMethodMangledNames.delete();
+    
+    expect(extension.getExtensionObjectsTypes().size()).toBe(1);
+    expect(extension.getExtensionObjectsTypes().at(0)).toBe("MyObject");
+    const objectMetadata = extension.getObjectMetadata("MyObject");
+
+    expect(objectMetadata.getAllExpressions().has("Value")).toBe(true);
+    const expression = objectMetadata.getAllExpressions().get("Value");
+    expect(expression.getFullName()).toBe("Some value");
+    expect(expression.getDescription()).toBe("Return some value.");
+
+    expect(expression.getParametersCount()).toBe(2);
+    checkObjectDefaultParameters(expression);
+    
+    expect(objectMetadata.getAllConditions().has("MyObject::Value")).toBe(true);
+    const condition = objectMetadata.getAllConditions().get("MyObject::Value");
+    expect(condition.getFullName()).toBe("Some value");
+    expect(condition.getDescription()).toBe("Compare some value.");
+    expect(condition.getSentence()).toBe("Some value of _PARAM0_ _PARAM1_ _PARAM2_");
+
+    expect(condition.getParametersCount()).toBe(4);
+    checkObjectDefaultParameters(condition);
+    expect(condition.getParameter(1).getType()).toBe("relationalOperator");
+    expect(condition.getParameter(2).getType()).toBe("expression");
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for object ActionWithOperator', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventObject = eventExtension.getEventsBasedObjects().insertNew("MyObject", 0);
+
+    const getter = eventObject.getEventsFunctions().insertNewEventsFunction("Value", 0);
+    getter.setFunctionType(gd.EventsFunction.ExpressionAndCondition);
+    getter.setFullName("Some value");
+    getter.setDescription("some value.");
+    getter.setSentence("some value");
+
+    const eventFunction = eventObject.getEventsFunctions().insertNewEventsFunction("SetValue", 0);
+    eventFunction.setFunctionType(gd.EventsFunction.ActionWithOperator);
+    eventFunction.setGetterName("Value");
+
+    gd.WholeProjectRefactorer.ensureObjectEventsFunctionsProperParameters(
+      eventExtension,
+      eventObject
+    );
+
+    const objectMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateObjectMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventObject,
+      objectMethodMangledNames);
+    objectMethodMangledNames.delete();
+    
+    expect(extension.getExtensionObjectsTypes().size()).toBe(1);
+    expect(extension.getExtensionObjectsTypes().at(0)).toBe("MyObject");
+    const objectMetadata = extension.getObjectMetadata("MyObject");
+
+    expect(objectMetadata.getAllActions().has("MyObject::SetValue")).toBe(true);
+    const action = objectMetadata.getAllActions().get("MyObject::SetValue");
+    expect(action.getFullName()).toBe("Some value");
+    expect(action.getDescription()).toBe("Change some value.");
+    expect(action.getSentence()).toBe("Change some value of _PARAM0_: _PARAM1_ _PARAM2_");
+
+    expect(action.getParametersCount()).toBe(4);
+    checkObjectDefaultParameters(action);
+    expect(action.getParameter(1).getType()).toBe("operator");
+    expect(action.getParameter(2).getType()).toBe("expression");
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for object string property functions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventObject = eventExtension.getEventsBasedObjects().insertNew("MyObject", 0);
+    const property = eventObject.getPropertyDescriptors().insertNew("Value", 0);
+    property.setLabel("Some value");
+
+    const objectMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateObjectMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventObject,
+      objectMethodMangledNames);
+    objectMethodMangledNames.delete();
+    
+    expect(extension.getExtensionObjectsTypes().size()).toBe(1);
+    expect(extension.getExtensionObjectsTypes().at(0)).toBe("MyObject");
+    const objectMetadata = extension.getObjectMetadata("MyObject");
+
+    expect(objectMetadata.getAllActions().has("MyObject::SetPropertyValue")).toBe(true);
+    const action = objectMetadata.getAllActions().get("MyObject::SetPropertyValue");
+    expect(action.getFullName()).toBe("Some value property");
+    expect(action.getDescription()).toBe("Change the property value for the some value.");
+    expect(action.getSentence()).toBe("Change the property value for the some value of _PARAM0_: _PARAM1_ _PARAM2_");
+    expect(action.isHidden()).toBe(false);
+    expect(action.isPrivate()).toBe(true);
+
+    expect(action.getParametersCount()).toBe(3);
+    expect(action.getParameter(0).getType()).toBe("object");
+    // TODO Check if there is actually no extension prefix.
+    expect(action.getParameter(0).getExtraInfo()).toBe("MyObject");
+    //expect(action.getParameter(0).getExtraInfo()).toBe("MyExtension::MyObject");
+    expect(action.getParameter(1).getType()).toBe("operator");
+    expect(action.getParameter(2).getType()).toBe("string");
+
+    expect(objectMetadata.getAllConditions().has("MyObject::PropertyValue")).toBe(true);
+    const condition = objectMetadata.getAllConditions().get("MyObject::PropertyValue");
+    expect(condition.getFullName()).toBe("Some value property");
+    expect(condition.getDescription()).toBe("Compare the property value for the some value.");
+    // TODO Check why does it starts with a lower case.
+    expect(condition.getSentence()).toBe("the property value for the some value of _PARAM0_ _PARAM1_ _PARAM2_");
+    expect(condition.isHidden()).toBe(false);
+    expect(condition.isPrivate()).toBe(true);
+
+    expect(condition.getParametersCount()).toBe(3);
+    expect(condition.getParameter(0).getType()).toBe("object");
+    // TODO Check if there is actually no extension prefix.
+    expect(condition.getParameter(0).getExtraInfo()).toBe("MyObject");
+    //expect(condition.getParameter(1).getExtraInfo()).toBe("MyExtension::MyObject");
+    expect(condition.getParameter(1).getType()).toBe("relationalOperator");
+    expect(condition.getParameter(2).getType()).toBe("string");
+
+    expect(objectMetadata.getAllStrExpressions().has("PropertyValue")).toBe(true);
+    const expression = objectMetadata.getAllStrExpressions().get("PropertyValue");
+    expect(expression.getFullName()).toBe("Some value property");
+    expect(expression.getDescription()).toBe("Return the property value for the some value.");
+    expect(expression.isPrivate()).toBe(true);
+
+    expect(expression.getParametersCount()).toBe(1);
+    expect(expression.getParameter(0).getType()).toBe("object");
+    // TODO Check if there is actually no extension prefix.
+    expect(expression.getParameter(0).getExtraInfo()).toBe("MyObject");
+    //expect(condition.getParameter(0).getExtraInfo()).toBe("MyExtension::MyObject");
+
+    extension.delete();
+    project.delete();
+  });
+
+  it('can create metadata for object boolean property functions', () => {
+    const extension = new gd.PlatformExtension();
+    const project = new gd.Project();
+
+    const eventExtension = project.insertNewEventsFunctionsExtension("MyExtension", 0);
+    const eventObject = eventExtension.getEventsBasedObjects().insertNew("MyObject", 0);
+    const property = eventObject.getPropertyDescriptors().insertNew("Value", 0);
+    property.setLabel("Some value");
+    property.setType("Boolean");
+
+    const objectMethodMangledNames = new gd.MapStringString();
+    gd.MetadataDeclarationHelper.generateObjectMetadata(
+      project,
+      extension,
+      eventExtension,
+      eventObject,
+      objectMethodMangledNames);
+    objectMethodMangledNames.delete();
+    
+    expect(extension.getExtensionObjectsTypes().size()).toBe(1);
+    expect(extension.getExtensionObjectsTypes().at(0)).toBe("MyObject");
+    const objectMetadata = extension.getObjectMetadata("MyObject");
+
+    expect(objectMetadata.getAllActions().has("MyObject::SetPropertyValue")).toBe(true);
+    const action = objectMetadata.getAllActions().get("MyObject::SetPropertyValue");
+    expect(action.getFullName()).toBe("Some value property");
+    expect(action.getDescription()).toBe("Update the property value for \"some value\".");
+    expect(action.getSentence()).toBe("Set property value for some value of _PARAM0_ to _PARAM1_");
+    expect(action.isHidden()).toBe(false);
+    expect(action.isPrivate()).toBe(true);
+
+    expect(action.getParametersCount()).toBe(2);
+    expect(action.getParameter(0).getType()).toBe("object");
+    // TODO Check if there is actually no extension prefix.
+    expect(action.getParameter(0).getExtraInfo()).toBe("MyObject");
+    //expect(action.getParameter(0).getExtraInfo()).toBe("MyExtension::MyObject");
+    expect(action.getParameter(1).getType()).toBe("yesorno");
+
+    expect(objectMetadata.getAllConditions().has("MyObject::PropertyValue")).toBe(true);
+    const condition = objectMetadata.getAllConditions().get("MyObject::PropertyValue");
+    expect(condition.getFullName()).toBe("Some value property");
+    expect(condition.getDescription()).toBe("Check the property value for some value.");
+    // TODO Check why does it starts with a lower case.
+    expect(condition.getSentence()).toBe("Property some value of _PARAM0_ is true");
+    expect(condition.isHidden()).toBe(false);
+    expect(condition.isPrivate()).toBe(true);
+
+    expect(condition.getParametersCount()).toBe(1);
+    expect(condition.getParameter(0).getType()).toBe("object");
+    // TODO Check if there is actually no extension prefix.
+    expect(condition.getParameter(0).getExtraInfo()).toBe("MyObject");
+    //expect(condition.getParameter(0).getExtraInfo()).toBe("MyExtension::MyObject");
 
     extension.delete();
     project.delete();
