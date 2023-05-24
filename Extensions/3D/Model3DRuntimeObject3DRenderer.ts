@@ -125,20 +125,19 @@ namespace gdjs {
     _updateMaterials() {
       const originalModelMesh = this._originalModel.scene;
       const modelObject3D = THREE_ADDONS.SkeletonUtils.clone(originalModelMesh);
-      
+
       this.get3DRendererObject().remove(this._threeObject);
       this.get3DRendererObject().add(modelObject3D);
-      
+
       this._threeObject = modelObject3D;
       this._animationMixer = new THREE.AnimationMixer(modelObject3D);
-      const animationName = this._model3DRuntimeObject.getAnimationName();
-      if (animationName) {
-        this.playAnimation(animationName);
-        if (this._model3DRuntimeObject.isAnimationPaused()) {
-          this.pauseAnimation();
-        }
+      const isAnimationPaused = this._model3DRuntimeObject.isAnimationPaused();
+      this._model3DRuntimeObject.setAnimationIndex(
+        this._model3DRuntimeObject.getAnimationIndex()
+      );
+      if (isAnimationPaused) {
+        this.pauseAnimation();
       }
-
       this._replaceMaterials();
     }
 
@@ -242,7 +241,7 @@ namespace gdjs {
       }
       this._action.paused = false;
     }
-    
+
     playAnimation(animationName: string) {
       this._animationMixer.stopAllAction();
       const clip = THREE.AnimationClip.findByName(
