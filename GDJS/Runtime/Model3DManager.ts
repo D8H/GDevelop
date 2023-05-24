@@ -40,15 +40,17 @@ namespace gdjs {
       if (typeof THREE !== 'undefined') {
         this._loader = new THREE_ADDONS.GLTFLoader();
 
-			  /**
+        /**
          * The invalid model is a box with magenta (#ff00ff) faces, to be
          * easily spotted if rendered on screen.
          */
         const group = new THREE.Group();
-        group.add(new THREE.Mesh(
-			    new THREE.BoxGeometry(1, 1, 1),
-          new THREE.MeshBasicMaterial({ color: '#ff00ff' })
-        ));
+        group.add(
+          new THREE.Mesh(
+            new THREE.BoxGeometry(1, 1, 1),
+            new THREE.MeshBasicMaterial({ color: '#ff00ff' })
+          )
+        );
         this._invalidModel = {
           scene: group,
           animations: [],
