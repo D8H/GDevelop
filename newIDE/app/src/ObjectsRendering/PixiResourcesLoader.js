@@ -281,21 +281,22 @@ export default class PixiResourcesLoader {
    */
   static _replaceMaterials(object3D: THREE.Object3D) {
     object3D.traverse(node => {
-      if (node.type === 'Mesh') {
-        const mesh: THREE.Mesh = node;
-        const basicMaterial = new THREE.MeshBasicMaterial();
-        //@ts-ignore
-        if (mesh.material.color) {
-          //@ts-ignore
-          basicMaterial.color = mesh.material.color;
-        }
-        //@ts-ignore
-        if (mesh.material.map) {
-          //@ts-ignore
-          basicMaterial.map = mesh.material.map;
-        }
-        mesh.material = basicMaterial;
+      if (!node.material) {
+        return;
       }
+      const mesh: THREE.Mesh = node;
+      let material = mesh.material;
+      if (Array.isArray(material)) {
+        material = material[0];
+      }
+      const basicMaterial = new THREE.MeshBasicMaterial();
+      if (mesh.material.color) {
+        basicMaterial.color = material.color;
+      }
+      if (mesh.material.map) {
+        basicMaterial.map = material.map;
+      }
+      mesh.material = basicMaterial;
     });
   }
 
