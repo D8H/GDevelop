@@ -1,4 +1,6 @@
 namespace gdjs {
+  type FloatPoint3D = [float, float, float];
+
   class Model3DRuntimeObject3DRenderer extends gdjs.RuntimeObject3DRenderer {
     private _model3DRuntimeObject: gdjs.Model3DRuntimeObject;
     /**
@@ -8,6 +10,8 @@ namespace gdjs {
     private _originalModel: THREE_ADDONS.GLTF;
     private _animationMixer: THREE.AnimationMixer;
     private _action: THREE.AnimationAction | null;
+
+    private _modelOriginPoint: FloatPoint3D = [0, 0, 0];
 
     constructor(
       runtimeObject: gdjs.Model3DRuntimeObject,
@@ -42,7 +46,29 @@ namespace gdjs {
       this._animationMixer.update(timeDelta);
     }
 
-    _updateDefaultTransformation(
+    updatePosition() {
+      const originPoint = this.getOriginPoint();
+      const centerPoint = this.getCenterPoint();
+      this.get3DRendererObject().position.set(
+        this._object.getX() -
+          this._object.getWidth() * (originPoint[0] - centerPoint[0]),
+        this._object.getY() -
+          this._object.getHeight() * (originPoint[1] - centerPoint[1]),
+        this._object.getZ() -
+          this._object.getDepth() * (originPoint[2] - centerPoint[2])
+      );
+    }
+
+    getOriginPoint() {
+      return this._model3DRuntimeObject._originPoint || this._modelOriginPoint;
+    }
+
+    getCenterPoint() {
+      return this._model3DRuntimeObject._centerPoint || this._modelOriginPoint;
+    }
+
+    private _updateDefaultTransformation(
+      threeObject: THREE.Object3D,
       rotationX: float,
       rotationY: float,
       rotationZ: float,
@@ -53,36 +79,49 @@ namespace gdjs {
     ) {
       const boundingBox = this._getModelAABB(rotationX, rotationY, rotationZ);
 
+      const modelWidth = boundingBox.max.x - boundingBox.min.x;
+      const modelHeight = boundingBox.max.y - boundingBox.min.y;
+      const modelDepth = boundingBox.max.z - boundingBox.min.z;
+      this._modelOriginPoint[0] = -boundingBox.min.x / modelWidth;
+      this._modelOriginPoint[1] = -boundingBox.min.y / modelHeight;
+      this._modelOriginPoint[2] = -boundingBox.min.z / modelDepth;
+
       // Center the model.
-      this._threeObject.position.set(
-        -(boundingBox.min.x + boundingBox.max.x) / 2,
-        (this._threeObject.position.y =
-          -(boundingBox.min.y + boundingBox.max.y) / 2),
-        (this._threeObject.position.z =
-          -(boundingBox.min.z + boundingBox.max.z) / 2)
-      );
+      const centerPoint = this._model3DRuntimeObject._centerPoint;
+      if (centerPoint) {
+        threeObject.position.set(
+          -(
+            boundingBox.min.x +
+            (boundingBox.max.x - boundingBox.min.x) * centerPoint[0]
+          ),
+          -(
+            boundingBox.min.y +
+            (boundingBox.max.y - boundingBox.min.y) * centerPoint[1]
+          ),
+          -(
+            boundingBox.min.z +
+            (boundingBox.max.z - boundingBox.min.z) * centerPoint[2]
+          )
+        );
+      }
 
       // Rotate the model.
-      this._threeObject.scale.set(1, 1, 1);
-      this._threeObject.rotation.set(
+      threeObject.scale.set(1, 1, 1);
+      threeObject.rotation.set(
         gdjs.toRad(rotationX),
         gdjs.toRad(rotationY),
         gdjs.toRad(rotationZ)
       );
 
       // Stretch the model in a 1x1x1 cube.
-      const modelWidth = boundingBox.max.x - boundingBox.min.x;
-      const modelHeight = boundingBox.max.y - boundingBox.min.y;
-      const modelDepth = boundingBox.max.z - boundingBox.min.z;
-
       const scaleX = 1 / modelWidth;
       const scaleY = 1 / modelHeight;
       const scaleZ = 1 / modelDepth;
 
       const scaleMatrix = new THREE.Matrix4();
       scaleMatrix.makeScale(scaleX, scaleY, scaleZ);
-      this._threeObject.updateMatrix();
-      this._threeObject.applyMatrix4(scaleMatrix);
+      threeObject.updateMatrix();
+      threeObject.applyMatrix4(scaleMatrix);
 
       if (keepAspectRatio) {
         // Reduce the object dimensions to keep aspect ratio.
@@ -96,7 +135,7 @@ namespace gdjs {
         this._object._setOriginalDepth(scaleRatio * modelDepth);
       }
 
-      this._threeObject.updateMatrix();
+      threeObject.updateMatrix();
     }
 
     private _getModelAABB(
@@ -122,15 +161,41 @@ namespace gdjs {
       return aabb;
     }
 
-    _updateMaterials() {
+    _updateModel(
+      rotationX: float,
+      rotationY: float,
+      rotationZ: float,
+      originalWidth: float,
+      originalHeight: float,
+      originalDepth: float,
+      keepAspectRatio: boolean
+    ) {
+      // Start from the original model because:
+      // - _replaceMaterials is destructive
+      // - _updateDefaultTransformation may need to work with meshes in local space
       const originalModelMesh = this._originalModel.scene;
-      const modelObject3D = THREE_ADDONS.SkeletonUtils.clone(originalModelMesh);
+      const threeObject = THREE_ADDONS.SkeletonUtils.clone(originalModelMesh);
 
+      this._replaceMaterials(threeObject);
+
+      this._updateDefaultTransformation(
+        threeObject,
+        rotationX,
+        rotationY,
+        rotationZ,
+        originalWidth,
+        originalHeight,
+        originalDepth,
+        keepAspectRatio
+      );
+
+      // Replace the 3D object.
       this.get3DRendererObject().remove(this._threeObject);
-      this.get3DRendererObject().add(modelObject3D);
+      this.get3DRendererObject().add(threeObject);
+      this._threeObject = threeObject;
 
-      this._threeObject = modelObject3D;
-      this._animationMixer = new THREE.AnimationMixer(modelObject3D);
+      // Start the current animation on the new 3D object.
+      this._animationMixer = new THREE.AnimationMixer(threeObject);
       const isAnimationPaused = this._model3DRuntimeObject.isAnimationPaused();
       this._model3DRuntimeObject.setAnimationIndex(
         this._model3DRuntimeObject.getAnimationIndex()
@@ -138,18 +203,17 @@ namespace gdjs {
       if (isAnimationPaused) {
         this.pauseAnimation();
       }
-      this._replaceMaterials();
     }
 
     /**
      * Replace materials to better work with lights (or no light).
      */
-    _replaceMaterials() {
+    private _replaceMaterials(threeObject: THREE.Object3D) {
       if (
         this._model3DRuntimeObject._materialType ===
         gdjs.Model3DRuntimeObject.MaterialType.StandardWithoutMetalness
       ) {
-        this._threeObject.traverse((node) => {
+        threeObject.traverse((node) => {
           const mesh = node as THREE.Mesh;
           if (!mesh.material) {
             return;
@@ -174,7 +238,7 @@ namespace gdjs {
         this._model3DRuntimeObject._materialType ===
         gdjs.Model3DRuntimeObject.MaterialType.Basic
       ) {
-        this._threeObject.traverse((node) => {
+        threeObject.traverse((node) => {
           const mesh = node as THREE.Mesh;
           if (!mesh.material) {
             return;
@@ -255,7 +319,10 @@ namespace gdjs {
         return;
       }
       this._action = this._animationMixer.clipAction(clip);
-      this._action.setLoop(shouldLoop ? THREE.LoopRepeat : THREE.LoopOnce, Number.POSITIVE_INFINITY);
+      this._action.setLoop(
+        shouldLoop ? THREE.LoopRepeat : THREE.LoopOnce,
+        Number.POSITIVE_INFINITY
+      );
       this._action.clampWhenFinished = true;
       this._action.play();
     }
