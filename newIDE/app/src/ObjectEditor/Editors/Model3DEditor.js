@@ -202,19 +202,13 @@ const styles = {
 };
 
 type AnimationProps = {|
-  animation: gdAnimation,
+  animation: gdModel3DAnimation,
   id: number,
   project: gdProject,
   resourceManagementProps: ResourceManagementProps,
   onRemove: () => void,
   resourcesLoader: typeof ResourcesLoader,
-  onSpriteContextMenu: (x: number, y: number, sprite: gdSprite) => void,
-  selectedSprites: {
-    [number]: boolean,
-  },
-  onSelectSprite: (sprite: gdSprite, selected: boolean) => void,
   onChangeName: string => void,
-  onSpriteUpdated: () => void,
 |};
 
 const Animation = ({
@@ -224,11 +218,7 @@ const Animation = ({
   onRemove,
   resourceManagementProps,
   resourcesLoader,
-  onSpriteContextMenu,
-  selectedSprites,
-  onSelectSprite,
   onChangeName,
-  onSpriteUpdated,
 }: AnimationProps) => {
   const forceUpdate = useForceUpdate();
 
@@ -262,7 +252,6 @@ const Animation = ({
             floatingLabelFixed
             floatingLabelText={<Trans>BLG animation name</Trans>}
             onChange={value => {
-              console.log(value);
               animation.setSource(value);
               forceUpdate();
             }}
@@ -286,10 +275,6 @@ const SortableAnimationsList = SortableContainer(
     resourcesLoader,
     resourceManagementProps,
     extraBottomTools,
-    onSpriteContextMenu,
-    selectedSprites,
-    onSelectSprite,
-    onSpriteUpdated,
   }) => {
     // TODO Fix drag and drop
 
@@ -309,10 +294,6 @@ const SortableAnimationsList = SortableContainer(
           resourceManagementProps={resourceManagementProps}
           onRemove={() => onRemoveAnimation(i)}
           onChangeName={newName => onChangeAnimationName(i, newName)}
-          onSpriteContextMenu={onSpriteContextMenu}
-          selectedSprites={selectedSprites}
-          onSelectSprite={onSelectSprite}
-          onSpriteUpdated={onSpriteUpdated}
         />
       );
     });
@@ -342,12 +323,6 @@ const AnimationsListContainer = ({
   onObjectUpdated,
   addAnimation,
 }: AnimationsListContainerProps) => {
-  const [selectedSprites, setSelectedSprites] = React.useState<{
-    [number]: boolean,
-  }>({});
-
-  const spriteContextMenu = React.useRef<?ContextMenuInterface>(null);
-
   const forceUpdate = useForceUpdate();
 
   const onSortEnd = React.useCallback(
@@ -419,26 +394,6 @@ const AnimationsListContainer = ({
     [forceUpdate, layout, object, onObjectUpdated, project, objectConfiguration]
   );
 
-  const selectSprite = React.useCallback(
-    (sprite, selected) => {
-      setSelectedSprites({
-        ...selectedSprites,
-        [sprite.ptr]: selected,
-      });
-    },
-    [selectedSprites]
-  );
-
-  const openSpriteContextMenu = React.useCallback(
-    (x, y, sprite, index) => {
-      selectSprite(sprite, true);
-      if (spriteContextMenu.current) {
-        spriteContextMenu.current.open(x, y);
-      }
-    },
-    [selectSprite]
-  );
-
   return (
     <Column noMargin expand useFullHeight>
       {objectConfiguration.getAnimationsCount() === 0 ? (
@@ -461,9 +416,6 @@ const AnimationsListContainer = ({
             onSortEnd={onSortEnd}
             onChangeAnimationName={changeAnimationName}
             onRemoveAnimation={removeAnimation}
-            onSpriteContextMenu={openSpriteContextMenu}
-            selectedSprites={selectedSprites}
-            onSelectSprite={selectSprite}
             resourcesLoader={resourcesLoader}
             resourceManagementProps={resourceManagementProps}
             useDragHandle
@@ -488,8 +440,6 @@ const Model3DEditor = ({
 }: EditorProps) => {
   const forceUpdate = useForceUpdate();
   const model3DConfiguration = gd.asModel3DConfiguration(objectConfiguration);
-  console.log(objectConfiguration);
-  console.log(model3DConfiguration);
   const properties = objectConfiguration.getProperties();
 
   const scrollView = React.useRef<?ScrollViewInterface>(null);
