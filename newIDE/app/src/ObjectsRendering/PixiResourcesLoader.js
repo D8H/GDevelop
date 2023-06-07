@@ -317,7 +317,6 @@ export default class PixiResourcesLoader {
       loader.load(
         url,
         gltf => {
-          gltf.scene.rotation.order = 'ZYX';
           traverseToSetBasicMaterialFromMeshes(gltf.scene);
           loaded3DModels[resourceName] = gltf;
           resolve(gltf);
