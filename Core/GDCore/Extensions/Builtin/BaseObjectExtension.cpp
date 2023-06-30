@@ -1819,7 +1819,7 @@ void GD_CORE_API BuiltinExtensionsImplementer::ImplementsBaseObjectExtension(
     obj
       .AddExpressionAndConditionAndAction(
         "number",
-        "Animation",
+        "AnimationIndex",
         _("Animation (by number)"),
         _(
           "the number of the animation played by the object (the number from the animations list)"
@@ -1833,26 +1833,35 @@ void GD_CORE_API BuiltinExtensionsImplementer::ImplementsBaseObjectExtension(
       .SetRequiresBaseObjectCapability("animable")
       .MarkAsSimple();
 
-    // TODO There is a conflict with the SetAnimationName from Sprite.
-    obj
-      .AddExpressionAndConditionAndAction(
-        "string",
-        "AnimationName",
-        _("Animation (by name)"),
-        _("the animation played by the object"),
-        _("the animation"),
-        _("Animations and images"),
-        "res/actions/animation24.png"
-      )
+  obj.AddAction("SetAnimationName",
+                _("Animation (by name)"),
+                _("Change the animation played by the object, using the name of the "
+                  "animation."),
+                _("Change the animation of _PARAM0_ to _PARAM1_"),
+                _("Animations and images"),
+                "res/actions/animation24.png",
+                "res/actions/animation.png")
       .AddParameter("object", _("Object"), "&animable")
-      .UseStandardParameters(
-        "objectAnimationName",
-        gd::ParameterOptions::MakeNewOptions().SetDescription(
-          _("Animation name")
-        )
-      )
-      .SetRequiresBaseObjectCapability("animable")
+      .AddParameter("objectAnimationName", _("Animation name"))
       .MarkAsAdvanced();
+
+  obj.AddCondition("AnimationName",
+                   _("Animation (by name)"),
+                   _("Check the animation played by the object."),
+                   _("The animation of _PARAM0_ is _PARAM1_"),
+                   _("Animations and images"),
+                   "res/conditions/animation24.png",
+                   "res/conditions/animation.png")
+      .AddParameter("object", _("Object"), "&animable")
+      .AddParameter("objectAnimationName", _("Animation name"))
+      .MarkAsAdvanced();
+
+  obj.AddExpression("AnimationName",
+                    _("Animation (by name)"),
+                    _("the name of animation played by the object"),
+                    _("Animations and images"),
+                    "res/actions/animation.png")
+      .AddParameter("object", _("Object"), "&animable");
 
     obj
       .AddAction(
@@ -1870,7 +1879,7 @@ void GD_CORE_API BuiltinExtensionsImplementer::ImplementsBaseObjectExtension(
 
     obj
       .AddAction(
-        "ResumeAnimation",
+        "PlayAnimation",
         _("Resume the animation"),
         _("Resume the animation of the object"),
         _("Resume the animation of _PARAM0_"),
