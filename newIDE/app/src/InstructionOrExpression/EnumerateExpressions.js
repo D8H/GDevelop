@@ -25,14 +25,54 @@ const enumerateExpressionMetadataMap = (
 
     if (
       scope.objectMetadata &&
-      scope.objectMetadata.isUnsupportedBaseObjectCapability(
+      !scope.objectMetadata.isSupportedBaseObjectCapability(
         exprMetadata.getRequiredBaseObjectCapability()
       )
     )
       return null; // Skip expressions not supported by the object.
 
-    var parameters = [];
-    for (var i = 0; i < exprMetadata.getParametersCount(); i++) {
+    let parameters = [];
+    for (let i = 0; i < exprMetadata.getParametersCount(); i++) {
+      if (scope.objectMetadata && i === 0) continue;
+      if (scope.behaviorMetadata && i <= 1) continue; //Skip object and behavior parameters
+      if (exprMetadata.getParameter(i).isCodeOnly()) continue;
+
+      parameters.push(exprMetadata.getParameter(i));
+    }
+
+    const groupName = exprMetadata.getGroup();
+
+    return {
+      type: expressionType,
+      name: expressionType,
+      displayedName: exprMetadata.getFullName(),
+      fullGroupName: [prefix, groupName].filter(Boolean).join(GROUP_DELIMITER),
+      iconFilename: exprMetadata.getSmallIconFilename(),
+      metadata: exprMetadata,
+      parameters: parameters,
+      scope,
+      isPrivate: exprMetadata.isPrivate(),
+      isRelevantForLayoutEvents: exprMetadata.isRelevantForLayoutEvents(),
+      isRelevantForFunctionEvents: exprMetadata.isRelevantForFunctionEvents(),
+      isRelevantForAsynchronousFunctionEvents: exprMetadata.isRelevantForAsynchronousFunctionEvents(),
+      isRelevantForCustomObjectEvents: exprMetadata.isRelevantForCustomObjectEvents(),
+    };
+  }).filter(Boolean);
+};
+
+const enumerateExpressionMetadataMapWithAnyCapabilities = (
+  prefix: string,
+  expressions: gdMapStringExpressionMetadata,
+  scope: InstructionOrExpressionScope
+): Array<EnumeratedExpressionMetadata> => {
+  return mapVector(expressions.keys(), expressionType => {
+    const exprMetadata = expressions.get(expressionType);
+    if (!exprMetadata.isShown()) {
+      return null; // Skip hidden expressions
+    }
+
+    let parameters = [];
+    for (let i = 0; i < exprMetadata.getParametersCount(); i++) {
       if (scope.objectMetadata && i === 0) continue;
       if (scope.behaviorMetadata && i <= 1) continue; //Skip object and behavior parameters
       if (exprMetadata.getParameter(i).isCodeOnly()) continue;
@@ -109,13 +149,13 @@ export const enumerateObjectExpressions = (
   const scope = { extension, objectMetadata };
 
   let objectsExpressions = [
-    ...(!shouldOnlyBeNumberType(type)
-      ? enumerateExpressionMetadataMap(
+    ...(shouldOnlyBeNumberType(type)
+      ? []
+      : enumerateExpressionMetadataMap(
           '',
           extension.getAllStrExpressionsForObject(objectType),
           scope
-        )
-      : []),
+        )),
     ...enumerateExpressionMetadataMap(
       '',
       extension.getAllExpressionsForObject(objectType),
@@ -133,13 +173,13 @@ export const enumerateObjectExpressions = (
 
     objectsExpressions = [
       ...objectsExpressions,
-      ...(!shouldOnlyBeNumberType(type)
-        ? enumerateExpressionMetadataMap(
+      ...(shouldOnlyBeNumberType(type)
+        ? []
+        : enumerateExpressionMetadataMap(
             '',
             extension.getAllStrExpressionsForObject(baseObjectType),
             scope
-          )
-        : []),
+          )),
       ...enumerateExpressionMetadataMap(
         '',
         extension.getAllExpressionsForObject(baseObjectType),
@@ -165,13 +205,13 @@ export const enumerateBehaviorExpressions = (
   const scope = { extension, behaviorMetadata };
 
   return [
-    ...(!shouldOnlyBeNumberType(type)
-      ? enumerateExpressionMetadataMap(
+    ...(shouldOnlyBeNumberType(type)
+      ? []
+      : enumerateExpressionMetadataMap(
           '',
           extension.getAllStrExpressionsForBehavior(behaviorType),
           scope
-        )
-      : []),
+        )),
     ...enumerateExpressionMetadataMap(
       '',
       extension.getAllExpressionsForBehavior(behaviorType),
@@ -202,7 +242,7 @@ export const enumerateAllExpressions = (
       if (!shouldOnlyBeNumberType(type))
         objectsExpressions.push.apply(
           objectsExpressions,
-          enumerateExpressionMetadataMap(
+          enumerateExpressionMetadataMapWithAnyCapabilities(
             prefix,
             extension.getAllStrExpressionsForObject(objectType),
             scope
@@ -210,7 +250,7 @@ export const enumerateAllExpressions = (
         );
       objectsExpressions.push.apply(
         objectsExpressions,
-        enumerateExpressionMetadataMap(
+        enumerateExpressionMetadataMapWithAnyCapabilities(
           prefix,
           extension.getAllExpressionsForObject(objectType),
           scope

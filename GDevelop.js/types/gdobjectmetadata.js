@@ -21,9 +21,8 @@ declare class gdObjectMetadata {
   getAllStrExpressions(): gdMapStringExpressionMetadata;
   setIncludeFile(includeFile: string): gdObjectMetadata;
   addIncludeFile(includeFile: string): gdObjectMetadata;
-  getUnsupportedBaseObjectCapabilities(): gdSetString;
-  addUnsupportedBaseObjectCapability(capability: string): gdObjectMetadata;
-  isUnsupportedBaseObjectCapability(capability: string): boolean;
+  getDefaultBehaviors(): gdSetString;
+  addDefaultBehavior(behaviorType: string): gdObjectMetadata;
   setHidden(): gdObjectMetadata;
   isHidden(): boolean;
   delete(): void;

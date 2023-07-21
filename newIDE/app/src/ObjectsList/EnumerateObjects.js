@@ -3,6 +3,7 @@ import { mapFor } from '../Utils/MapFor';
 import flatten from 'lodash/flatten';
 import { type SelectedTags, hasStringAllTags } from '../Utils/TagsHelper';
 import { type RequiredExtension } from '../AssetStore/InstallAsset';
+
 const gd: libGDevelop = global.gd;
 
 export type EnumeratedObjectMetadata = {|
@@ -219,19 +220,22 @@ export const enumerateGroups = (
 };
 
 export const enumerateObjectsAndGroups = (
+  platform: ?gdPlatform,
   globalObjectsContainer: gdObjectsContainer,
   objectsContainer: gdObjectsContainer,
   type: ?string = undefined
+  requiredObjectCapabilities: Array<string> = []
 ) => {
   const filterObject = (object: gdObject): boolean => {
     return (
       !type ||
-      gd.getTypeOfObject(
+      !platform ||
+      objectType.isMatchedBy(
+        platform,
         globalObjectsContainer,
         objectsContainer,
-        object.getName(),
-        false
-      ) === type
+        object.getName()
+      )
     );
   };
   const filterGroup = (group: gdObjectGroup): boolean => {
@@ -243,6 +247,7 @@ export const enumerateObjectsAndGroups = (
         group.getName(),
         true
       ) === type
+      // TODO Check capabilities intersection of groups
     );
   };
 
