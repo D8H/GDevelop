@@ -206,6 +206,7 @@ describe('gdjs.SpriteRuntimeObject', () => {
         behaviorsSharedData: [],
         objects: [],
         instances: [],
+        usedResources: [],
       });
       const stepDurationInMilliseconds = 1000 / 60;
       runtimeScene._timeManager.getElapsedTime = function () {
@@ -258,6 +259,7 @@ describe('gdjs.SpriteRuntimeObject', () => {
         behaviorsSharedData: [],
         objects: [],
         instances: [],
+        usedResources: [],
       });
       const stepDurationInMilliseconds = 1000 / 60;
       runtimeScene._timeManager.getElapsedTime = function () {
@@ -310,6 +312,7 @@ describe('gdjs.SpriteRuntimeObject', () => {
         behaviorsSharedData: [],
         objects: [],
         instances: [],
+        usedResources: [],
       });
       const stepDurationInMilliseconds = 1000 / 60;
       runtimeScene._timeManager.getElapsedTime = function () {
