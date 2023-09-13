@@ -301,6 +301,7 @@ namespace gdjs {
       try {
         const loadedTexture = await PIXI.Assets.load(resource.file);
         this._loadedTextures.put(resource.name, loadedTexture);
+        console.log('Loaded: ' + resource.name);
         // TODO What if 2 assets share the same file with different settings?
         applyTextureSettings(loadedTexture, resource);
       } catch (error) {
