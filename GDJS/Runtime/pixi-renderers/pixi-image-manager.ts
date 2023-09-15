@@ -49,7 +49,7 @@ namespace gdjs {
     /**
      * Map associating a resource name to the loaded PixiJS texture.
      */
-    private _loadedTextures: Hashtable<PIXI.Texture<PIXI.Resource>>;
+    private _loadedTextures = new gdjs.ResourceCache<PIXI.Texture>();
 
     /**
      * Map associating a resource name to the loaded Three.js texture.
@@ -68,7 +68,6 @@ namespace gdjs {
       this._invalidTexture = PIXI.Texture.from(
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFElEQVQoU2P8z/D/PwMewDgyFAAApMMX8Zi0uXAAAAAASUVORK5CYIIA'
       );
-      this._loadedTextures = new Hashtable();
       this._loadedThreeTextures = new Hashtable();
       this._loadedThreeMaterials = new Hashtable();
     }
@@ -84,10 +83,18 @@ namespace gdjs {
      * @returns The requested texture, or a placeholder if not found.
      */
     getPIXITexture(resourceName: string): PIXI.Texture {
-      if (this._loadedTextures.containsKey(resourceName)) {
-        const texture = this._loadedTextures.get(resourceName);
-        if (texture.valid) {
-          return texture;
+      const resource = this._getImageResource(resourceName);
+      if (!resource) {
+        logger.warn(
+          'Unable to find texture for resource "' + resourceName + '".'
+        );
+        return this._invalidTexture;
+      }
+
+      const existingTexture = this._loadedTextures.get(resource);
+      if (existingTexture) {
+        if (existingTexture.valid) {
+          return existingTexture;
         } else {
           logger.error(
             'Texture for ' +
@@ -101,16 +108,6 @@ namespace gdjs {
       }
 
       // Texture is not loaded, load it now from the resources list.
-      const resource = this._getImageResource(resourceName);
-
-      if (!resource) {
-        logger.warn(
-          'Unable to find texture for resource "' + resourceName + '".'
-        );
-        return this._invalidTexture;
-      }
-
-      logger.log('Loading texture for resource "' + resourceName + '"...');
       const file = resource.file;
       const texture = PIXI.Texture.from(this._resourceLoader.getFullUrl(file), {
         resourceOptions: {
@@ -126,7 +123,7 @@ namespace gdjs {
       });
       applyTextureSettings(texture, resource);
 
-      this._loadedTextures.put(resourceName, texture);
+      this._loadedTextures.set(resource, texture);
       return texture;
     }
 
@@ -138,7 +135,9 @@ namespace gdjs {
      */
     getThreeTexture(resourceName: string): THREE.Texture {
       const loadedThreeTexture = this._loadedThreeTextures.get(resourceName);
-      if (loadedThreeTexture) return loadedThreeTexture;
+      if (loadedThreeTexture) {
+        return loadedThreeTexture;
+      }
 
       // Texture is not loaded, load it now from the PixiJS texture.
       // TODO (3D) - optimization: don't load the PixiJS Texture if not used by PixiJS.
@@ -214,22 +213,22 @@ namespace gdjs {
      * Returns a placeholder texture if not found.
      * @param resourceName The name of the resource to get.
      */
-    getPIXIVideoTexture(resourceName: string) {
-      if (this._loadedTextures.containsKey(resourceName)) {
-        return this._loadedTextures.get(resourceName);
-      }
+    getPIXIVideoTexture(resourceName: string): PIXI.Texture {
       if (resourceName === '') {
         return this._invalidTexture;
       }
-
       // Texture is not loaded, load it now from the resources list.
       const resource = this._getImageResource(resourceName);
-
       if (!resource) {
         logger.warn(
           'Unable to find video texture for resource "' + resourceName + '".'
         );
         return this._invalidTexture;
+      }
+
+      const existingTexture = this._loadedTextures.get(resource);
+      if (existingTexture) {
+        return existingTexture;
       }
 
       const file = resource.file;
@@ -249,7 +248,7 @@ namespace gdjs {
         logFileLoadingError(file, error);
       });
 
-      this._loadedTextures.put(resourceName, texture);
+      this._loadedTextures.set(resource, texture);
       return texture;
     }
 
@@ -289,6 +288,9 @@ namespace gdjs {
      * @param onProgress Callback called each time a new file is loaded.
      */
     async _loadTexture(resource: ResourceData): Promise<void> {
+      if (this._loadedTextures.get(resource)) {
+        return;
+      }
       PIXI.Assets.setPreferences({
         preferWorkers: false,
         preferCreateImageBitmap: false,
@@ -300,8 +302,7 @@ namespace gdjs {
       });
       try {
         const loadedTexture = await PIXI.Assets.load(resource.file);
-        this._loadedTextures.put(resource.name, loadedTexture);
-        console.log('Loaded: ' + resource.name);
+        this._loadedTextures.set(resource, loadedTexture);
         // TODO What if 2 assets share the same file with different settings?
         applyTextureSettings(loadedTexture, resource);
       } catch (error) {
