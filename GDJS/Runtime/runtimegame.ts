@@ -602,7 +602,9 @@ namespace gdjs {
     /**
      * Load all assets, displaying progress in renderer.
      */
-    async loadFirstAssetsAsync(progressCallback?: (progress: float) => void) {
+    async loadFirstAssetsAsync(
+      progressCallback?: (progress: float) => void
+    ): Promise<void> {
       await this.loadAssetsWithLoadingScreen(async (onProgress) => {
         if (false) {
           this._resourcesLoader.loadAllResources(onProgress);
@@ -623,10 +625,7 @@ namespace gdjs {
     async loadLayoutAssetsAsync(
       layoutName: string,
       progressCallback?: (progress: float) => void
-    ) {
-      if (false) {
-        return;
-      }
+    ): Promise<void> {
       await this.loadAssetsWithLoadingScreen(async (onProgress) => {
         await this._resourcesLoader.loadLayoutResources(layoutName, onProgress);
       }, progressCallback);
@@ -644,7 +643,7 @@ namespace gdjs {
         onProgress: (count: integer, total: integer) => void
       ) => Promise<void>,
       progressCallback?: (progress: float) => void
-    ) {
+    ): Promise<void> {
       const loadingScreen = new gdjs.LoadingScreenRenderer(
         this.getRenderer(),
         this._resourcesLoader.getImageManager(),
