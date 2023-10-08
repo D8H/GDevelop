@@ -76,7 +76,10 @@ namespace gdjs {
     gdjs.evtTools.common.exponentialInterpolation;
 
   export class TweenRuntimeBehavior extends gdjs.RuntimeBehavior {
-    private _tweens = new gdjs.TweenRuntimeBehavior.TweenManager();
+    private _tweens = new gdjs.TweenRuntimeBehavior.TweenManager(
+      () => this._onFirstActiveTween(),
+      () => this._onNoMoreActiveTween()
+    );
     private _isActive: boolean = true;
 
     /**
@@ -98,14 +101,6 @@ namespace gdjs {
     ): boolean {
       // Nothing to update.
       return true;
-    }
-
-    doStepPreEvents(instanceContainer: gdjs.RuntimeInstanceContainer): void {
-      this._tweens.step();
-    }
-
-    private _deleteFromScene() {
-      this.owner.deleteFromScene(this.owner.getInstanceContainer());
     }
 
     /**
@@ -1494,12 +1489,59 @@ namespace gdjs {
       return this._tweens.getValue(identifier);
     }
 
+    private _addToStepping() {
+      const objectTweens = gdjs.evtTools.tween.getObjectTweens(
+        this.owner.getRuntimeScene()
+      );
+      objectTweens.push(this._tweens);
+    }
+
+    private _removeFromStepping() {
+      const objectTweens = gdjs.evtTools.tween.getObjectTweens(
+        this.owner.getRuntimeScene()
+      );
+      const index = objectTweens.findIndex(
+        (manager) => manager === this._tweens
+      );
+      if (index < 0) {
+        return;
+      }
+      objectTweens.splice(index, 1);
+    }
+
     onDeActivate() {
+      if (!this._isActive) {
+        return;
+      }
+      if (this._tweens.hasActiveTween()) {
+        this._removeFromStepping();
+      }
       this._isActive = false;
     }
 
     onActivate() {
+      if (this._isActive) {
+        return;
+      }
+      if (this._tweens.hasActiveTween()) {
+        this._addToStepping();
+      }
       this._isActive = true;
+    }
+
+    private _deleteFromScene() {
+      if (this._tweens.hasActiveTween()) {
+        this._removeFromStepping();
+      }
+      this.owner.deleteFromScene(this.owner.getInstanceContainer());
+    }
+
+    private _onFirstActiveTween() {
+      this._addToStepping();
+    }
+
+    private _onNoMoreActiveTween() {
+      this._removeFromStepping();
     }
   }
   gdjs.registerBehavior('Tween::TweenBehavior', gdjs.TweenRuntimeBehavior);
@@ -1522,7 +1564,16 @@ namespace gdjs {
        */
       private _activeTweens = new Array<TweenRuntimeBehavior.TweenInstance>();
 
-      constructor() {}
+      private onFirstActiveTween: () => void;
+      private onNoMoreActiveTween: () => void;
+
+      constructor(
+        onFirstActiveTween = () => {},
+        onNoMoreActiveTween = () => {}
+      ) {
+        this.onFirstActiveTween = onFirstActiveTween;
+        this.onNoMoreActiveTween = onNoMoreActiveTween;
+      }
 
       /**
        * Make all active tween step toward the end.
@@ -1690,7 +1741,13 @@ namespace gdjs {
       }
 
       _addActiveTween(tween: TweenInstance): void {
+        const hadActiveTween = this._activeTweens.length > 0;
+
         this._activeTweens.push(tween);
+
+        if (!hadActiveTween) {
+          this.onFirstActiveTween();
+        }
       }
 
       _removeActiveTween(tween: TweenInstance): void {
@@ -1698,6 +1755,11 @@ namespace gdjs {
           (activeTween) => activeTween === tween
         );
         this._activeTweens.splice(index, 1);
+
+        const hasActiveTween = this._activeTweens.length > 0;
+        if (!hasActiveTween) {
+          this.onNoMoreActiveTween();
+        }
       }
 
       /**
@@ -1727,6 +1789,10 @@ namespace gdjs {
           return 0;
         }
         return tween.getValue();
+      }
+
+      hasActiveTween() {
+        return this._activeTweens.length > 0;
       }
     }
 

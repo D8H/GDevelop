@@ -5,6 +5,7 @@ Copyright (c) 2010-2023 Florian Rival (Florian.Rival@gmail.com)
 namespace gdjs {
   export interface RuntimeScene {
     _tweens: gdjs.TweenRuntimeBehavior.TweenManager;
+    _objectTweens: Array<gdjs.TweenRuntimeBehavior.TweenManager>;
   }
   export namespace evtTools {
     export namespace tween {
@@ -31,8 +32,16 @@ namespace gdjs {
         runtimeScene._tweens ||
         (runtimeScene._tweens = new gdjs.TweenRuntimeBehavior.TweenManager());
 
+      export const getObjectTweens = (runtimeScene: RuntimeScene) =>
+        runtimeScene._objectTweens || (runtimeScene._objectTweens = []);
+
       gdjs.registerRuntimeScenePreEventsCallback(function (runtimeScene) {
         gdjs.evtTools.tween.getTweensMap(runtimeScene).step();
+        for (const objectTweenManager of gdjs.evtTools.tween.getObjectTweens(
+          runtimeScene
+        )) {
+          objectTweenManager.step();
+        }
       });
 
       export const sceneTweenExists = (

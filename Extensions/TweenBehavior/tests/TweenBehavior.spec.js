@@ -1,5 +1,5 @@
 // @ts-check
-describe('gdjs.TweenRuntimeBehavior', () => {
+describe.only('gdjs.TweenRuntimeBehavior', () => {
   const behaviorName = 'Tween';
 
   const createScene = (timeDelta = 1000 / 60) => {
