@@ -51,6 +51,8 @@ module.exports = function (config) {
       './newIDE/app/resources/GDJS/Runtime/Model3DManager.js',
       './newIDE/app/resources/GDJS/Runtime/timemanager.js',
       './newIDE/app/resources/GDJS/Runtime/polygon.js',
+      './newIDE/app/resources/GDJS/Runtime/ObjectSleepState.js',
+      './newIDE/app/resources/GDJS/Runtime/ObjectManager.js',
       './newIDE/app/resources/GDJS/Runtime/runtimeobject.js',
       './newIDE/app/resources/GDJS/Runtime/RuntimeInstanceContainer.js',
       './newIDE/app/resources/GDJS/Runtime/runtimescene.js',
