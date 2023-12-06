@@ -43,7 +43,33 @@ import ContextMenu, {
   type ContextMenuInterface,
 } from '../../../UI/Menu/ContextMenu';
 import useAlertDialog from '../../../UI/Alert/useAlertDialog';
+import path from 'path-browserify';
+import groupBy from 'lodash/groupBy';
+
 const gd: libGDevelop = global.gd;
+
+const commonPrefix = (values: Array<string>): string => {
+  if (values.length === 0) {
+    return '';
+  }
+  if (values.length === 1) {
+    return values[0];
+  }
+  let hasFoundBiggerPrefix = true;
+  let prefixLength = 0;
+  for (let index = 0; hasFoundBiggerPrefix; index++) {
+    const character = values[0].charAt(index);
+    hasFoundBiggerPrefix = values.every(
+      value => value.length > index && value.charAt(index) === character
+    );
+    if (!hasFoundBiggerPrefix) {
+      prefixLength = index;
+    }
+  }
+  return values[0].substring(0, prefixLength);
+};
+
+const separators = [' ', '_', '-', '.'];
 
 const SPRITE_SIZE = 100; //TODO: Factor with Thumbnail
 
@@ -196,10 +222,83 @@ const checkObjectPointsAndCollisionsMasks = (
   };
 };
 
+const applyPointsAndMasksToSpriteIfNecessary = (
+  spriteConfiguration: gdSpriteObject,
+  direction: gdDirection,
+  sprite: gdSprite
+) => {
+  const {
+    allDirectionSpritesHaveSameCollisionMasks,
+    allDirectionSpritesHaveSamePoints,
+  } = checkDirectionPointsAndCollisionsMasks(direction);
+  const {
+    allObjectSpritesHaveSameCollisionMasks,
+    allObjectSpritesHaveSamePoints,
+  } = checkObjectPointsAndCollisionsMasks(spriteConfiguration);
+  const shouldUseFullImageCollisionMask = isFirstSpriteUsingFullImageCollisionMask(
+    spriteConfiguration
+  );
+  const firstObjectSprite = getCurrentElements(spriteConfiguration, 0, 0, 0)
+    .sprite;
+  const firstDirectionSprite =
+    direction.getSpritesCount() > 0 ? direction.getSprite(0) : null;
+
+  // Copy points if toggles were set before adding the sprite.
+  if (allObjectSpritesHaveSamePoints && firstObjectSprite) {
+    // Copy points from the first sprite of the object, if existing.
+    copySpritePoints(firstObjectSprite, sprite);
+  } else if (allDirectionSpritesHaveSamePoints && firstDirectionSprite) {
+    // Copy points from the first sprite of the direction, if this is not the first one we add.
+    copySpritePoints(firstDirectionSprite, sprite);
+  }
+
+  // Copy collision masks if toggles were set before adding the sprite.
+  if (allObjectSpritesHaveSameCollisionMasks && firstObjectSprite) {
+    // Copy collision masks from the first sprite of the object, if existing.
+    copySpritePolygons(firstObjectSprite, sprite);
+  } else if (
+    allDirectionSpritesHaveSameCollisionMasks &&
+    firstDirectionSprite
+  ) {
+    // Copy collision masks from the first sprite of the direction, if this is not the first one we add.
+    copySpritePolygons(firstDirectionSprite, sprite);
+  }
+
+  if (shouldUseFullImageCollisionMask) {
+    sprite.setFullImageCollisionMask(true);
+  }
+};
+
+export const addAnimationFrame = (
+  spriteConfiguration: gdSpriteObject,
+  direction: gdDirection,
+  resource: gdResource,
+  onSpriteAdded: (sprite: gdSprite) => void
+) => {
+  const sprite = new gd.Sprite();
+  sprite.setImageName(resource.getName());
+
+  applyPointsAndMasksToSpriteIfNecessary(
+    spriteConfiguration,
+    direction,
+    sprite
+  );
+
+  onSpriteAdded(sprite); // Call the callback before `addSprite`, as `addSprite` will store a copy of it.
+  direction.addSprite(sprite);
+  sprite.delete();
+};
+
 const removeExtensionFromFileName = (fileName: string) => {
   const dotIndex = fileName.lastIndexOf('.');
   return dotIndex < 0 ? fileName : fileName.substring(0, dotIndex);
 };
+
+type NewAnimation = {|
+  resource: gdResource,
+  name: string,
+  index: number | null,
+|};
 
 type Props = {|
   spriteConfiguration: gdSpriteObject,
@@ -211,6 +310,7 @@ type Props = {|
   onSpriteAdded: (sprite: gdSprite) => void,
   onSpriteUpdated?: () => void,
   onFirstSpriteUpdated?: () => void,
+  addAnimations: (resourcesByAnimation: Map<string, Array<gdResource>>) => void,
   onChangeName: (newAnimationName: string) => void, // Used by piskel to set the name, if there is no name
   objectName: string, // This is used for the default name of images created with Piskel.
   animationName: string, // This is used for the default name of images created with Piskel.
@@ -226,6 +326,7 @@ const SpritesList = ({
   onSpriteAdded,
   onSpriteUpdated,
   onFirstSpriteUpdated,
+  addAnimations,
   onChangeName,
   objectName,
   animationName,
@@ -326,52 +427,6 @@ const SpritesList = ({
     ]
   );
 
-  const applyPointsAndMasksToSpriteIfNecessary = React.useCallback(
-    (sprite: gdSprite) => {
-      const {
-        allDirectionSpritesHaveSameCollisionMasks,
-        allDirectionSpritesHaveSamePoints,
-      } = checkDirectionPointsAndCollisionsMasks(direction);
-      const {
-        allObjectSpritesHaveSameCollisionMasks,
-        allObjectSpritesHaveSamePoints,
-      } = checkObjectPointsAndCollisionsMasks(spriteConfiguration);
-      const shouldUseFullImageCollisionMask = isFirstSpriteUsingFullImageCollisionMask(
-        spriteConfiguration
-      );
-      const firstObjectSprite = getCurrentElements(spriteConfiguration, 0, 0, 0)
-        .sprite;
-      const firstDirectionSprite =
-        direction.getSpritesCount() > 0 ? direction.getSprite(0) : null;
-
-      // Copy points if toggles were set before adding the sprite.
-      if (allObjectSpritesHaveSamePoints && firstObjectSprite) {
-        // Copy points from the first sprite of the object, if existing.
-        copySpritePoints(firstObjectSprite, sprite);
-      } else if (allDirectionSpritesHaveSamePoints && firstDirectionSprite) {
-        // Copy points from the first sprite of the direction, if this is not the first one we add.
-        copySpritePoints(firstDirectionSprite, sprite);
-      }
-
-      // Copy collision masks if toggles were set before adding the sprite.
-      if (allObjectSpritesHaveSameCollisionMasks && firstObjectSprite) {
-        // Copy collision masks from the first sprite of the object, if existing.
-        copySpritePolygons(firstObjectSprite, sprite);
-      } else if (
-        allDirectionSpritesHaveSameCollisionMasks &&
-        firstDirectionSprite
-      ) {
-        // Copy collision masks from the first sprite of the direction, if this is not the first one we add.
-        copySpritePolygons(firstDirectionSprite, sprite);
-      }
-
-      if (shouldUseFullImageCollisionMask) {
-        sprite.setFullImageCollisionMask(true);
-      }
-    },
-    [direction, spriteConfiguration]
-  );
-
   const onAddSprite = React.useCallback(
     async (resourceSource: ResourceSource) => {
       const directionSpritesCountBeforeAdding = direction.getSpritesCount();
@@ -381,20 +436,82 @@ const SpritesList = ({
         multiSelection: true,
         resourceKind: 'image',
       });
-
       resources.forEach(resource => {
         applyResourceDefaults(project, resource);
         project.getResourcesManager().addResource(resource);
-
-        const sprite = new gd.Sprite();
-        sprite.setImageName(resource.getName());
-
-        applyPointsAndMasksToSpriteIfNecessary(sprite);
-
-        onSpriteAdded(sprite); // Call the callback before `addSprite`, as `addSprite` will store a copy of it.
-        direction.addSprite(sprite);
-        sprite.delete();
       });
+
+      if (directionSpritesCountBeforeAdding === 0) {
+        // Extract the frame indexes from the file names.
+        const namedResources = resources.map(resource => {
+          const basename = path.basename(
+            resource.getFile(),
+            path.extname(resource.getFile())
+          );
+          const indexMatches = basename.match(/\d+$/g);
+          const index = indexMatches ? parseInt(indexMatches[0]) : null;
+          let name = indexMatches
+            ? basename.substring(0, basename.length - indexMatches[0].length)
+            : basename;
+          if (separators.some(separator => name.endsWith(separator))) {
+            name = name.substring(0, name.length - 1);
+          }
+          return {
+            resource,
+            name,
+            index: isNaN(index) ? null : index,
+          };
+        });
+
+        let objectName = commonPrefix(
+          namedResources.map(resources => resources.name)
+        );
+        const hasSeveralAnimations =
+          objectName.length !== namedResources[0].name.length;
+        if (hasSeveralAnimations) {
+          // Extract the object name from the file names.
+          if (separators.some(separator => objectName.endsWith(separator))) {
+            objectName = objectName.substring(0, objectName.length - 1);
+          }
+          for (const namedResource of namedResources) {
+            namedResource.name = namedResource.name.substring(
+              objectName.length + 1
+            );
+          }
+
+          // Index the resources by animation names and frame indexes.
+          const resourcesByName = groupBy(namedResources, ({ name }) => name);
+          const resourcesByAnimation = new Map<string, Array<gdResource>>();
+          for (const name in resourcesByName) {
+            const enumeratedResources = resourcesByName[name];
+            resourcesByAnimation.set(
+              name,
+              enumeratedResources
+                .sort((a, b) => (a.index || 0) - (b.index || 0))
+                .map(resource => resource.resource)
+            );
+          }
+          addAnimations(resourcesByAnimation);
+        } else {
+          for (const resource of resources) {
+            addAnimationFrame(
+              spriteConfiguration,
+              direction,
+              resource,
+              onSpriteAdded
+            );
+          }
+        }
+      } else {
+        for (const resource of resources) {
+          addAnimationFrame(
+            spriteConfiguration,
+            direction,
+            resource,
+            onSpriteAdded
+          );
+        }
+      }
 
       // Important, we are responsible for deleting the resources that were given to us.
       // Otherwise we have a memory leak, as calling addResource is making a copy of the resource.
@@ -476,7 +593,11 @@ const SpritesList = ({
             copySpritePolygons(originalSprite, sprite);
           } else {
             // The sprite is new, apply points & collision masks if necessary.
-            applyPointsAndMasksToSpriteIfNecessary(sprite);
+            applyPointsAndMasksToSpriteIfNecessary(
+              spriteConfiguration,
+              direction,
+              sprite
+            );
           }
           onSpriteAdded(sprite); // Call the callback before `addSprite`, as `addSprite` will store a copy of it.
           newDirection.addSprite(sprite);
@@ -515,18 +636,18 @@ const SpritesList = ({
       }
     },
     [
-      animationName,
       direction,
-      objectName,
-      onReplaceByDirection,
-      onSpriteUpdated,
-      onSpriteAdded,
-      onFirstSpriteUpdated,
       project,
       resourceManagementProps,
+      animationName,
+      objectName,
       resourcesLoader,
+      onReplaceByDirection,
+      onSpriteUpdated,
+      onFirstSpriteUpdated,
+      onSpriteAdded,
+      spriteConfiguration,
       onChangeName,
-      applyPointsAndMasksToSpriteIfNecessary,
     ]
   );
 
