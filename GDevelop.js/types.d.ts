@@ -682,6 +682,7 @@ export class CustomObjectConfiguration extends EmscriptenObject {
   updateProperty(name: string, value: string): boolean;
   getInitialInstanceProperties(instance: InitialInstance, project: Project, scene: Layout): MapStringPropertyDescriptor;
   updateInitialInstanceProperty(instance: InitialInstance, name: string, value: string, project: Project, scene: Layout): boolean;
+  getAnimations(): SpriteAnimationList;
 }
 
 export class Layout extends EmscriptenObject {
@@ -2430,7 +2431,7 @@ export class Animation extends EmscriptenObject {
   setUseMultipleDirections(enable: boolean): void;
 }
 
-export class SpriteObject extends EmscriptenObject {
+export class SpriteAnimationList extends EmscriptenObject {
   constructor(): void;
   addAnimation(animation: Animation): void;
   getAnimation(index: number): Animation;
@@ -2440,10 +2441,15 @@ export class SpriteObject extends EmscriptenObject {
   hasNoAnimations(): boolean;
   swapAnimations(first: number, second: number): void;
   moveAnimation(oldIndex: number, newIndex: number): void;
-  setUpdateIfNotVisible(updateIfNotVisible: boolean): void;
-  getUpdateIfNotVisible(): boolean;
   adaptCollisionMaskAutomatically(): boolean;
   setAdaptCollisionMaskAutomatically(adaptCollisionMaskAutomatically: boolean): void;
+}
+
+export class SpriteObject extends EmscriptenObject {
+  constructor(): void;
+  getAnimations(): SpriteAnimationList;
+  setUpdateIfNotVisible(updateIfNotVisible: boolean): void;
+  getUpdateIfNotVisible(): boolean;
 }
 
 export class SpineAnimation extends EmscriptenObject {
