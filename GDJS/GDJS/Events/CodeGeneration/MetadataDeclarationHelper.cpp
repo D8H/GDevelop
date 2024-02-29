@@ -138,6 +138,10 @@ gd::ObjectMetadata &MetadataDeclarationHelper::DeclareObjectMetadata(
   else {
     objectMetadata.AddDefaultBehavior("OpacityCapability::OpacityBehavior");
   }
+  if (eventsBasedObject.IsAnimatable()) {
+    objectMetadata
+        .AddDefaultBehavior("AnimatableCapability::AnimatableBehavior");
+  }
 
   // TODO EBO Use full type to identify object to avoid collision.
   // Objects are identified by their name alone.

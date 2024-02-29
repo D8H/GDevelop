@@ -106,6 +106,14 @@ export default function EventsBasedObjectEditor({
           onChange();
         }}
       />
+      <Checkbox
+        label={<Trans>Has animations</Trans>}
+        checked={eventsBasedObject.isAnimatable()}
+        onCheck={(e, checked) => {
+          eventsBasedObject.markAsAnimatable(checked);
+          onChange();
+        }}
+      />
       {eventsBasedObject.getEventsFunctions().getEventsFunctionsCount() ===
         0 && (
         <DismissableAlertMessage

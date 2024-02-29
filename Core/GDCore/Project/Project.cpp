@@ -116,6 +116,9 @@ std::unique_ptr<gd::Object> Project::CreateObject(
     else {
       addDefaultBehavior("OpacityCapability::OpacityBehavior");
     }
+    if (eventBasedObject.IsAnimatable()) {
+      addDefaultBehavior("AnimatableCapability::AnimatableBehavior");
+    }
   } else {
     auto& objectMetadata =
         gd::MetadataProvider::GetObjectMetadata(platform, objectType);
