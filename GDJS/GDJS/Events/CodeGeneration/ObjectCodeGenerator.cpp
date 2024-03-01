@@ -78,7 +78,7 @@ gd::String ObjectCodeGenerator::GenerateRuntimeObjectCompleteCode(
                   methodFullyQualifiedName,
                   "that._onceTriggers",
                   functionName == doStepPreEventsFunctionName
-                      ? GenerateDoStepPreEventsPreludeCode()
+                      ? GenerateDoStepPreEventsPreludeCode(eventsBasedObject)
                       : "",
                   functionName == onCreatedFunctionName
                       ? "gdjs.CustomRuntimeObject.prototype.onCreated.call(this);\n"
@@ -109,6 +109,55 @@ gd::String ObjectCodeGenerator::GenerateRuntimeObjectCompleteCode(
         }
 
         return updateFromObjectCode;
+      },
+      // generateAnimatableCode
+      [&]() {
+        return gd::String(R"jscode_template(
+
+  // Animatable capability
+  getAnimator() {
+    return this._animator;
+  }
+  getAnimationIndex() {
+    return this._animator.getAnimationIndex();
+  }
+  setAnimationIndex(animationIndex) {
+    this._animator.setAnimationIndex(animationIndex);
+  }
+  getAnimationName() {
+    return this._animator.getAnimationName();
+  }
+  setAnimationName(animationName) {
+    this._animator.setAnimationName(animationName);
+  }
+  hasAnimationEnded() {
+    return this._animator.hasAnimationEnded();
+  }
+  isAnimationPaused() {
+    return this._animator.isAnimationPaused();
+  }
+  pauseAnimation() {
+    this._animator.pauseAnimation();
+  }
+  resumeAnimation() {
+    this._animator.resumeAnimation();
+  }
+  getAnimationSpeedScale() {
+    return this._animator.getAnimationSpeedScale();
+  }
+  setAnimationSpeedScale(ratio) {
+    this._animator.setAnimationSpeedScale(ratio);
+  }
+  getAnimationElapsedTime() {
+    return this._animator.getAnimationElapsedTime();
+  }
+  setAnimationElapsedTime(time) {
+    this._animator.setAnimationElapsedTime(time);
+  }
+  getAnimationDuration() {
+    return this._animator.getAnimationDuration();
+  }
+)jscode_template");
       });
 }
 
@@ -119,7 +168,8 @@ gd::String ObjectCodeGenerator::GenerateRuntimeObjectTemplateCode(
     std::function<gd::String()> generateInitializePropertiesCode,
     std::function<gd::String()> generatePropertiesCode,
     std::function<gd::String()> generateMethodsCode,
-    std::function<gd::String()> generateUpdateFromObjectDataCode) {
+    std::function<gd::String()> generateUpdateFromObjectDataCode,
+    std::function<gd::String()> generateAnimatableCode) {
   return gd::String(R"jscode_template(
 CODE_NAMESPACE = CODE_NAMESPACE || {};
 
@@ -134,6 +184,7 @@ CODE_NAMESPACE.RUNTIME_OBJECT_CLASSNAME = class RUNTIME_OBJECT_CLASSNAME extends
     this._onceTriggers = new gdjs.OnceTriggers();
     this._objectData = {};
     INITIALIZE_PROPERTIES_CODE
+    INITIALIZE_ANIMATABLE_CODE
 
     // It calls the onCreated super implementation at the end.
     this.onCreated();
@@ -149,6 +200,7 @@ CODE_NAMESPACE.RUNTIME_OBJECT_CLASSNAME = class RUNTIME_OBJECT_CLASSNAME extends
 
   // Properties:
   PROPERTIES_CODE
+  ANIMATABLE_CODE
 }
 
 // Methods:
@@ -168,6 +220,11 @@ gdjs.registerObject("EXTENSION_NAME::OBJECT_NAME", CODE_NAMESPACE.RUNTIME_OBJECT
                       generateInitializePropertiesCode())
       .FindAndReplace("UPDATE_FROM_OBJECT_DATA_CODE", generateUpdateFromObjectDataCode())
       .FindAndReplace("PROPERTIES_CODE", generatePropertiesCode())
+      .FindAndReplace("INITIALIZE_ANIMATABLE_CODE",
+                      eventsBasedObject.IsAnimatable()
+                          ? "this._animator = new gdjs.SpriteAnimator(objectData.animatable.animations);"
+                          : "")
+      .FindAndReplace("ANIMATABLE_CODE", eventsBasedObject.IsAnimatable() ? generateAnimatableCode() : "")
       .FindAndReplace("METHODS_CODE", generateMethodsCode());
   ;
 }
@@ -265,11 +322,18 @@ CODE_NAMESPACE.RUNTIME_OBJECT_CLASSNAME.prototype.doStepPreEvents = function() {
       .FindAndReplace("RUNTIME_OBJECT_CLASSNAME",
                       eventsBasedObject.GetName())
       .FindAndReplace("CODE_NAMESPACE", codeNamespace)
-      .FindAndReplace("PRELUDE_CODE", GenerateDoStepPreEventsPreludeCode());
-}
+      .FindAndReplace("PRELUDE_CODE",
+                      GenerateDoStepPreEventsPreludeCode(eventsBasedObject));}
 
-gd::String ObjectCodeGenerator::GenerateDoStepPreEventsPreludeCode() {
-  return "this._onceTriggers.startNewFrame();";
+gd::String ObjectCodeGenerator::GenerateDoStepPreEventsPreludeCode(
+    const gd::EventsBasedObject& eventsBasedObject) {
+  gd::String doStepPreEventsPreludeCode;
+  doStepPreEventsPreludeCode += "this._onceTriggers.startNewFrame();";
+  if (eventsBasedObject.IsAnimatable()) {
+    doStepPreEventsPreludeCode +=
+        "\nthis._animator.step(this.getElapsedTime() / 1000);";
+  }
+  return doStepPreEventsPreludeCode;
 }
 
 }  // namespace gdjs
