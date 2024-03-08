@@ -98,6 +98,19 @@ class GD_CORE_API EventsBasedObject: public AbstractEventsBasedEntity, public Ob
    */
   bool IsAnimatable() const { return isAnimatable; }
 
+  /**
+   * \brief Declare an TextContainer capability.
+   */
+  EventsBasedObject& MarkAsTextContainer(bool isTextContainer_) {
+    isTextContainer = isTextContainer_;
+    return *this;
+  }
+
+  /**
+   * \brief Return true if the object needs an TextContainer capability.
+   */
+  bool IsTextContainer() const { return isTextContainer; }
+
   void SerializeTo(SerializerElement& element) const override;
 
   void UnserializeFrom(gd::Project& project,
@@ -107,6 +120,7 @@ class GD_CORE_API EventsBasedObject: public AbstractEventsBasedEntity, public Ob
   gd::String defaultName;
   bool isRenderedIn3D;
   bool isAnimatable;
+  bool isTextContainer;
 };
 
 }  // namespace gd

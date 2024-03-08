@@ -2135,6 +2135,8 @@ export class EventsBasedObject extends EmscriptenObject {
   isRenderedIn3D(): boolean;
   markAsAnimatable(isAnimatable: boolean): EventsBasedObject;
   isAnimatable(): boolean;
+  markAsTextContainer(isTextContainer: boolean): EventsBasedObject;
+  isTextContainer(): boolean;
   static getPropertyActionName(propertyName: string): string;
   static getPropertyConditionName(propertyName: string): string;
   static getPropertyExpressionName(propertyName: string): string;

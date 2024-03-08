@@ -142,6 +142,10 @@ gd::ObjectMetadata &MetadataDeclarationHelper::DeclareObjectMetadata(
     objectMetadata
         .AddDefaultBehavior("AnimatableCapability::AnimatableBehavior");
   }
+  if (eventsBasedObject.IsTextContainer()) {
+    objectMetadata
+        .AddDefaultBehavior("TextContainerCapability::TextContainerBehavior");
+  }
 
   // TODO EBO Use full type to identify object to avoid collision.
   // Objects are identified by their name alone.

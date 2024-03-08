@@ -168,6 +168,20 @@ gd::String ObjectCodeGenerator::GenerateRuntimeObjectCompleteCode(
     return this._animator.getAnimationDuration();
   }
 )jscode_template");
+      },
+      // generateTextContainerCode
+      [&]() {
+        return gd::String(R"jscode_template(
+
+  // gdjs.TextContainer interface implementation
+  _text = '';
+  getText() {
+    return this._text;
+  }
+  setText(text) {
+    this._text = text;
+  }
+)jscode_template");
       });
 }
 
@@ -180,7 +194,8 @@ gd::String ObjectCodeGenerator::GenerateRuntimeObjectTemplateCode(
     std::function<gd::String()> generateMethodsCode,
     std::function<gd::String()> generateUpdateFromObjectDataCode,
     std::function<gd::String()> generateInitializeAnimatableCode,
-    std::function<gd::String()> generateAnimatableCode) {
+    std::function<gd::String()> generateAnimatableCode,
+    std::function<gd::String()> generateTextContainerCode) {
   return gd::String(R"jscode_template(
 CODE_NAMESPACE = CODE_NAMESPACE || {};
 
@@ -212,6 +227,7 @@ CODE_NAMESPACE.RUNTIME_OBJECT_CLASSNAME = class RUNTIME_OBJECT_CLASSNAME extends
   // Properties:
   PROPERTIES_CODE
   ANIMATABLE_CODE
+  TEXT_CONTAINER_CODE
 }
 
 // Methods:
@@ -236,6 +252,7 @@ gdjs.registerObject("EXTENSION_NAME::OBJECT_NAME", CODE_NAMESPACE.RUNTIME_OBJECT
       .FindAndReplace("UPDATE_FROM_OBJECT_DATA_CODE", generateUpdateFromObjectDataCode())
       .FindAndReplace("PROPERTIES_CODE", generatePropertiesCode())
       .FindAndReplace("ANIMATABLE_CODE", eventsBasedObject.IsAnimatable() ? generateAnimatableCode() : "")
+      .FindAndReplace("TEXT_CONTAINER_CODE", eventsBasedObject.IsTextContainer() ? generateTextContainerCode() : "")
       .FindAndReplace("METHODS_CODE", generateMethodsCode());
   ;
 }

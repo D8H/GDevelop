@@ -2794,6 +2794,8 @@ interface EventsBasedObject {
     boolean IsRenderedIn3D();
     [Ref] EventsBasedObject MarkAsAnimatable(boolean isAnimatable);
     boolean IsAnimatable();
+    [Ref] EventsBasedObject MarkAsTextContainer(boolean isTextContainer);
+    boolean IsTextContainer();
 
     [Const, Value] DOMString STATIC_GetPropertyActionName([Const] DOMString propertyName);
     [Const, Value] DOMString STATIC_GetPropertyConditionName([Const] DOMString propertyName);

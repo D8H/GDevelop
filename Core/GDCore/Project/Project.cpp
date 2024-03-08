@@ -119,6 +119,9 @@ std::unique_ptr<gd::Object> Project::CreateObject(
     if (eventBasedObject.IsAnimatable()) {
       addDefaultBehavior("AnimatableCapability::AnimatableBehavior");
     }
+    if (eventBasedObject.IsTextContainer()) {
+      addDefaultBehavior("TextContainerCapability::TextContainerBehavior");
+    }
   } else {
     auto& objectMetadata =
         gd::MetadataProvider::GetObjectMetadata(platform, objectType);
