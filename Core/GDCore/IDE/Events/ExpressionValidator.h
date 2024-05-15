@@ -66,7 +66,7 @@ class GD_CORE_API ExpressionValidator : public ExpressionParser2NodeWorker {
    *
    * Expressions with fatal error can't be generated.
    */
-  const std::vector<ExpressionParserDiagnostic*>& GetFatalErrors() {
+  const std::vector<ExpressionParserError*>& GetFatalErrors() {
     return fatalErrors;
   };
 
@@ -75,7 +75,7 @@ class GD_CORE_API ExpressionValidator : public ExpressionParser2NodeWorker {
    *
    * No errors means that the expression is valid.
    */
-  const std::vector<ExpressionParserDiagnostic*>& GetAllErrors() {
+  const std::vector<ExpressionParserError*>& GetAllErrors() {
     return allErrors;
   };
 
@@ -461,9 +461,9 @@ class GD_CORE_API ExpressionValidator : public ExpressionParser2NodeWorker {
   static const gd::String identifierTypeString;
   static const gd::String emptyTypeString;
 
-  std::vector<ExpressionParserDiagnostic*> fatalErrors;
-  std::vector<ExpressionParserDiagnostic*> allErrors;
-  std::vector<std::unique_ptr<ExpressionParserDiagnostic>> supplementalErrors;
+  std::vector<ExpressionParserError*> fatalErrors;
+  std::vector<ExpressionParserError*> allErrors;
+  std::vector<std::unique_ptr<ExpressionParserError>> supplementalErrors;
   Type childType; ///< The type "discovered" down the tree and passed up.
   Type parentType; ///< The type "required" by the top of the tree.
   bool forbidsUsageOfBracketsBecauseParentIsObject;

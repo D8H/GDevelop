@@ -3,14 +3,14 @@
  * Copyright 2008-present Florian Rival (Florian.Rival@gmail.com). All rights
  * reserved. This project is released under the MIT License.
  */
-#ifndef GDCORE_EXPRESSIONPARSER2NODES_H
-#define GDCORE_EXPRESSIONPARSER2NODES_H
+#pragma once
 
 #include <memory>
 #include <vector>
 
 #include "ExpressionParser2NodeWorker.h"
 #include "GDCore/String.h"
+
 namespace gd {
 class Expression;
 class ObjectsContainer;
@@ -41,28 +41,9 @@ struct GD_CORE_API ExpressionParserLocation {
 };
 
 /**
- * \brief A diagnostic that can be attached to a gd::ExpressionNode.
- */
-struct GD_CORE_API ExpressionParserDiagnostic {
-  virtual ~ExpressionParserDiagnostic() = default;
-  virtual bool IsError() { return false; }
-  virtual gd::ExpressionParserError::ErrorType GetType() {
-    return gd::ExpressionParserError::ErrorType::SyntaxError;
-  }
-  virtual const gd::String &GetMessage() { return noMessage; }
-  virtual const gd::String &GetObjectName() { return noMessage; }
-  virtual const gd::String &GetActualValue() { return noMessage; }
-  virtual size_t GetStartPosition() { return 0; }
-  virtual size_t GetEndPosition() { return 0; }
-
- private:
-  static gd::String noMessage;
-};
-
-/**
  * \brief An error that can be attached to a gd::ExpressionNode.
  */
-struct GD_CORE_API ExpressionParserError : public ExpressionParserDiagnostic {
+struct GD_CORE_API ExpressionParserError {
   enum ErrorType {
     SyntaxError,
     InvalidOperator,
@@ -78,36 +59,36 @@ struct GD_CORE_API ExpressionParserError : public ExpressionParserDiagnostic {
     UnknownParameterType,
   };
 
-  ExpressionParserError(ExpressionParserError::ErrorType type_,
-                        const gd::String &message_,
+  ExpressionParserError(ErrorType type_, const gd::String &message_,
                         const ExpressionParserLocation &location_,
                         const gd::String &actualValue_ = "",
                         const gd::String &objectName_ = "")
       : type(type_), message(message_), location(location_),
         actualValue(actualValue_), objectName(objectName_){};
-  ExpressionParserError(ExpressionParserError::ErrorType type_,
-                        const gd::String &message_,
+  ;
+  ExpressionParserError(ErrorType type_, const gd::String &message_,
                         size_t position_)
       : type(type_), message(message_), location(position_){};
-  ExpressionParserError(ExpressionParserError::ErrorType type_,
-                        const gd::String &message_,
-                        size_t startPosition_,
-                        size_t endPosition_)
-      : type(type_),
-        message(message_),
+  ExpressionParserError(ErrorType type_, const gd::String &message_,
+                        size_t startPosition_, size_t endPosition_)
+      : type(type_), message(message_),
         location(startPosition_, endPosition_){};
+  ;
   virtual ~ExpressionParserError(){};
 
-  bool IsError() override { return true; }
-  gd::ExpressionParserError::ErrorType GetType() override { return type; }
-  const gd::String &GetMessage() override { return message; }
-  const gd::String &GetObjectName() override { return objectName; }
-  const gd::String &GetActualValue() override { return actualValue; }
-  size_t GetStartPosition() override { return location.GetStartPosition(); }
-  size_t GetEndPosition() override { return location.GetEndPosition(); }
+  bool IsError() { return true; }
+  ErrorType GetType() { return type; };
+  const gd::String &GetMessage() { return message; }
+  const gd::String &GetObjectName() { return objectName; }
+  const gd::String &GetActualValue() { return actualValue; }
+  size_t GetStartPosition() { return location.GetStartPosition(); }
+  size_t GetEndPosition() { return location.GetEndPosition(); }
 
- private:
-  ExpressionParserError::ErrorType type;
+  ExpressionParserError()
+      : type(gd::ExpressionParserError::ErrorType::SyntaxError){};
+
+private:
+  ErrorType type;
   gd::String message;
   ExpressionParserLocation location;
   gd::String objectName;
@@ -123,7 +104,7 @@ struct GD_CORE_API ExpressionNode {
   virtual ~ExpressionNode(){};
   virtual void Visit(ExpressionParser2NodeWorker &worker){};
 
-  std::unique_ptr<ExpressionParserDiagnostic> diagnostic;
+  std::unique_ptr<ExpressionParserError> diagnostic;
   ExpressionParserLocation location;  ///< The location of the entire node. Some
                                       /// nodes might have other locations
                                       /// stored inside them. For example, a
@@ -453,5 +434,3 @@ struct GD_CORE_API EmptyNode : public FunctionCallOrObjectFunctionNameOrEmptyNod
 };
 
 }  // namespace gd
-
-#endif

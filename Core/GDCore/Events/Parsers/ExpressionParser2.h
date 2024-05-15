@@ -38,7 +38,7 @@ using namespace gd::GrammarTerminals;
  * parser by refactoring out the dependency on gd::MetadataProvider (injecting
  * instead functions to be called to query supported functions).
  *
- * \see gd::ExpressionParserDiagnostic
+ * \see gd::ExpressionParserError
  * \see gd::ExpressionNode
  */
 class GD_CORE_API ExpressionParser2 {
@@ -547,11 +547,11 @@ class GD_CORE_API ExpressionParser2 {
   }
   ///@}
 
-  std::unique_ptr<ExpressionParserDiagnostic> ValidateOperator(
+  std::unique_ptr<ExpressionParserError> ValidateOperator(
       gd::String::value_type operatorChar) {
     if (operatorChar == '+' || operatorChar == '-' || operatorChar == '/' ||
         operatorChar == '*') {
-      return gd::make_unique<ExpressionParserDiagnostic>();
+      return gd::make_unique<ExpressionParserError>();
     }
     return gd::make_unique<ExpressionParserError>(
         gd::ExpressionParserError::ErrorType::InvalidOperator,
@@ -560,11 +560,11 @@ class GD_CORE_API ExpressionParser2 {
         GetCurrentPosition());
   }
 
-  std::unique_ptr<ExpressionParserDiagnostic> ValidateUnaryOperator(
+  std::unique_ptr<ExpressionParserError> ValidateUnaryOperator(
       gd::String::value_type operatorChar,
       size_t position) {
     if (operatorChar == '+' || operatorChar == '-') {
-      return gd::make_unique<ExpressionParserDiagnostic>();
+      return gd::make_unique<ExpressionParserError>();
     }
 
     return gd::make_unique<ExpressionParserError>(
