@@ -65,7 +65,6 @@ struct GD_CORE_API ExpressionParserError {
                         const gd::String &objectName_ = "")
       : type(type_), message(message_), location(location_),
         actualValue(actualValue_), objectName(objectName_){};
-  ;
   ExpressionParserError(ErrorType type_, const gd::String &message_,
                         size_t position_)
       : type(type_), message(message_), location(position_){};
@@ -73,7 +72,6 @@ struct GD_CORE_API ExpressionParserError {
                         size_t startPosition_, size_t endPosition_)
       : type(type_), message(message_),
         location(startPosition_, endPosition_){};
-  ;
   virtual ~ExpressionParserError(){};
 
   bool IsError() { return true; }
