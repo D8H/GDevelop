@@ -39,6 +39,7 @@ import Tune from '../UI/CustomSvgIcons/Tune';
 import Mark from '../UI/CustomSvgIcons/Mark';
 import newNameGenerator from '../Utils/NewNameGenerator';
 import { ProjectScopedContainersAccessor } from '../InstructionOrExpression/EventsScope.flow';
+import GlobalAndSceneVariablesDialog from '../VariablesList/GlobalAndSceneVariablesDialog';
 
 const gd: libGDevelop = global.gd;
 
@@ -78,10 +79,12 @@ type State = {|
   editedEventsBasedBehavior: ?gdEventsBasedBehavior,
   selectedEventsBasedObject: ?gdEventsBasedObject,
   editedEventsBasedObject: ?gdEventsBasedObject,
+  selectedEditorId: ?{ global: boolean },
   editOptionsDialogOpen: boolean,
   behaviorMethodSelectorDialogOpen: boolean,
   objectMethodSelectorDialogOpen: boolean,
   extensionFunctionSelectorDialogOpen: boolean,
+  variablesEditorOpen: { global: boolean } | null,
   onAddEventsFunctionCb: ?(
     parameters: ?EventsFunctionCreationParameters
   ) => void,
@@ -117,6 +120,7 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
     behaviorMethodSelectorDialogOpen: false,
     objectMethodSelectorDialogOpen: false,
     extensionFunctionSelectorDialogOpen: false,
+    variablesEditorOpen: null,
     onAddEventsFunctionCb: null,
   };
   editor: ?EventsSheetInterface;
@@ -897,6 +901,14 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
     });
   };
 
+  _editVariables = (
+    options: { global: boolean } | null = { global: false }
+  ) => {
+    this.setState({
+      variablesEditorOpen: options,
+    });
+  };
+
   _editBehavior = (editedEventsBasedBehavior: ?gdEventsBasedBehavior) => {
     this.setState(
       state => {
@@ -1112,6 +1124,7 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
       behaviorMethodSelectorDialogOpen,
       objectMethodSelectorDialogOpen,
       extensionFunctionSelectorDialogOpen,
+      variablesEditorOpen,
     } = this.state;
 
     const scope = {
@@ -1347,6 +1360,11 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
                   i18n
                 )}
                 onEventsBasedObjectRenamed={this._onEventsBasedObjectRenamed}
+                onSelectExtensionProperties={() => this._editOptions(true)}
+                onSelectExtensionGlobalVariables={() =>
+                  this._editVariables({ global })
+                }
+                onSelectExtensionSceneVariables={() => this._editVariables()}
               />
             )}
           </I18n>
@@ -1428,6 +1446,24 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
             eventsFunctionsExtension={eventsFunctionsExtension}
             open
             onClose={() => this._editOptions(false)}
+          />
+        )}
+        {variablesEditorOpen && project && (
+          <GlobalAndSceneVariablesDialog
+            isGlobalTabInitiallyOpen={variablesEditorOpen.global}
+            globalVariables={eventsFunctionsExtension.getGlobalVariables()}
+            sceneVariables={eventsFunctionsExtension.getSceneVariables()}
+            project={project}
+            projectScopedContainersAccessor={
+              new ProjectScopedContainersAccessor({
+                project,
+                eventsFunctionsExtension,
+              })
+            }
+            open
+            onCancel={() => this._editVariables(null)}
+            onApply={() => this._editVariables(null)}
+            preventRefactoringToDeleteInstructions
           />
         )}
         {objectMethodSelectorDialogOpen && selectedEventsBasedObject && (
