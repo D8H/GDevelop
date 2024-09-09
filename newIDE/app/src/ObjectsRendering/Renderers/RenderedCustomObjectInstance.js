@@ -7,7 +7,7 @@ import ObjectsRenderingService from '../ObjectsRenderingService';
 import RenderedTextInstance from './RenderedTextInstance';
 import {
   applyChildLayouts,
-  ChildInstance,
+  LayoutedInstance,
   LayoutedParent,
 } from './CustomObjectLayoutingModel';
 import * as PIXI from 'pixi.js-legacy';
@@ -26,7 +26,7 @@ export default class RenderedCustomObjectInstance extends Rendered3DInstance
   /** Functor used to render an instance */
   instancesRenderer: gdInitialInstanceJSFunctor;
 
-  layoutedInstances = new Map<number, ChildInstance>();
+  layoutedInstances = new Map<number, LayoutedInstance>();
   renderedInstances = new Map<number, RenderedInstance | Rendered3DInstance>();
 
   constructor(
@@ -68,8 +68,6 @@ export default class RenderedCustomObjectInstance extends Rendered3DInstance
       ? project.getEventsBasedObject(customObjectConfiguration.getType())
       : null;
 
-    this.layoutedInstances = [];
-
     const { eventBasedObject } = this;
     if (!eventBasedObject) {
       return;
@@ -82,8 +80,7 @@ export default class RenderedCustomObjectInstance extends Rendered3DInstance
     if (eventBasedObject.isInnerAreaFollowingParentSize()) {
       // $FlowFixMe - invoke is not writable
       this.instancesRenderer.invoke = applyChildLayouts(this);
-    }
-    else {
+    } else {
       // $FlowFixMe - invoke is not writable
       this.instancesRenderer.invoke = instancePtr => {
         // $FlowFixMe - wrapPointer is not exposed
@@ -96,8 +93,7 @@ export default class RenderedCustomObjectInstance extends Rendered3DInstance
         const renderedInstance:
           | RenderedInstance
           | Rendered3DInstance = this.getRendererOfInstance(
-          instance,
-          customObjectConfiguration
+          instance
         );
         if (!renderedInstance) return;
 
@@ -147,11 +143,13 @@ export default class RenderedCustomObjectInstance extends Rendered3DInstance
   }
 
   getRendererOfInstance = (
-    instance: gdInitialInstance,
-    customObjectConfiguration: gdCustomObjectConfiguration
+    instance: gdInitialInstance
   ): RenderedInstance | Rendered3DInstance => {
     let renderedInstance = this.renderedInstances.get(instance.ptr);
     if (!renderedInstance) {
+      const customObjectConfiguration = gd.asCustomObjectConfiguration(
+        this._associatedObjectConfiguration
+      );
       //No renderer associated yet, the instance must have been just created!...
       const childObjectConfiguration = customObjectConfiguration.getChildObjectConfiguration(
         instance.getObjectName()
@@ -169,13 +167,12 @@ export default class RenderedCustomObjectInstance extends Rendered3DInstance
     return renderedInstance;
   };
 
-  getLayoutedInstance = (
-    instance: gdInitialInstance
-  ): ChildInstance => {
+  getLayoutedInstance = (instance: gdInitialInstance): LayoutedInstance => {
     let layoutedInstance = this.layoutedInstances.get(instance.ptr);
     if (!layoutedInstance) {
-      layoutedInstance = new ChildInstance();
-      this.renderedInstances.set(instance.ptr, layoutedInstance);
+      layoutedInstance = new LayoutedInstance();
+      layoutedInstance.setObjectName(instance.getObjectName());
+      this.layoutedInstances.set(instance.ptr, layoutedInstance);
     }
     return layoutedInstance;
   };

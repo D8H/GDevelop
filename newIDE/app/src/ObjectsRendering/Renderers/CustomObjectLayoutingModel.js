@@ -50,10 +50,17 @@ export type ObjectAnchor = {
 };
 
 const getPropertyValue = (
-  properties: gdPropertyDescriptor,
+  properties: gdMapStringPropertyDescriptor,
   name: string
-): number =>
-  properties.has(name) ? parseFloat(properties.get(name).getValue()) || 0 : 0;
+): PropertyAnchorType =>
+  properties.has(name)
+    ? ((parseFloat(properties.get(name).getValue()) ||
+        0: any): PropertyAnchorType)
+    : 0;
+
+export interface PropertiesContainer {
+  getProperties(): gdMapStringPropertyDescriptor;
+}
 
 /**
  * Build the layouts description from the custom object properties.
@@ -67,7 +74,7 @@ export const getObjectAnchors = (
     mapFor(0, childObjects.getObjectsCount(), i => {
       const childObject = childObjects.getObjectAt(i);
 
-      if (!childObject.hasBehavior('Anchor')) {
+      if (!childObject.hasBehaviorNamed('Anchor')) {
         return null;
       }
       const properties = childObject.getBehavior('Anchor').getProperties();
@@ -92,7 +99,7 @@ export const getObjectAnchors = (
  * instances.
  * @see gdInitialInstance
  */
-export class ChildInstance implements InitialInstance {
+export class LayoutedInstance {
   objectName = '';
   ptr = 0;
   x = 0;
@@ -281,26 +288,29 @@ export interface ChildRenderedInstance {
 export interface LayoutedParent<
   CovariantChildRenderedInstance: ChildRenderedInstance
 > {
-  eventBasedObject: gdEventsBasedObject;
+  eventBasedObject: gdEventsBasedObject | null;
   _associatedObjectConfiguration: gdObjectConfiguration;
-  objectAnchors: Map<string, ObjectAnchor>;
-  childrenInstances: Array<ChildInstance>;
   getWidth(): number;
   getHeight(): number;
   getRendererOfInstance: (
-    instance: gdInitialInstance,
-    customObjectConfiguration: gdCustomObjectConfiguration
-  ) => RenderedInstance | Rendered3DInstance;
-  getLayoutedInstance: (instance: gdInitialInstance) => ChildInstance;
+    instance: gdInitialInstance
+  ) => CovariantChildRenderedInstance;
+  getLayoutedInstance: (instance: gdInitialInstance) => LayoutedInstance;
 }
 
 export const applyChildLayouts = <T: ChildRenderedInstance>(
   parent: LayoutedParent<T>
 ): ((instancePtr: number) => void) => {
   const eventBasedObject = parent.eventBasedObject;
+  if (!eventBasedObject) {
+    return (instancePtr: number) => {};
+  }
+  const customObjectConfiguration = gd.asCustomObjectConfiguration(
+    parent._associatedObjectConfiguration
+  );
   const objectAnchors = getObjectAnchors(
     eventBasedObject,
-    parent._associatedObjectConfiguration
+    customObjectConfiguration
   );
   const parentInitialMinX = eventBasedObject.getAreaMinX();
   const parentInitialMinY = eventBasedObject.getAreaMinY();
@@ -330,8 +340,7 @@ export const applyChildLayouts = <T: ChildRenderedInstance>(
     );
     const layoutedInstance = parent.getLayoutedInstance(initialInstance);
     const renderedInstance = parent.getRendererOfInstance(
-      layoutedInstance,
-      parent._associatedObjectConfiguration
+      ((layoutedInstance: any): gdInitialInstance)
     );
 
     const objectAnchor = objectAnchors.get(layoutedInstance.getObjectName());
@@ -348,10 +357,10 @@ export const applyChildLayouts = <T: ChildRenderedInstance>(
         const initialInstanceX = initialInstance.getX();
         const initialInstanceWidth = initialInstance.hasCustomSize()
           ? initialInstance.getCustomWidth()
-          : initialInstance.getDefaultWidth();
+          : renderedInstance.getDefaultWidth();
         const initialInstanceOriginX =
           (renderedInstance.getOriginX() * initialInstanceWidth) /
-          renderedInstance.getWidth();
+          renderedInstance.getDefaultWidth();
         const initialInstanceMinX = initialInstanceX - initialInstanceOriginX;
         const initialInstanceMaxX = initialInstanceMinX + initialInstanceWidth;
 
@@ -387,7 +396,8 @@ export const applyChildLayouts = <T: ChildRenderedInstance>(
 
         const width = rightPixel - leftPixel;
         const originX =
-          (renderedInstance.getOriginX() * width) / renderedInstance.getWidth();
+          (renderedInstance.getOriginX() * width) /
+          renderedInstance.getDefaultWidth();
         const x = leftPixel + originX;
         layoutedInstance.x = x;
         layoutedInstance.setCustomWidth(width);
@@ -397,10 +407,10 @@ export const applyChildLayouts = <T: ChildRenderedInstance>(
         const initialInstanceY = initialInstance.getY();
         const initialInstanceHeight = initialInstance.hasCustomSize()
           ? initialInstance.getCustomHeight()
-          : initialInstance.getDefaultHeight();
+          : renderedInstance.getDefaultHeight();
         const initialInstanceOriginY =
           (renderedInstance.getOriginY() * initialInstanceHeight) /
-          renderedInstance.getHeight();
+          renderedInstance.getDefaultHeight();
         const initialInstanceMinY = initialInstanceY - initialInstanceOriginY;
         const initialInstanceMaxY = initialInstanceMinY + initialInstanceHeight;
 
@@ -436,7 +446,7 @@ export const applyChildLayouts = <T: ChildRenderedInstance>(
         const height = bottomPixel - topPixel;
         const originY =
           (renderedInstance.getOriginY() * height) /
-          renderedInstance.getHeight();
+          renderedInstance.getDefaultHeight();
         const y = topPixel + originY;
         layoutedInstance.setCustomHeight(height);
         // This ensure objects are centered if their dimensions changed from the

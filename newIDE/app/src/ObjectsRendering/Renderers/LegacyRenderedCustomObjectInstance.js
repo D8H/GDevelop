@@ -24,7 +24,8 @@ const gd: libGDevelop = global.gd;
 /**
  * Renderer for gd.CustomObject (the class is not exposed to newIDE)
  */
-export default class LegacyRenderedCustomObjectInstance extends Rendered3DInstance
+export default class LegacyRenderedCustomObjectInstance
+  extends Rendered3DInstance
   implements LayoutedParent<RenderedInstance | Rendered3DInstance> {
   childrenInstances: ChildInstance[];
   childrenLayouts: ChildLayout[];
@@ -166,10 +167,7 @@ export default class LegacyRenderedCustomObjectInstance extends Rendered3DInstan
       this.childrenInstances.push(childInstance);
       this.childrenLayouts.push(childLayout);
       this.childrenRenderedInstances.push(renderer);
-      this.childrenRenderedInstanceByNames.set(
-        childObject.getName(),
-        renderer
-      );
+      this.childrenRenderedInstanceByNames.set(childObject.getName(), renderer);
     });
 
     if (this.childrenRenderedInstances.length === 0) {
@@ -189,19 +187,8 @@ export default class LegacyRenderedCustomObjectInstance extends Rendered3DInstan
     super.onRemovedFromScene();
 
     // Destroy all instances
-    for (const i in this.renderedInstances) {
-      // $FlowFixMe - useless to cast to number
-      this.renderedInstances[i].onRemovedFromScene();
-      // $FlowFixMe - useless to cast to number
-      delete this.renderedInstances[i];
-    }
     for (const childrenInstance of this.childrenRenderedInstances) {
       childrenInstance.onRemovedFromScene();
-    }
-
-    // Destroy the object iterating on instances
-    if (this.instancesRenderer) {
-      this.instancesRenderer.delete();
     }
 
     // Destroy the container.
@@ -285,18 +272,6 @@ export default class LegacyRenderedCustomObjectInstance extends Rendered3DInstan
 
     applyChildLayouts(this);
 
-    const firstInstance = this.childrenRenderedInstances[0];
-    let is3D = !!firstInstance && firstInstance instanceof Rendered3DInstance;
-
-    for (const i in this.renderedInstances) {
-      // $FlowFixMe - useless to cast to number
-      const renderedInstance = this.renderedInstances[i];
-      if (renderedInstance instanceof Rendered3DInstance) {
-        is3D = true;
-        break;
-      }
-    }
-
     // The children dimension and position are evaluated according to the
     // layout. The object pixels are not stretched. The object is rendered in
     // its current dimension. This is why the scale is always set to 1.
@@ -308,7 +283,7 @@ export default class LegacyRenderedCustomObjectInstance extends Rendered3DInstan
     const centerZ = this.getCenterZ();
 
     const threeObject = this._threeObject;
-    if (threeObject && is3D) {
+    if (threeObject && this._isRenderedIn3D) {
       threeObject.rotation.set(
         RenderedInstance.toRad(this._instance.getRotationX()),
         RenderedInstance.toRad(this._instance.getRotationY()),

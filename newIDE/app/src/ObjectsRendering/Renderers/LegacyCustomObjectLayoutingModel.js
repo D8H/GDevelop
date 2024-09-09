@@ -389,7 +389,7 @@ export const getLayouts = (
  * instances.
  * @see gdInitialInstance
  */
-export class ChildInstance implements InitialInstance {
+export class ChildInstance {
   x: number;
   y: number;
   z: number;
