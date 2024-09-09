@@ -6,7 +6,7 @@ import ResourcesLoader from '../../ResourcesLoader';
 import ObjectsRenderingService from '../ObjectsRenderingService';
 import RenderedTextInstance from './RenderedTextInstance';
 import {
-  applyChildLayouts,
+  getLayoutedRenderedInstance,
   LayoutedInstance,
   LayoutedParent,
 } from './CustomObjectLayoutingModel';
@@ -76,70 +76,66 @@ export default class RenderedCustomObjectInstance extends Rendered3DInstance
 
     // Functor used to render an instance
     this.instancesRenderer = new gd.InitialInstanceJSFunctor();
+    // $FlowFixMe - invoke is not writable
+    this.instancesRenderer.invoke = instancePtr => {
+      // $FlowFixMe - wrapPointer is not exposed
+      const instance: gdInitialInstance = gd.wrapPointer(
+        instancePtr,
+        gd.InitialInstance
+      );
 
-    if (eventBasedObject.isInnerAreaFollowingParentSize()) {
-      // $FlowFixMe - invoke is not writable
-      this.instancesRenderer.invoke = applyChildLayouts(this);
-    } else {
-      // $FlowFixMe - invoke is not writable
-      this.instancesRenderer.invoke = instancePtr => {
-        // $FlowFixMe - wrapPointer is not exposed
-        const instance: gdInitialInstance = gd.wrapPointer(
-          instancePtr,
-          gd.InitialInstance
-        );
+      //Get the "RenderedInstance" object associated to the instance and tell it to update.
+      const renderedInstance:
+        | RenderedInstance
+        | Rendered3DInstance
+        | null = eventBasedObject.isInnerAreaFollowingParentSize()
+        ? getLayoutedRenderedInstance(this, instance)
+        : this.getRendererOfInstance(instance);
 
-        //Get the "RenderedInstance" object associated to the instance and tell it to update.
-        const renderedInstance:
-          | RenderedInstance
-          | Rendered3DInstance = this.getRendererOfInstance(
-          instance
-        );
-        if (!renderedInstance) return;
+      if (!renderedInstance) return;
 
-        const pixiObject: PIXI.DisplayObject | null = renderedInstance.getPixiObject();
+      const pixiObject: PIXI.DisplayObject | null = renderedInstance.getPixiObject();
+      if (pixiObject) {
+        if (renderedInstance instanceof Rendered3DInstance) {
+          pixiObject.zOrder = instance.getZ() + renderedInstance.getDepth();
+        } else {
+          pixiObject.zOrder = instance.getZOrder();
+        }
+      }
+
+      try {
+        // TODO: should we do culling here?
+        // "Culling" improves rendering performance of large levels
+        const isVisible = true; // this._isInstanceVisible(instance);
         if (pixiObject) {
-          if (renderedInstance instanceof Rendered3DInstance) {
-            pixiObject.zOrder = instance.getZ() + renderedInstance.getDepth();
-          } else {
-            pixiObject.zOrder = instance.getZOrder();
+          pixiObject.visible = isVisible;
+          pixiObject.eventMode = 'auto';
+        }
+        if (isVisible) renderedInstance.update();
+
+        if (renderedInstance instanceof Rendered3DInstance) {
+          const threeObject = renderedInstance.getThreeObject();
+          if (threeObject) {
+            threeObject.visible = isVisible;
           }
         }
-
-        try {
-          // TODO: should we do culling here?
-          // "Culling" improves rendering performance of large levels
-          const isVisible = true; // this._isInstanceVisible(instance);
-          if (pixiObject) {
-            pixiObject.visible = isVisible;
-            pixiObject.eventMode = 'auto';
-          }
-          if (isVisible) renderedInstance.update();
-
-          if (renderedInstance instanceof Rendered3DInstance) {
-            const threeObject = renderedInstance.getThreeObject();
-            if (threeObject) {
-              threeObject.visible = isVisible;
-            }
-          }
-        } catch (error) {
-          if (error instanceof TypeError) {
-            // When reloading a texture when a resource changed externally, rendering
-            // an instance could crash when trying to access a non-existent PIXI base texture.
-            // The error is not propagated in order to avoid a crash at the SceneEditor level.
-            // See https://github.com/4ian/GDevelop/issues/5802.
-            console.error(
-              `An error occurred when rendering instance for object ${instance.getObjectName()}:`,
-              error
-            );
-            return;
-          }
-          throw error;
-        } finally {
-          renderedInstance.wasUsed = true;
+      } catch (error) {
+        if (error instanceof TypeError) {
+          // When reloading a texture when a resource changed externally, rendering
+          // an instance could crash when trying to access a non-existent PIXI base texture.
+          // The error is not propagated in order to avoid a crash at the SceneEditor level.
+          // See https://github.com/4ian/GDevelop/issues/5802.
+          console.error(
+            `An error occurred when rendering instance for object ${instance.getObjectName()}:`,
+            error
+          );
+          return;
         }
-      };
-    }
+        throw error;
+      } finally {
+        renderedInstance.wasUsed = true;
+      }
+    };
   }
 
   getRendererOfInstance = (
@@ -170,8 +166,10 @@ export default class RenderedCustomObjectInstance extends Rendered3DInstance
   getLayoutedInstance = (instance: gdInitialInstance): LayoutedInstance => {
     let layoutedInstance = this.layoutedInstances.get(instance.ptr);
     if (!layoutedInstance) {
-      layoutedInstance = new LayoutedInstance();
-      layoutedInstance.setObjectName(instance.getObjectName());
+      layoutedInstance = new LayoutedInstance(
+        instance.ptr,
+        instance.getObjectName()
+      );
       this.layoutedInstances.set(instance.ptr, layoutedInstance);
     }
     return layoutedInstance;

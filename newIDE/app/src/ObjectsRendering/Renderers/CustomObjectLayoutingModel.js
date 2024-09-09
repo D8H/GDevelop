@@ -45,8 +45,10 @@ const getPropertyValue = (
   name: string
 ): CustomObjectConfiguration_EdgeAnchor =>
   properties.has(name)
-    ? gd.CustomObjectConfiguration.getEdgeAnchorFromString(properties.get(name).getValue())
-    : gd.CustomObjectConfiguration.None;
+    ? gd.CustomObjectConfiguration.getEdgeAnchorFromString(
+        properties.get(name).getValue()
+      )
+    : gd.CustomObjectConfiguration.NoAnchor;
 
 export interface PropertiesContainer {
   getProperties(): gdMapStringPropertyDescriptor;
@@ -90,8 +92,8 @@ export const getObjectAnchors = (
  * @see gdInitialInstance
  */
 export class LayoutedInstance {
-  objectName = '';
-  ptr = 0;
+  ptr: number;
+  objectName: string;
   x = 0;
   y = 0;
   z = 0;
@@ -100,6 +102,11 @@ export class LayoutedInstance {
   _customWidth = 0;
   _customHeight = 0;
   _customDepth = 0;
+
+  constructor(ptr: number, objectName: string) {
+    this.ptr = ptr;
+    this.objectName = objectName;
+  }
 
   getX() {
     return this.x;
@@ -288,170 +295,202 @@ export interface LayoutedParent<
   getLayoutedInstance: (instance: gdInitialInstance) => LayoutedInstance;
 }
 
-export const applyChildLayouts = <T: ChildRenderedInstance>(
-  parent: LayoutedParent<T>
-): ((instancePtr: number) => void) => {
+export const getLayoutedRenderedInstance = <T: ChildRenderedInstance>(
+  parent: LayoutedParent<T>,
+  initialInstance: gdInitialInstance
+): T | null => {
   const eventBasedObject = parent.eventBasedObject;
   if (!eventBasedObject) {
-    return (instancePtr: number) => {};
+    return null;
   }
   const customObjectConfiguration = gd.asCustomObjectConfiguration(
     parent._associatedObjectConfiguration
   );
+
   const objectAnchors = getObjectAnchors(
     eventBasedObject,
     customObjectConfiguration
   );
-  console.log(objectAnchors);
+
   const parentInitialMinX = eventBasedObject.getAreaMinX();
   const parentInitialMinY = eventBasedObject.getAreaMinY();
   const parentInitialMaxX = eventBasedObject.getAreaMaxX();
   const parentInitialMaxY = eventBasedObject.getAreaMaxY();
-  const parentInitialCenterX = (parentInitialMaxX + parentInitialMinX) / 2;
-  const parentInitialCenterY = (parentInitialMaxY + parentInitialMinY) / 2;
   const parentInitialWidth = parentInitialMaxX - parentInitialMinX;
   const parentInitialHeight = parentInitialMaxY - parentInitialMinY;
+
+  const layoutedInstance = parent.getLayoutedInstance(initialInstance);
+  const renderedInstance = parent.getRendererOfInstance(
+    ((layoutedInstance: any): gdInitialInstance)
+  );
+
+  const objectAnchor = objectAnchors.get(layoutedInstance.getObjectName());
+  const leftEdgeAnchor = objectAnchor
+    ? objectAnchor.leftEdgeAnchor
+    : gd.CustomObjectConfiguration.NoAnchor;
+  const topEdgeAnchor = objectAnchor
+    ? objectAnchor.topEdgeAnchor
+    : gd.CustomObjectConfiguration.NoAnchor;
+  const rightEdgeAnchor = objectAnchor
+    ? objectAnchor.rightEdgeAnchor
+    : gd.CustomObjectConfiguration.NoAnchor;
+  const bottomEdgeAnchor = objectAnchor
+    ? objectAnchor.bottomEdgeAnchor
+    : gd.CustomObjectConfiguration.NoAnchor;
 
   const parentWidth = parent.getWidth();
   const parentHeight = parent.getHeight();
   const parentScaleX = parentWidth / parentInitialWidth;
   const parentScaleY = parentHeight / parentInitialHeight;
-  const parentMinX = parentInitialMinX * parentScaleX;
-  const parentMinY = parentInitialMinY * parentScaleX;
-  const parentMaxX = parentInitialMaxX * parentScaleY;
-  const parentMaxY = parentInitialMaxY * parentScaleY;
-  const parentCenterX = (parentMaxX + parentMinX) / 2;
-  const parentCenterY = (parentMaxY + parentMinY) / 2;
 
-  return (instancePtr: number) => {
-    // $FlowFixMe - wrapPointer is not exposed
-    const initialInstance: gdInitialInstance = gd.wrapPointer(
-      instancePtr,
-      gd.InitialInstance
-    );
-    const layoutedInstance = parent.getLayoutedInstance(initialInstance);
-    const renderedInstance = parent.getRendererOfInstance(
-      ((layoutedInstance: any): gdInitialInstance)
-    );
+  const initialInstanceX = initialInstance.getX();
+  const initialInstanceWidth = initialInstance.hasCustomSize()
+    ? initialInstance.getCustomWidth()
+    : renderedInstance.getDefaultWidth();
 
-    const objectAnchor = objectAnchors.get(layoutedInstance.getObjectName());
-    if (!objectAnchor) {
-    } else {
-      const {
-        leftEdgeAnchor,
-        topEdgeAnchor,
-        rightEdgeAnchor,
-        bottomEdgeAnchor,
-      } = objectAnchor;
+  if (parentScaleX === 1 || (!leftEdgeAnchor && !rightEdgeAnchor)) {
+    layoutedInstance.x = initialInstanceX;
+    layoutedInstance.setCustomWidth(initialInstanceWidth);
+  } else {
+    const parentInitialCenterX = (parentInitialMaxX + parentInitialMinX) / 2;
 
-      if (parentScaleX !== 1 && (leftEdgeAnchor || rightEdgeAnchor)) {
-        const initialInstanceX = initialInstance.getX();
-        const initialInstanceWidth = initialInstance.hasCustomSize()
-          ? initialInstance.getCustomWidth()
-          : renderedInstance.getDefaultWidth();
-        const initialInstanceOriginX =
-          (renderedInstance.getOriginX() * initialInstanceWidth) /
-          renderedInstance.getDefaultWidth();
-        const initialInstanceMinX = initialInstanceX - initialInstanceOriginX;
-        const initialInstanceMaxX = initialInstanceMinX + initialInstanceWidth;
+    const parentMinX = parentInitialMinX * parentScaleX;
+    const parentMaxX = parentInitialMaxX * parentScaleX;
+    const parentCenterX = (parentMaxX + parentMinX) / 2;
 
-        let leftPixel = initialInstanceMinX;
-        if (leftEdgeAnchor === gd.CustomObjectConfiguration.MinEdge) {
-          leftPixel = parentMinX + initialInstanceMinX - parentInitialMinX;
-        } else if (leftEdgeAnchor === gd.CustomObjectConfiguration.MaxEdge) {
-          leftPixel = parentMaxX + initialInstanceMinX - parentInitialMaxX;
-        } else if (leftEdgeAnchor === gd.CustomObjectConfiguration.Proportional) {
-          leftPixel =
-            parentMinX +
-            ((initialInstanceMinX - parentInitialMinX) / parentInitialWidth) *
-              parentWidth;
-        } else if (leftEdgeAnchor === gd.CustomObjectConfiguration.Center) {
-          leftPixel =
-            parentCenterX + initialInstanceMinX - parentInitialCenterX;
-        }
+    const initialInstanceOriginX =
+      (renderedInstance.getOriginX() * initialInstanceWidth) /
+      renderedInstance.getDefaultWidth();
+    const initialInstanceMinX = initialInstanceX - initialInstanceOriginX;
+    const initialInstanceMaxX = initialInstanceMinX + initialInstanceWidth;
 
-        let rightPixel = initialInstanceMaxX;
-        if (rightEdgeAnchor === gd.CustomObjectConfiguration.MinEdge) {
-          rightPixel = parentMinX + initialInstanceMaxX - parentInitialMinX;
-        } else if (rightEdgeAnchor === gd.CustomObjectConfiguration.MaxEdge) {
-          rightPixel = parentMaxX + initialInstanceMaxX - parentInitialMaxX;
-        } else if (rightEdgeAnchor === gd.CustomObjectConfiguration.Proportional) {
-          rightPixel =
-            parentMinX +
-            ((initialInstanceMaxX - parentInitialMinX) / parentInitialWidth) *
-              parentWidth;
-        } else if (rightEdgeAnchor === gd.CustomObjectConfiguration.Center) {
-          rightPixel =
-            parentCenterX + initialInstanceMaxX - parentInitialCenterX;
-        }
-
-        const width = rightPixel - leftPixel;
-        const originX =
-          (renderedInstance.getOriginX() * width) /
-          renderedInstance.getDefaultWidth();
-        const x = leftPixel + originX;
-        layoutedInstance.x = x;
-        layoutedInstance.setCustomWidth(width);
-
-        console.log(layoutedInstance.getObjectName() + " X: " + leftPixel + " --> " + rightPixel);
-      }
-
-      if (parentScaleY !== 1 && (topEdgeAnchor || bottomEdgeAnchor)) {
-        const initialInstanceY = initialInstance.getY();
-        const initialInstanceHeight = initialInstance.hasCustomSize()
-          ? initialInstance.getCustomHeight()
-          : renderedInstance.getDefaultHeight();
-        const initialInstanceOriginY =
-          (renderedInstance.getOriginY() * initialInstanceHeight) /
-          renderedInstance.getDefaultHeight();
-        const initialInstanceMinY = initialInstanceY - initialInstanceOriginY;
-        const initialInstanceMaxY = initialInstanceMinY + initialInstanceHeight;
-
-        let bottomPixel = initialInstanceMaxY;
-        if (bottomEdgeAnchor === gd.CustomObjectConfiguration.MinEdge) {
-          bottomPixel = parentMinY + initialInstanceMaxY - parentInitialMinY;
-        } else if (bottomEdgeAnchor === gd.CustomObjectConfiguration.MaxEdge) {
-          bottomPixel = parentMaxY + initialInstanceMaxY - parentInitialMaxY;
-        } else if (bottomEdgeAnchor === gd.CustomObjectConfiguration.Proportional) {
-          bottomPixel =
-            parentMinY +
-            ((initialInstanceMaxY - parentInitialMinY) / parentInitialHeight) *
-              parentHeight;
-        } else if (bottomEdgeAnchor === gd.CustomObjectConfiguration.Center) {
-          bottomPixel =
-            parentCenterY + initialInstanceMaxY - parentInitialCenterY;
-        }
-
-        let topPixel = initialInstanceMinY;
-        if (topEdgeAnchor === gd.CustomObjectConfiguration.MinEdge) {
-          topPixel = parentMinY + initialInstanceMinY - parentInitialMinY;
-        } else if (topEdgeAnchor === gd.CustomObjectConfiguration.MaxEdge) {
-          topPixel = parentMaxY + initialInstanceMinY - parentInitialMaxY;
-        } else if (topEdgeAnchor === gd.CustomObjectConfiguration.Proportional) {
-          topPixel =
-            parentMinY +
-            ((initialInstanceMinY - parentInitialMinY) / parentInitialHeight) *
-              parentHeight;
-        } else if (topEdgeAnchor === gd.CustomObjectConfiguration.Center) {
-          topPixel = parentCenterY + initialInstanceMinY - parentInitialCenterY;
-        }
-
-        const height = bottomPixel - topPixel;
-        const originY =
-          (renderedInstance.getOriginY() * height) /
-          renderedInstance.getDefaultHeight();
-        const y = topPixel + originY;
-        layoutedInstance.setCustomHeight(height);
-        // This ensure objects are centered if their dimensions changed from the
-        // custom ones (preferred ones).
-        // For instance, text object dimensions change according to how the text is wrapped.
-        renderedInstance.update();
-        layoutedInstance.y = y;
-        
-        console.log(layoutedInstance.getObjectName() + " Y: " + topPixel + " --> " + bottomPixel);
-      }
-
-      renderedInstance.update();
+    let left = initialInstanceMinX;
+    if (leftEdgeAnchor === gd.CustomObjectConfiguration.MinEdge) {
+      left = parentMinX + initialInstanceMinX - parentInitialMinX;
+    } else if (leftEdgeAnchor === gd.CustomObjectConfiguration.MaxEdge) {
+      left = parentMaxX + initialInstanceMinX - parentInitialMaxX;
+    } else if (leftEdgeAnchor === gd.CustomObjectConfiguration.Proportional) {
+      left =
+        parentMinX +
+        ((initialInstanceMinX - parentInitialMinX) / parentInitialWidth) *
+          parentWidth;
+    } else if (leftEdgeAnchor === gd.CustomObjectConfiguration.Center) {
+      left = parentCenterX + initialInstanceMinX - parentInitialCenterX;
     }
-  };
+
+    let right = initialInstanceMaxX;
+    if (rightEdgeAnchor === gd.CustomObjectConfiguration.MinEdge) {
+      right = parentMinX + initialInstanceMaxX - parentInitialMinX;
+    } else if (rightEdgeAnchor === gd.CustomObjectConfiguration.MaxEdge) {
+      right = parentMaxX + initialInstanceMaxX - parentInitialMaxX;
+    } else if (rightEdgeAnchor === gd.CustomObjectConfiguration.Proportional) {
+      right =
+        parentMinX +
+        ((initialInstanceMaxX - parentInitialMinX) / parentInitialWidth) *
+          parentWidth;
+    } else if (rightEdgeAnchor === gd.CustomObjectConfiguration.Center) {
+      right = parentCenterX + initialInstanceMaxX - parentInitialCenterX;
+    }
+
+    let x, width;
+    if (rightEdgeAnchor === gd.CustomObjectConfiguration.NoAnchor) {
+      width = initialInstanceWidth;
+      const originX =
+        (renderedInstance.getOriginX() * width) /
+        renderedInstance.getDefaultWidth();
+      x = left + originX;
+    } else if (leftEdgeAnchor === gd.CustomObjectConfiguration.NoAnchor) {
+      width = initialInstanceWidth;
+      const originX =
+        (renderedInstance.getOriginX() * width) /
+        renderedInstance.getDefaultWidth();
+      x = right - width + originX;
+    } else {
+      width = right - left;
+      const originX =
+        (renderedInstance.getOriginX() * width) /
+        renderedInstance.getDefaultWidth();
+      x = left + originX;
+    }
+    layoutedInstance.x = x;
+    layoutedInstance.setCustomWidth(width);
+  }
+
+  const initialInstanceY = initialInstance.getY();
+  const initialInstanceHeight = initialInstance.hasCustomSize()
+    ? initialInstance.getCustomHeight()
+    : renderedInstance.getDefaultHeight();
+
+  if (parentScaleY === 1 || (!topEdgeAnchor && !bottomEdgeAnchor)) {
+    layoutedInstance.y = initialInstanceY;
+    layoutedInstance.setCustomHeight(initialInstanceHeight);
+  } else {
+    const parentInitialCenterY = (parentInitialMaxY + parentInitialMinY) / 2;
+
+    const parentMinY = parentInitialMinY * parentScaleX;
+    const parentMaxY = parentInitialMaxY * parentScaleY;
+    const parentCenterY = (parentMaxY + parentMinY) / 2;
+
+    const initialInstanceOriginY =
+      (renderedInstance.getOriginY() * initialInstanceHeight) /
+      renderedInstance.getDefaultHeight();
+    const initialInstanceMinY = initialInstanceY - initialInstanceOriginY;
+    const initialInstanceMaxY = initialInstanceMinY + initialInstanceHeight;
+
+    let bottom = initialInstanceMaxY;
+    if (bottomEdgeAnchor === gd.CustomObjectConfiguration.MinEdge) {
+      bottom = parentMinY + initialInstanceMaxY - parentInitialMinY;
+    } else if (bottomEdgeAnchor === gd.CustomObjectConfiguration.MaxEdge) {
+      bottom = parentMaxY + initialInstanceMaxY - parentInitialMaxY;
+    } else if (bottomEdgeAnchor === gd.CustomObjectConfiguration.Proportional) {
+      bottom =
+        parentMinY +
+        ((initialInstanceMaxY - parentInitialMinY) / parentInitialHeight) *
+          parentHeight;
+    } else if (bottomEdgeAnchor === gd.CustomObjectConfiguration.Center) {
+      bottom = parentCenterY + initialInstanceMaxY - parentInitialCenterY;
+    }
+
+    let top = initialInstanceMinY;
+    if (topEdgeAnchor === gd.CustomObjectConfiguration.MinEdge) {
+      top = parentMinY + initialInstanceMinY - parentInitialMinY;
+    } else if (topEdgeAnchor === gd.CustomObjectConfiguration.MaxEdge) {
+      top = parentMaxY + initialInstanceMinY - parentInitialMaxY;
+    } else if (topEdgeAnchor === gd.CustomObjectConfiguration.Proportional) {
+      top =
+        parentMinY +
+        ((initialInstanceMinY - parentInitialMinY) / parentInitialHeight) *
+          parentHeight;
+    } else if (topEdgeAnchor === gd.CustomObjectConfiguration.Center) {
+      top = parentCenterY + initialInstanceMinY - parentInitialCenterY;
+    }
+
+    let y, height;
+    if (bottomEdgeAnchor === gd.CustomObjectConfiguration.NoAnchor) {
+      height = initialInstanceHeight;
+      const originY =
+        (renderedInstance.getOriginY() * height) /
+        renderedInstance.getDefaultHeight();
+      y = top + originY;
+    } else if (topEdgeAnchor === gd.CustomObjectConfiguration.NoAnchor) {
+      height = initialInstanceHeight;
+      const originY =
+        (renderedInstance.getOriginY() * height) /
+        renderedInstance.getDefaultHeight();
+      y = bottom - height + originY;
+    } else {
+      height = bottom - top;
+      const originY =
+        (renderedInstance.getOriginY() * height) /
+        renderedInstance.getDefaultHeight();
+      y = top + originY;
+    }
+    layoutedInstance.setCustomHeight(height);
+    // This ensure objects are centered if their dimensions changed from the
+    // custom ones (preferred ones).
+    // For instance, text object dimensions change according to how the text is wrapped.
+    renderedInstance.update();
+    layoutedInstance.y = y;
+  }
+  return renderedInstance;
 };
