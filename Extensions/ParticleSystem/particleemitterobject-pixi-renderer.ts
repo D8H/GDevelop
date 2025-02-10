@@ -14,6 +14,8 @@ namespace gdjs {
     first.next.value = endValue;
   };
 
+  // TODO PIXI8 use https://github.com/andriibarvynko/particle-emitter ?
+
   export class ParticleEmitterObjectPixiRenderer {
     renderer: PIXI.Container;
     emitter: PIXI.particles.Emitter;
@@ -373,7 +375,7 @@ namespace gdjs {
         .getGame()
         .getImageManager()
         .getPIXITexture(texture);
-      return pixiTexture.valid && pixiTexture !== invalidPixiTexture;
+      return !pixiTexture.destroyed && pixiTexture !== invalidPixiTexture;
     }
 
     setTextureName(
@@ -388,7 +390,7 @@ namespace gdjs {
         .getGame()
         .getImageManager()
         .getPIXITexture(texture);
-      if (pixiTexture.valid && pixiTexture !== invalidPixiTexture) {
+      if (!pixiTexture.destroyed && pixiTexture !== invalidPixiTexture) {
         // Access private members of the behavior to apply changes right away.
         const behavior: any = this.emitter.getBehavior('textureSingle');
         behavior.texture = pixiTexture;

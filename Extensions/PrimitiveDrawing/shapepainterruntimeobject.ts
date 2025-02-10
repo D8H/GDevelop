@@ -490,7 +490,6 @@ namespace gdjs {
 
     setOutlineColor(rgbColor: string): void {
       this._outlineColor = gdjs.rgbOrHexStringToNumber(rgbColor);
-      this._renderer.updateOutline();
     }
 
     getOutlineColorR(): integer {
@@ -505,7 +504,6 @@ namespace gdjs {
 
     setOutlineSize(size: float): void {
       this._outlineSize = size;
-      this._renderer.updateOutline();
     }
 
     getOutlineSize() {
@@ -534,7 +532,6 @@ namespace gdjs {
      */
     setOutlineOpacity(opacity: float): void {
       this._outlineOpacity = opacity;
-      this._renderer.updateOutline();
     }
 
     /**
