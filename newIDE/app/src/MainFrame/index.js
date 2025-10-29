@@ -206,6 +206,7 @@ import { useGamesPlatformFrame } from './EditorContainers/HomePage/PlaySection/U
 import { useExtensionLoadErrorDialog } from '../Utils/UseExtensionLoadErrorDialog';
 import { PanesContainer } from './PanesContainer';
 import StandaloneDialog from './StandAloneDialog';
+import { ProjectScopedContainersAccessor } from '../InstructionOrExpression/EventsScope';
 
 const GD_STARTUP_TIMES = global.GD_STARTUP_TIMES || [];
 
@@ -3872,6 +3873,14 @@ const MainFrame = (props: Props) => {
     ]
   );
 
+  const projectScopedContainersAccessor: ProjectScopedContainersAccessor | null = React.useMemo(
+    () =>
+      currentProject
+        ? new ProjectScopedContainersAccessor({ project: currentProject })
+        : null,
+    [currentProject]
+  );
+
   const hideAskAi =
     !!authenticatedUser.limits &&
     !!authenticatedUser.limits.capabilities.classrooms &&
@@ -4062,6 +4071,7 @@ const MainFrame = (props: Props) => {
           isOpen={projectManagerOpen}
           hotReloadPreviewButtonProps={hotReloadPreviewButtonProps}
           resourceManagementProps={resourceManagementProps}
+          projectScopedContainersAccessor={projectScopedContainersAccessor}
           gamesList={gamesList}
           onOpenHomePage={openHomePage}
           toggleProjectManager={toggleProjectManager}
