@@ -172,7 +172,7 @@ const ResourceSelector = React.forwardRef<Props, ResourceSelectorInterface>(
     );
 
     const loadFrom = React.useCallback(
-      (resourcesManager: gdResourcesManager) => {
+      (resourcesManager: gdResourcesContainer) => {
         const allResourcesNames = resourcesManager
           .getAllResourceNames()
           .toJSArray();

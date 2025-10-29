@@ -198,6 +198,13 @@ class GD_CORE_API ValueTypeMetadata {
   }
 
   /**
+   * \brief Return true if the type is a resource.
+   */
+  bool IsResource() const {
+    return gd::ValueTypeMetadata::IsTypeValue("resource", name);
+  }
+
+  /**
    * \brief Return true if the type is an expression of the given type from the
    * caller point of view.
    *
