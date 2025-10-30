@@ -260,7 +260,8 @@ class GD_CORE_API ValueTypeMetadata {
              parameterType == "spineResource" ||
              // Deprecated, old parameter types:
              parameterType == "soundfile" ||
-             parameterType == "musicfile";
+             parameterType == "musicfile" ||
+             parameterType == "password";
     }
     return false;
   }

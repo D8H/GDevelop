@@ -1419,7 +1419,7 @@ gd::String EventsCodeGenerator::GenerateGetVariable(
   const gd::VariablesContainer* variables = NULL;
   if (scope == ANY_VARIABLE || scope == VARIABLE_OR_PROPERTY ||
       scope == VARIABLE_OR_PROPERTY_OR_PARAMETER) {
-    const auto variablesContainersList =
+    const auto &variablesContainersList =
         GetProjectScopedContainers().GetVariablesContainersList();
     const auto& variablesContainer =
         scope == VARIABLE_OR_PROPERTY_OR_PARAMETER
