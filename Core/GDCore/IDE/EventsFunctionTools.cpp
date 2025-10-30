@@ -190,8 +190,9 @@ void EventsFunctionTools::ParametersToResourcesContainer(
 
     auto &valueTypeMetadata = parameter.GetValueTypeMetadata();
     if (valueTypeMetadata.IsResource()) {
-      outputResourcesContainer.AddResource(parameter.GetName(), "",
-                                           valueTypeMetadata.GetExtraInfo());
+      outputResourcesContainer.AddResource(
+          parameter.GetName(), "",
+          gd::ValueTypeMetadata::GetResourceType(valueTypeMetadata.GetName()));
     }
   }
 }

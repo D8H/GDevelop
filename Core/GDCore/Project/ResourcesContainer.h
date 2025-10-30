@@ -26,6 +26,19 @@ namespace gd {
  */
 class GD_CORE_API Resource {
 public:
+  static const gd::String imageType;
+  static const gd::String audioType;
+  static const gd::String fontType;
+  static const gd::String videoType;
+  static const gd::String jsonType;
+  static const gd::String tileMapType;
+  static const gd::String tileSetType;
+  static const gd::String bitmapType;
+  static const gd::String model3DType;
+  static const gd::String atlasType;
+  static const gd::String spineType;
+  static const gd::String javaScriptType;
+
   Resource(){};
   virtual ~Resource(){};
   virtual Resource *Clone() const { return new Resource(*this); }

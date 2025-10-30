@@ -313,6 +313,12 @@ class GD_CORE_API ValueTypeMetadata {
    */
   static const gd::String &ConvertPropertyTypeToValueType(const gd::String &propertyType);
 
+  /**
+   * \brief Return the resource type for a parameter type.
+   * \see gd::Resource
+   */
+  static const gd::String &GetResourceType(const gd::String &parameterType);
+
   /** \name Serialization
    */
   ///@{

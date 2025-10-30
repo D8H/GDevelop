@@ -111,7 +111,9 @@ public:
   /**
    * \brief Return the number of objects containers.
    */
-  std::size_t GetResourcesContainersCount() const;
+  std::size_t GetResourcesContainersCount() const{
+    return resourcesContainers.size();
+  }
 
   /** Do not use - should be private but accessible to let Emscripten create a
    * temporary. */

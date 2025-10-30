@@ -137,6 +137,19 @@ ResourcesContainer::CreateResource(const gd::String &kind) {
   return std::make_shared<Resource>();
 }
 
+const gd::String Resource::imageType = "image";
+const gd::String Resource::audioType = "audio";
+const gd::String Resource::fontType = "font";
+const gd::String Resource::videoType = "video";
+const gd::String Resource::jsonType = "json";
+const gd::String Resource::tileMapType = "tilemap";
+const gd::String Resource::tileSetType = "tileset";
+const gd::String Resource::bitmapType = "bitmapFont";
+const gd::String Resource::model3DType = "model3D";
+const gd::String Resource::atlasType = "atlas";
+const gd::String Resource::spineType = "spine";
+const gd::String Resource::javaScriptType = "javascript";
+
 bool ResourcesContainer::HasResource(const gd::String &name) const {
   for (std::size_t i = 0; i < resources.size(); ++i) {
     if (resources[i]->GetName() == name)
