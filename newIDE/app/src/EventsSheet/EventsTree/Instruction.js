@@ -365,7 +365,9 @@ const Instruction = (props: Props) => {
               const resourceName = instruction
                 .getParameter(parameterIndex)
                 .getPlainString();
-              expressionIsValid = resourcesManager.hasResource(resourceName);
+              expressionIsValid = projectScopedContainers
+                .getResourcesContainersList()
+                .hasResourceNamed(resourceName);
             }
             if (
               expressionIsValid &&

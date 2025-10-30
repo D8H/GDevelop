@@ -178,8 +178,6 @@ const ResourceSelector = React.forwardRef<Props, ResourceSelectorInterface>(
     const loadFrom = React.useCallback(
       (resourcesContainersList: gdResourcesContainersList) => {
         const allResourcesNames = new Set<string>();
-        console.log("getResourcesContainersCount", resourcesContainersList.getResourcesContainersCount());
-        console.log("resourceKind", resourceKind);
         for (
           let i = 0;
           i < resourcesContainersList.getResourcesContainersCount();
