@@ -2052,6 +2052,7 @@ export class UsedExtensionsResult extends EmscriptenObject {
 
 export class UsedExtensionsFinder extends EmscriptenObject {
   static scanProject(project: Project): UsedExtensionsResult;
+  static scanEventsFunctionsExtension(project: Project, eventsFunctionsExtension: EventsFunctionsExtension): UsedExtensionsResult;
 }
 
 export class ExampleExtensionUsagesFinder extends EmscriptenObject {

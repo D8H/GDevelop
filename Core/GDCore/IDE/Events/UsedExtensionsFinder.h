@@ -80,8 +80,11 @@ class GD_CORE_API UsedExtensionsFinder
       public ExpressionParser2NodeWorker {
  public:
   static const UsedExtensionsResult ScanProject(gd::Project& project);
+  static const UsedExtensionsResult ScanEventsFunctionsExtension(
+      gd::Project &project,
+      const gd::EventsFunctionsExtension &eventsFunctionsExtension);
 
- private:
+private:
   UsedExtensionsFinder(gd::Project& project_) : project(project_){};
   gd::Project& project;
   gd::String rootType;

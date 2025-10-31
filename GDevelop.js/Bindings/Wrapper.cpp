@@ -825,6 +825,7 @@ typedef std::vector<gd::PropertyDescriptorChoice> VectorPropertyDescriptorChoice
 #define STATIC_GetNodeAtPosition GetNodeAtPosition
 
 #define STATIC_ScanProject ScanProject
+#define STATIC_ScanEventsFunctionsExtension ScanEventsFunctionsExtension
 #define STATIC_GetUsedExtensions GetUsedExtensions
 
 #define STATIC_ApplyTranslation ApplyTranslation
