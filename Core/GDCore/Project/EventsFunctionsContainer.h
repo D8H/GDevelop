@@ -3,11 +3,11 @@
  * Copyright 2008-present Florian Rival (Florian.Rival@gmail.com). All rights
  * reserved. This project is released under the MIT License.
  */
-#if defined(GD_IDE_ONLY)
-#ifndef GDCORE_EVENTSFUNCTIONSCONTAINER_H
-#define GDCORE_EVENTSFUNCTIONSCONTAINER_H
+#pragma once
+
 #include <vector>
 #include "GDCore/Project/EventsFunction.h"
+#include "GDCore/Project/FunctionFolderOrFunction.h"
 #include "GDCore/String.h"
 #include "GDCore/Tools/SerializableWithNameList.h"
 namespace gd {
@@ -145,6 +145,43 @@ public:
   };
   ///@}
 
+  /** \name Folders management
+   */
+  ///@{
+  /**
+   * \brief Add a new empty function called \a name in the
+   * given folder at the specified position.<br>
+   *
+   * \return A reference to the function in the list.
+   */
+  gd::EventsFunction &InsertNewFunctionInFolder(
+      const gd::String &name,
+      gd::FunctionFolderOrFunction &functionFolderOrFunction,
+      std::size_t position);
+
+  /**
+   * Returns a vector containing all object and folders in this container.
+   * Only use this for checking if you hold a valid `FunctionFolderOrFunction` -
+   * don't use this for rendering or anything else.
+   */
+  std::vector<const FunctionFolderOrFunction *>
+  GetAllFunctionFolderOrFunction() const;
+
+  gd::FunctionFolderOrFunction &GetRootFolder() { return *rootFolder; }
+
+  void AddMissingFunctionsInRootFolder();
+
+  /**
+   * \brief Serialize folder structure.
+   */
+  void SerializeFoldersTo(SerializerElement &element) const;
+
+  /**
+   * \brief Unserialize folder structure.
+   */
+  void UnserializeFoldersFrom(const SerializerElement &element);
+  ///@}
+
   /** \name Serialization
    */
   ///@{
@@ -174,9 +211,7 @@ public:
 
 private:
   FunctionOwner owner;
+  std::unique_ptr<gd::FunctionFolderOrFunction> rootFolder;
 };
 
 }  // namespace gd
-
-#endif  // GDCORE_EVENTSFUNCTIONSCONTAINER_H
-#endif
