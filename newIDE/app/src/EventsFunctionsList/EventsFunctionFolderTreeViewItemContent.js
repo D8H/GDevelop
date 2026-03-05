@@ -105,6 +105,10 @@ export class EventsFunctionFolderTreeViewItemContent
     return this.functionFolder;
   }
 
+  getEventsFunction(): ?gdEventsFunction {
+    return null;
+  }
+
   isDescendantOf(treeViewItemContent: TreeViewItemContent): boolean {
     const functionFolderOrFunction = treeViewItemContent.getFunctionFolderOrFunction();
     return (
@@ -148,6 +152,8 @@ export class EventsFunctionFolderTreeViewItemContent
   getThumbnail(): ?string {
     return 'FOLDER';
   }
+
+  onSelect(): void {}
 
   onClick(): void {}
 
