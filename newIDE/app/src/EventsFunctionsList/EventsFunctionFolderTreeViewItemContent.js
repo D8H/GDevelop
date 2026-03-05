@@ -37,7 +37,6 @@ export const expandAllSubfolders = (
 
 export type EventFunctionFolderCommonProps = {|
   ...TreeItemProps,
-  onFunctionsUpdated: () => void,
   expandFolders: (
     functionFolderOrFunctionList: Array<gdFunctionFolderOrFunction>
   ) => void,
@@ -156,7 +155,6 @@ export class EventsFunctionFolderTreeViewItemContent
       return;
     }
     this.functionFolder.setFolderName(newName);
-    this.props.onFunctionsUpdated();
   }
 
   edit(): void {}
@@ -360,7 +358,6 @@ export class EventsFunctionFolderTreeViewItemContent
     if (this.props.unsavedChanges)
       this.props.unsavedChanges.triggerUnsavedChanges();
     this.props.forceUpdate();
-    this.props.onFunctionsUpdated();
   }
 
   getRightButton(i18n: I18nType): any {

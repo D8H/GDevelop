@@ -704,10 +704,7 @@ const EventsFunctionsList = React.forwardRef<
     >([]);
 
     const setSelectedFunctionFolderOrFunction = React.useRef<
-      (
-        functionFolderOrFunction: gdFunctionFolderOrFunction | null,
-        isSharedProperties: boolean
-      ) => void
+      (functionFolderOrFunction: gdFunctionFolderOrFunction | null) => void
     >((propertyFolderOrProperty, isSharedProperties) => {});
 
     const preferences = React.useContext(PreferencesContext);
@@ -1218,12 +1215,8 @@ const EventsFunctionsList = React.forwardRef<
           functionFolderOrFunction,
           isSharedProperties
         ) =>
-          setSelectedFunctionFolderOrFunction.current(
-            functionFolderOrFunction,
-            isSharedProperties
-          ),
+          setSelectedFunctionFolderOrFunction.current(functionFolderOrFunction),
         onEventsFunctionAdded,
-        onFunctionsUpdated,
         onSelectEventsFunction,
       }),
       [
@@ -1483,7 +1476,8 @@ const EventsFunctionsList = React.forwardRef<
       () => {
         setSelectedFunctionFolderOrFunction.current = (
           functionFolderOrFunction: gdFunctionFolderOrFunction | null,
-          isSharedFunctions: boolean
+          eventsBasedBehavior: ?gdEventsBasedBehavior,
+          eventsBasedObject: ?gdEventsBasedObject
         ) => {
           if (!functionFolderOrFunction) {
             setSelectedItems([]);
@@ -1499,17 +1493,28 @@ const EventsFunctionsList = React.forwardRef<
             ) {
               return selectedItems;
             }
-            const treeViewItemProps = isSharedFunctions
-              ? sharedFunctionsTreeViewItemProps
-              : functionsTreeViewItemProps;
-            if (!treeViewItemProps || !functionFolderTreeViewItemProps) {
-              return [];
-            }
+            const eventsBasedEntity =
+              selectedEventsBasedBehavior || selectedEventsBasedObject;
+            const eventsFunctionsContainer = eventsBasedEntity
+              ? eventsBasedEntity.getEventsFunctions()
+              : eventsFunctionsExtension.getEventsFunctions();
+            const eventFunctionProps: EventsFunctionProps = {
+              eventsBasedObject,
+              eventsBasedBehavior,
+              eventsFunctionsContainer,
+              ...eventFunctionCommonProps,
+            };
+            const eventFunctionFolderProps: EventsFunctionFolderProps = {
+              eventsBasedObject,
+              eventsBasedBehavior,
+              eventsFunctionsContainer,
+              ...eventFunctionFolderCommonProps,
+            };
             return [
               createTreeViewItem({
                 functionFolderOrFunction,
-                functionFolderTreeViewItemProps: eventsFunctionFolderProps,
-                functionTreeViewItemProps: EventsFunctionProps,
+                functionTreeViewItemProps: eventFunctionProps,
+                functionFolderTreeViewItemProps: eventFunctionFolderProps,
               }),
             ].filter(Boolean);
           });
@@ -1517,30 +1522,13 @@ const EventsFunctionsList = React.forwardRef<
         };
       },
       [
-        functionsTreeViewItemProps,
-        functionFolderTreeViewItemProps,
         scrollToItem,
-        sharedFunctionsTreeViewItemProps,
+        selectedEventsBasedBehavior,
+        selectedEventsBasedObject,
+        eventsFunctionsExtension,
+        eventFunctionCommonProps,
+        eventFunctionFolderCommonProps,
       ]
-    );
-
-    const setSelectedFunction = React.useCallback(
-      (functionName: string, isSharedFunctions: boolean) => {
-        const functionsContainer = isSharedFunctions
-          ? sharedFunctions
-          : functions;
-        if (!functionsContainer || !functionsContainer.has(functionName)) {
-          return;
-        }
-        const eventsFunction = functionsContainer.get(functionName);
-        setSelectedFunctionFolderOrFunction.current(
-          functionsContainer
-            .getRootFolder()
-            .getFunctionNamed(eventsFunction.getName()),
-          isSharedFunctions
-        );
-      },
-      [functions, sharedFunctions]
     );
 
     const canMoveSelectionTo = React.useCallback(
@@ -1647,10 +1635,18 @@ const EventsFunctionsList = React.forwardRef<
             eventsFunctionsContainer,
             ...eventFunctionCommonProps,
           };
+          const rootFunctionFolder = getRootFunctionFolder(
+            eventsFunctionsExtension,
+            selectedEventsBasedBehavior,
+            selectedEventsBasedObject
+          );
+
           setSelectedItems([
             new LeafTreeViewItem(
               new EventsFunctionTreeViewItemContent(
-                selectedEventsFunction,
+                rootFunctionFolder.getFunctionNamed(
+                  selectedEventsFunction.getName()
+                ),
                 eventFunctionProps
               )
             ),
