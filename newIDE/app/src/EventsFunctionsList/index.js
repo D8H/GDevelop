@@ -37,6 +37,7 @@ import {
 } from './EventsFunctionTreeViewItemContent';
 import {
   EventsFunctionFolderTreeViewItemContent,
+  getEventsFunctionFolderTreeViewItemId,
   type EventFunctionFolderCommonProps,
   type EventsFunctionFolderProps,
 } from './EventsFunctionFolderTreeViewItemContent';
@@ -89,6 +90,46 @@ const extensionItemReactDndType = 'GD_EXTENSION_ITEM';
 const extensionPropertiesItemId = 'extension-properties';
 const extensionGlobalVariablesItemId = 'extension-global-variables';
 const extensionSceneVariablesItemId = 'extension-scene-variables';
+
+export const getTreeViewItemIdFromFunctionFolderOrFunction = (
+  functionFolderOrFunction: gdFunctionFolderOrFunction
+): string => {
+  return functionFolderOrFunction.isFolder()
+    ? getEventsFunctionFolderTreeViewItemId(functionFolderOrFunction)
+    : getEventsFunctionTreeViewItemId(functionFolderOrFunction.getFunction());
+};
+
+export const getRootId = (
+  eventsBasedBehavior?: ?gdEventsBasedBehavior,
+  eventsBasedObject?: ?gdEventsBasedObject
+): string => {
+  return eventsBasedBehavior
+    ? extensionBehaviorsRootFolderId
+    : eventsBasedObject
+    ? extensionObjectsRootFolderId
+    : extensionFunctionsRootFolderId;
+};
+
+export const getRootFunctionFolderId = (
+  eventsBasedBehavior?: ?gdEventsBasedBehavior,
+  eventsBasedObject?: ?gdEventsBasedObject
+): string => {
+  return eventsBasedBehavior
+    ? getEventsBasedBehaviorTreeViewItemId(eventsBasedBehavior)
+    : eventsBasedObject
+    ? getObjectTreeViewItemId(eventsBasedObject)
+    : extensionFunctionsRootFolderId;
+};
+
+export const getRootFunctionFolder = (
+  eventsFunctionsExtension: gdEventsFunctionsExtension,
+  eventsBasedBehavior?: ?gdEventsBasedBehavior,
+  eventsBasedObject?: ?gdEventsBasedObject
+): gdFunctionFolderOrFunction => {
+  return (eventsBasedObject || eventsBasedBehavior || eventsFunctionsExtension)
+    .getEventsFunctions()
+    .getRootFolder();
+};
 
 export interface TreeViewItemContent {
   getName(): string | React.Node;
@@ -662,6 +703,13 @@ const EventsFunctionsList = React.forwardRef<
       Array<TreeViewItem>
     >([]);
 
+    const setSelectedFunctionFolderOrFunction = React.useRef<
+      (
+        functionFolderOrFunction: gdFunctionFolderOrFunction | null,
+        isSharedProperties: boolean
+      ) => void
+    >((propertyFolderOrProperty, isSharedProperties) => {});
+
     const preferences = React.useContext(PreferencesContext);
     const gdevelopTheme = React.useContext(GDevelopThemeContext);
     const { currentlyRunningInAppTutorial } = React.useContext(
@@ -1045,8 +1093,7 @@ const EventsFunctionsList = React.forwardRef<
     );
 
     const getClosestVisibleParentId = (
-      functionFolderOrFunction: gdFunctionFolderOrFunction,
-      isSharedProperties: boolean
+      functionFolderOrFunction: gdFunctionFolderOrFunction
     ): ?string => {
       const treeView = treeViewRef.current;
       if (!treeView) return null;
@@ -1066,8 +1113,7 @@ const EventsFunctionsList = React.forwardRef<
       if (firstClosedFolderIndex === -1) {
         // If all parents are open, return the functionFolderOrFunction given as input.
         return getTreeViewItemIdFromFunctionFolderOrFunction(
-          functionFolderOrFunction,
-          isSharedProperties
+          functionFolderOrFunction
         );
       }
       // $FlowFixMe[incompatible-type] - We are confident this TreeView item is in fact a FunctionFolderOrFunctionWithContext
@@ -1077,7 +1123,8 @@ const EventsFunctionsList = React.forwardRef<
     const addFolder = React.useCallback(
       (
         items: Array<gdFunctionFolderOrFunction>,
-        isSharedProperties: boolean
+        eventsBasedBehavior?: ?gdEventsBasedBehavior,
+        eventsBasedObject?: ?gdEventsBasedObject
       ) => {
         let newFunctionFolderOrFunction;
         if (items.length === 1) {
@@ -1103,26 +1150,22 @@ const EventsFunctionsList = React.forwardRef<
             newFunctionFolderOrFunction = newFolder;
           }
         } else {
-          const rootFolder = isSharedProperties
-            ? sharedProperties && sharedProperties.getRootFolder()
-            : properties && properties.getRootFolder();
-          if (!rootFolder) {
-            return;
-          }
+          const rootFolder = getRootFunctionFolder(
+            eventsFunctionsExtension,
+            eventsBasedBehavior,
+            eventsBasedObject
+          );
           const newFolder = rootFolder.insertNewFolder('New folder', 0);
           newFunctionFolderOrFunction = newFolder;
         }
         setSelectedFunctionFolderOrFunction.current(
-          newFunctionFolderOrFunction,
-          isSharedProperties
+          newFunctionFolderOrFunction
         );
         const itemsToOpen = getFoldersAscendanceWithoutRootFolder(
           newFunctionFolderOrFunction
         ).map(folder => getEventsFunctionFolderTreeViewItemId(folder));
         itemsToOpen.push(
-          isSharedProperties
-            ? sharedPropertiesRootFolderId
-            : propertiesRootFolderId
+          getRootFunctionFolderId(eventsBasedBehavior, eventsBasedObject)
         );
         if (treeViewRef.current) treeViewRef.current.openItems(itemsToOpen);
 
@@ -1131,25 +1174,15 @@ const EventsFunctionsList = React.forwardRef<
         );
         forceUpdateList();
       },
-      [
-        setSelectedFunctionFolderOrFunction,
-        editName,
-        forceUpdateList,
-        sharedProperties,
-        properties,
-      ]
+      [editName, forceUpdateList, eventsFunctionsExtension]
     );
 
     const onMovedFunctionFolderOrFunctionToAnotherFolderInSameContainer = React.useCallback(
-      (
-        functionFolderOrFunction: gdFunctionFolderOrFunction,
-        isSharedProperties: boolean
-      ) => {
+      (functionFolderOrFunction: gdFunctionFolderOrFunction) => {
         const treeView = treeViewRef.current;
         if (treeView) {
           const closestVisibleParentId = getClosestVisibleParentId(
-            functionFolderOrFunction,
-            isSharedProperties
+            functionFolderOrFunction
           );
           if (closestVisibleParentId) {
             treeView.animateItemFromId(closestVisibleParentId);
@@ -1189,6 +1222,9 @@ const EventsFunctionsList = React.forwardRef<
             functionFolderOrFunction,
             isSharedProperties
           ),
+        onEventsFunctionAdded,
+        onFunctionsUpdated,
+        onSelectEventsFunction,
       }),
       [
         treeItemProps,
@@ -1197,6 +1233,8 @@ const EventsFunctionsList = React.forwardRef<
         addFolder,
         addNewEventsFunction,
         onMovedFunctionFolderOrFunctionToAnotherFolderInSameContainer,
+        onEventsFunctionAdded,
+        onSelectEventsFunction,
       ]
     );
 
@@ -1440,6 +1478,71 @@ const EventsFunctionsList = React.forwardRef<
       ]
     );
 
+    // Avoid a circular dependency with functionsTreeViewItemProps
+    React.useEffect(
+      () => {
+        setSelectedFunctionFolderOrFunction.current = (
+          functionFolderOrFunction: gdFunctionFolderOrFunction | null,
+          isSharedFunctions: boolean
+        ) => {
+          if (!functionFolderOrFunction) {
+            setSelectedItems([]);
+            return;
+          }
+          const functionItemId = getTreeViewItemIdFromFunctionFolderOrFunction(
+            functionFolderOrFunction
+          );
+          setSelectedItems(selectedItems => {
+            if (
+              selectedItems.length === 1 &&
+              selectedItems[0].content.getId() === functionItemId
+            ) {
+              return selectedItems;
+            }
+            const treeViewItemProps = isSharedFunctions
+              ? sharedFunctionsTreeViewItemProps
+              : functionsTreeViewItemProps;
+            if (!treeViewItemProps || !functionFolderTreeViewItemProps) {
+              return [];
+            }
+            return [
+              createTreeViewItem({
+                functionFolderOrFunction,
+                functionFolderTreeViewItemProps: eventsFunctionFolderProps,
+                functionTreeViewItemProps: EventsFunctionProps,
+              }),
+            ].filter(Boolean);
+          });
+          scrollToItem(functionItemId);
+        };
+      },
+      [
+        functionsTreeViewItemProps,
+        functionFolderTreeViewItemProps,
+        scrollToItem,
+        sharedFunctionsTreeViewItemProps,
+      ]
+    );
+
+    const setSelectedFunction = React.useCallback(
+      (functionName: string, isSharedFunctions: boolean) => {
+        const functionsContainer = isSharedFunctions
+          ? sharedFunctions
+          : functions;
+        if (!functionsContainer || !functionsContainer.has(functionName)) {
+          return;
+        }
+        const eventsFunction = functionsContainer.get(functionName);
+        setSelectedFunctionFolderOrFunction.current(
+          functionsContainer
+            .getRootFolder()
+            .getFunctionNamed(eventsFunction.getName()),
+          isSharedFunctions
+        );
+      },
+      [functions, sharedFunctions]
+    );
+
     const canMoveSelectionTo = React.useCallback(
       (destinationItem: TreeViewItem, where: 'before' | 'inside' | 'after') =>
         selectedItems.every(item => {
@@ -1557,7 +1660,8 @@ const EventsFunctionsList = React.forwardRef<
             new BehaviorTreeViewItem(
               selectedEventsBasedBehavior,
               eventBasedBehaviorProps,
-              eventFunctionCommonProps
+              eventFunctionCommonProps,
+              eventFunctionFolderCommonProps
             ),
           ]);
         } else if (selectedEventsBasedObject) {
@@ -1565,7 +1669,8 @@ const EventsFunctionsList = React.forwardRef<
             new EventsBasedObjectTreeViewItem(
               selectedEventsBasedObject,
               eventsBasedObjectProps,
-              eventFunctionCommonProps
+              eventFunctionCommonProps,
+              eventFunctionFolderCommonProps
             ),
           ]);
         } else {
@@ -1575,6 +1680,7 @@ const EventsFunctionsList = React.forwardRef<
       [
         eventBasedBehaviorProps,
         eventFunctionCommonProps,
+        eventFunctionFolderCommonProps,
         eventsBasedObjectProps,
         eventsFunctionsExtension,
         selectedEventsBasedBehavior,

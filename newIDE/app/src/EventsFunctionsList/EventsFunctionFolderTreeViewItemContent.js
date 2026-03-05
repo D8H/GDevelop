@@ -9,8 +9,6 @@ import {
   // $FlowFixMe[import-type-as-value]
   TreeViewItemContent,
   type TreeItemProps,
-  functionsRootFolderId,
-  sharedFunctionsRootFolderId,
 } from '.';
 import {
   enumerateFoldersInContainer,
@@ -18,6 +16,7 @@ import {
   enumerateFunctionsInFolder,
 } from './EnumerateFunctionFolderOrFunction';
 import {
+  getEventsFunctionTreeViewItemId,
   pasteEventsFunction,
   EVENTS_FUNCTION_CLIPBOARD_KIND,
 } from './EventsFunctionTreeViewItemContent';
@@ -39,15 +38,13 @@ export const expandAllSubfolders = (
 export type EventFunctionFolderCommonProps = {|
   ...TreeItemProps,
   onFunctionsUpdated: () => void,
-  showFunctionOverridingConfirmation: (
-    existingFunctionNames: string[]
-  ) => Promise<boolean>,
   expandFolders: (
     functionFolderOrFunctionList: Array<gdFunctionFolderOrFunction>
   ) => void,
   addFolder: (
     items: Array<gdFunctionFolderOrFunction>,
-    isSharedFunctions: boolean
+    eventsBasedBehavior?: ?gdEventsBasedBehavior,
+    eventsBasedObject?: ?gdEventsBasedObject
   ) => void,
   addNewEventsFunction: ({|
     itemContent: ?TreeViewItemContent,
@@ -56,13 +53,22 @@ export type EventFunctionFolderCommonProps = {|
     index: number,
   |}) => void,
   onMovedFunctionFolderOrFunctionToAnotherFolderInSameContainer: (
-    functionFolderOrFunction: gdFunctionFolderOrFunction,
-    isSharedFunctions: boolean
+    functionFolderOrFunction: gdFunctionFolderOrFunction
   ) => void,
   showDeleteConfirmation: (options: any) => Promise<boolean>,
   setSelectedFunctionFolderOrFunction: (
     functionFolderOrFunction: gdFunctionFolderOrFunction | null,
     isSharedFunctions: boolean
+  ) => void,
+  onSelectEventsFunction: (
+    selectedEventsFunction: ?gdEventsFunction,
+    selectedEventsBasedBehavior: ?gdEventsBasedBehavior,
+    selectedEventsBasedObject: ?gdEventsBasedObject
+  ) => void,
+  onEventsFunctionAdded: (
+    eventsFunction: gdEventsFunction,
+    eventsBasedBehavior: ?gdEventsBasedBehavior,
+    eventsBasedObject: ?gdEventsBasedObject
   ) => void,
 |};
 
@@ -115,12 +121,6 @@ export class EventsFunctionFolderTreeViewItemContent
     );
   }
 
-  getRootId(): string {
-    return this.props.isSharedFunctions
-      ? sharedFunctionsRootFolderId
-      : functionsRootFolderId;
-  }
-
   getIndex(): number {
     return this.functionFolder
       .getParent()
@@ -142,7 +142,6 @@ export class EventsFunctionFolderTreeViewItemContent
   getDataSet(): ?HTMLDataset {
     return {
       folderName: this.functionFolder.getFolderName(),
-      isSharedFunctions: this.props.isSharedFunctions ? 'true' : 'false',
     };
   }
 
@@ -164,8 +163,8 @@ export class EventsFunctionFolderTreeViewItemContent
 
   _getPasteLabel(i18n: I18nType): any {
     let translation = t`Paste`;
-    if (Clipboard.has(PROPERTIES_CLIPBOARD_KIND)) {
-      const clipboardContent = Clipboard.get(PROPERTIES_CLIPBOARD_KIND);
+    if (Clipboard.has(EVENTS_FUNCTION_CLIPBOARD_KIND)) {
+      const clipboardContent = Clipboard.get(EVENTS_FUNCTION_CLIPBOARD_KIND);
       const clipboardObjectName =
         SafeExtractor.extractStringProperty(clipboardContent, 'name') || '';
       translation = t`Paste ${clipboardObjectName} inside folder`;
@@ -176,7 +175,8 @@ export class EventsFunctionFolderTreeViewItemContent
   buildMenuTemplate(i18n: I18nType, index: number): any {
     const {
       eventsFunctionsContainer,
-      isSharedFunctions,
+      eventsBasedBehavior,
+      eventsBasedObject,
       expandFolders,
       addFolder,
       addNewEventsFunction,
@@ -228,8 +228,7 @@ export class EventsFunctionFolderTreeViewItemContent
                   0
                 );
               onMovedFunctionFolderOrFunctionToAnotherFolderInSameContainer(
-                folder,
-                this.props.isSharedFunctions
+                folder
               );
             },
           })),
@@ -238,7 +237,11 @@ export class EventsFunctionFolderTreeViewItemContent
           {
             label: i18n._(t`Create new folder...`),
             click: () =>
-              addFolder([this.functionFolder.getParent()], isSharedFunctions),
+              addFolder(
+                [this.functionFolder.getParent()],
+                eventsBasedBehavior,
+                eventsBasedObject
+              ),
           },
         ],
       },
@@ -246,16 +249,21 @@ export class EventsFunctionFolderTreeViewItemContent
       {
         label: i18n._(t`Add a new function`),
         click: () =>
-          addNewEventsFunction(
-            itemContent,
+          addNewEventsFunction({
+            itemContent: this,
             eventsBasedBehavior,
             eventsBasedObject,
-            0
-          ),
+            index: 0,
+          }),
       },
       {
         label: i18n._(t`Add a new folder`),
-        click: () => addFolder([this.functionFolder], isSharedFunctions),
+        click: () =>
+          addFolder(
+            [this.functionFolder],
+            eventsBasedBehavior,
+            eventsBasedObject
+          ),
       },
       { type: 'separator' },
       {
@@ -322,7 +330,7 @@ export class EventsFunctionFolderTreeViewItemContent
   cut(): void {}
 
   paste(): void {
-    const newEventsFunction = !!pasteEventsFunction(
+    const newEventsFunction = pasteEventsFunction(
       this.props.eventsFunctionsContainer,
       this.functionFolder,
       this.getIndex() + 1
@@ -338,7 +346,6 @@ export class EventsFunctionFolderTreeViewItemContent
       this.props.eventsBasedObject
     );
 
-    this._onEventsFunctionModified();
     this.props.onSelectEventsFunction(
       newEventsFunction,
       this.props.eventsBasedBehavior,
