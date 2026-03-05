@@ -9,10 +9,12 @@ export const getFunctionFolderOrFunctionUnifiedName = (
     ? functionFolderOrFunction.getFolderName()
     : functionFolderOrFunction.getFunction().getName();
 
+type EnumeratedFolder = {| path: string, folder: gdFunctionFolderOrFunction |};
+
 const recursivelyEnumerateFoldersInFolder = (
   folder: gdFunctionFolderOrFunction,
   prefix: string,
-  result: {| path: string, folder: gdFunctionFolderOrFunction |}[]
+  result: Array<EnumeratedFolder>
 ) => {
   mapFor(0, folder.getChildrenCount(), i => {
     const child = folder.getChildAt(i);
@@ -31,7 +33,7 @@ const recursivelyEnumerateFoldersInFolder = (
 
 const recursivelyEnumerateFunctionsInFolder = (
   folder: gdFunctionFolderOrFunction,
-  result: gdEventsFunction[]
+  result: Array<gdEventsFunction>
 ) => {
   mapFor(0, folder.getChildrenCount(), i => {
     const child = folder.getChildAt(i);
@@ -45,37 +47,28 @@ const recursivelyEnumerateFunctionsInFolder = (
 
 export const enumerateFunctionsInFolder = (
   folder: gdFunctionFolderOrFunction
-): gdEventsFunction[] => {
+): Array<gdEventsFunction> => {
   if (!folder.isFolder()) return [];
-  // $FlowFixMe[missing-empty-array-annot]
-  const result = [];
-  // $FlowFixMe[incompatible-type]
+  const result: Array<gdEventsFunction> = [];
   recursivelyEnumerateFunctionsInFolder(folder, result);
-  // $FlowFixMe[incompatible-type]
   return result;
 };
 
 export const enumerateFoldersInFolder = (
   folder: gdFunctionFolderOrFunction
-): {| path: string, folder: gdFunctionFolderOrFunction |}[] => {
+): Array<EnumeratedFolder> => {
   if (!folder.isFolder()) return [];
-  // $FlowFixMe[missing-empty-array-annot]
-  const result = [];
-  // $FlowFixMe[incompatible-type]
+  const result: Array<EnumeratedFolder> = [];
   recursivelyEnumerateFoldersInFolder(folder, '', result);
-  // $FlowFixMe[incompatible-type]
   return result;
 };
 
 export const enumerateFoldersInContainer = (
   container: gdEventsFunctionsContainer
-): {| path: string, folder: gdFunctionFolderOrFunction |}[] => {
+): Array<EnumeratedFolder> => {
   const rootFolder = container.getRootFolder();
-  // $FlowFixMe[missing-empty-array-annot]
-  const result = [];
-  // $FlowFixMe[incompatible-type]
+  const result: Array<EnumeratedFolder> = [];
   recursivelyEnumerateFoldersInFolder(rootFolder, '', result);
-  // $FlowFixMe[incompatible-type]
   return result;
 };
 
@@ -94,7 +87,7 @@ export const getFunctionsInFolder = (
 
 export const getFoldersAscendanceWithoutRootFolder = (
   functionFolderOrFunction: gdFunctionFolderOrFunction
-): gdFunctionFolderOrFunction[] => {
+): Array<gdFunctionFolderOrFunction> => {
   if (functionFolderOrFunction.isRootFolder()) return [];
   const parent = functionFolderOrFunction.getParent();
   if (parent.isRootFolder()) return [];
