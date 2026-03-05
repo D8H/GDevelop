@@ -22,7 +22,7 @@ class EventsFunctionsContainer;
 namespace gd {
 
 /**
- * \brief Class representing a folder structure in order to organize properties
+ * \brief Class representing a folder structure in order to organize functions
  * in folders (to be used with a EventsFunctionsContainer.)
  *
  * \see gd::EventsFunctionsContainer
@@ -189,7 +189,7 @@ class GD_CORE_API FunctionFolderOrFunction {
       std::size_t newPosition);
 
   /** \name Saving and loading
-   * Members functions related to saving and loading the properties of the class.
+   * Members functions related to saving and loading the functions of the class.
    */
   ///@{
   /**
@@ -201,14 +201,14 @@ class GD_CORE_API FunctionFolderOrFunction {
    * \brief Unserialize the FunctionFolderOrFunction instance.
    */
   void UnserializeFrom(const SerializerElement& element,
-                       EventsFunctionsContainer& propertiesContainer);
+                       EventsFunctionsContainer& functionsContainer);
   ///@}
 
-  void UpdateGroupNameOfAllProperties();
+  void UpdateGroupNameOfAllFunctions();
 
  private:
-  void DoUpdateGroupNameOfAllProperties(const gd::String& groupPath);
-  const gd::String &GetGroupPath();
+  void DoUpdateGroupNameOfAllFunctions(const gd::String& groupPath);
+  const gd::String GetGroupPath();
 
   static gd::FunctionFolderOrFunction badFunctionFolderOrFunction;
   static gd::String emptyGroupName;

@@ -58,7 +58,7 @@ void EventsFunctionsContainer::SerializeFoldersTo(
 void EventsFunctionsContainer::UnserializeFoldersFrom(
     const SerializerElement &element) {
   rootFolder->UnserializeFrom(element, *this);
-  rootFolder->UpdateGroupNameOfAllProperties();
+  rootFolder->UpdateGroupNameOfAllFunctions();
 }
 
 } // namespace gd

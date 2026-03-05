@@ -78,36 +78,37 @@ void FunctionFolderOrFunction::SetFolderName(const gd::String &name) {
   if (!IsFolder())
     return;
   folderName = name;
-  UpdateGroupNameOfAllProperties();
+  UpdateGroupNameOfAllFunctions();
 }
 
-const gd::String &FunctionFolderOrFunction::GetGroupPath() {
+const gd::String FunctionFolderOrFunction::GetGroupPath() {
   if (IsRootFolder()) {
     return gd::FunctionFolderOrFunction::emptyGroupName;
   }
   auto *groupFolder = this;
   gd::String groupPath = groupFolder->GetFolderName();
+  groupFolder = groupFolder->parent;
   while (groupFolder->parent) {
     groupPath = groupFolder->GetFolderName() + "/" + groupPath;
     groupFolder = groupFolder->parent;
   }
-  return groupFolder->GetFolderName();
+  return groupPath;
 }
 
-void FunctionFolderOrFunction::UpdateGroupNameOfAllProperties() {
+void FunctionFolderOrFunction::UpdateGroupNameOfAllFunctions() {
   auto groupPath = GetGroupPath();
   if (IsFolder()) {
-    DoUpdateGroupNameOfAllProperties(groupPath);
+    DoUpdateGroupNameOfAllFunctions(groupPath);
   } else {
     function->SetGroup(groupPath);
   }
 }
 
-void FunctionFolderOrFunction::DoUpdateGroupNameOfAllProperties(
+void FunctionFolderOrFunction::DoUpdateGroupNameOfAllFunctions(
     const gd::String &groupPath) {
   for (auto &&child : children) {
     if (IsFolder()) {
-      child->DoUpdateGroupNameOfAllProperties(groupPath + "/" +
+      child->DoUpdateGroupNameOfAllFunctions(groupPath + "/" +
                                               child->folderName);
     } else {
       child->function->SetGroup(groupPath);
@@ -263,7 +264,7 @@ void FunctionFolderOrFunction::MoveFunctionFolderOrFunctionToAnotherFolder(
   children.erase(it);
 
   functionFolderOrFunctionPtr->parent = &newParentFolder;
-  functionFolderOrFunctionPtr->UpdateGroupNameOfAllProperties();
+  functionFolderOrFunctionPtr->UpdateGroupNameOfAllFunctions();
 
   newParentFolder.children.insert(newPosition < newParentFolder.children.size()
                                       ? newParentFolder.children.begin() +
@@ -289,7 +290,7 @@ void FunctionFolderOrFunction::SerializeTo(SerializerElement &element) const {
 }
 
 void FunctionFolderOrFunction::UnserializeFrom(const SerializerElement &element,
-    gd::EventsFunctionsContainer &propertiesContainer) {
+    gd::EventsFunctionsContainer &functionsContainer) {
   children.clear();
   gd::String potentialFolderName = element.GetStringAttribute("folderName", "");
 
@@ -306,7 +307,7 @@ void FunctionFolderOrFunction::UnserializeFrom(const SerializerElement &element,
             childFunctionFolderOrFunction =
                 make_unique<FunctionFolderOrFunction>();
         childFunctionFolderOrFunction->UnserializeFrom(
-            childrenElements.GetChild(i), propertiesContainer);
+            childrenElements.GetChild(i), functionsContainer);
         childFunctionFolderOrFunction->parent = this;
         children.push_back(std::move(childFunctionFolderOrFunction));
       }
@@ -314,11 +315,11 @@ void FunctionFolderOrFunction::UnserializeFrom(const SerializerElement &element,
   } else {
     folderName = "";
     gd::String functionName = element.GetStringAttribute("functionName");
-    if (propertiesContainer.HasEventsFunctionNamed(functionName)) {
-      function = &propertiesContainer.GetEventsFunction(functionName);
+    if (functionsContainer.HasEventsFunctionNamed(functionName)) {
+      function = &functionsContainer.GetEventsFunction(functionName);
     } else {
       gd::LogError("Function with name " + functionName +
-                   " not found in properties container.");
+                   " not found in functions container.");
       function = nullptr;
     }
   }
