@@ -149,6 +149,10 @@ export class EventsFunctionTreeViewItemContent implements TreeViewItemContent {
     return this.props.eventsFunctionsContainer;
   }
 
+  getFunctionFolderOrFunction(): gdFunctionFolderOrFunction | null {
+    return this.functionFolderOrFunction;
+  }
+
   getEventsFunction(): ?gdEventsFunction {
     return this.functionFolderOrFunction.getFunction();
   }
@@ -421,9 +425,9 @@ export class EventsFunctionTreeViewItemContent implements TreeViewItemContent {
   }
 
   getIndex(): number {
-    return this.props.eventsFunctionsContainer.getEventsFunctionPosition(
-      this.functionFolderOrFunction.getFunction()
-    );
+    return this.functionFolderOrFunction
+      .getParent()
+      .getChildPosition(this.functionFolderOrFunction);
   }
 
   moveAt(destinationIndex: number): void {

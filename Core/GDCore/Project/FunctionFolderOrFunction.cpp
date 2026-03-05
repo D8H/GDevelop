@@ -86,6 +86,9 @@ const gd::String FunctionFolderOrFunction::GetGroupPath() {
     return gd::FunctionFolderOrFunction::emptyGroupName;
   }
   auto *groupFolder = this;
+  if (!groupFolder->IsFolder()) {
+    groupFolder = groupFolder->parent;
+  }
   gd::String groupPath = groupFolder->GetFolderName();
   groupFolder = groupFolder->parent;
   while (groupFolder->parent) {
@@ -107,7 +110,7 @@ void FunctionFolderOrFunction::UpdateGroupNameOfAllFunctions() {
 void FunctionFolderOrFunction::DoUpdateGroupNameOfAllFunctions(
     const gd::String &groupPath) {
   for (auto &&child : children) {
-    if (IsFolder()) {
+    if (child->IsFolder()) {
       child->DoUpdateGroupNameOfAllFunctions(groupPath + "/" +
                                               child->folderName);
     } else {

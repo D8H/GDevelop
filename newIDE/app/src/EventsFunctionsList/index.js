@@ -1567,13 +1567,73 @@ const EventsFunctionsList = React.forwardRef<
         destinationItem: TreeViewItem,
         where: 'before' | 'inside' | 'after'
       ) => {
-        if (selectedItems.length === 0) {
+        console.log('moveSelectionTo', where);
+        if (destinationItem.isRoot || selectedItems.length !== 1) {
           return;
         }
         const selectedItem = selectedItems[0];
-        selectedItem.content.moveAt(
-          destinationItem.content.getIndex() + (where === 'after' ? 1 : 0)
-        );
+        const selectedFunctionFolderOrFunction = selectedItem.content.getFunctionFolderOrFunction();
+
+        if (
+          !selectedFunctionFolderOrFunction ||
+          destinationItem.content.getId() === selectedItem.content.getId()
+        ) {
+          return;
+        }
+
+        if (destinationItem.isPlaceholder) {
+          return;
+        }
+
+        const destinationFunctionFolderOrFunction = destinationItem.content.getFunctionFolderOrFunction();
+        if (!destinationFunctionFolderOrFunction) {
+          return;
+        }
+        if (
+          selectedItem.content.getEventsFunctionsContainer() !==
+          destinationItem.content.getEventsFunctionsContainer()
+        ) {
+          return;
+        }
+        // At this point, the move is done from within the same container.
+        let parent;
+        if (
+          where === 'inside' &&
+          destinationFunctionFolderOrFunction.isFolder()
+        ) {
+          parent = destinationFunctionFolderOrFunction;
+        } else {
+          parent = destinationFunctionFolderOrFunction.getParent();
+        }
+        const selectedFunctionFolderOrFunctionParent = selectedFunctionFolderOrFunction.getParent();
+        if (parent === selectedFunctionFolderOrFunctionParent) {
+          const fromIndex = selectedItem.content.getIndex();
+          let toIndex = destinationItem.content.getIndex();
+          if (toIndex > fromIndex) toIndex -= 1;
+          if (where === 'after') toIndex += 1;
+          selectedFunctionFolderOrFunctionParent.moveChild(fromIndex, toIndex);
+        } else {
+          if (destinationItem.content.isDescendantOf(selectedItem.content)) {
+            return;
+          }
+          const position =
+            where === 'inside'
+              ? 0
+              : destinationItem.content.getIndex() +
+                (where === 'after' ? 1 : 0);
+          selectedFunctionFolderOrFunctionParent.moveFunctionFolderOrFunctionToAnotherFolder(
+            selectedFunctionFolderOrFunction,
+            parent,
+            position
+          );
+          const treeView = treeViewRef.current;
+          if (treeView) {
+            const closestVisibleParentId = getClosestVisibleParentId(parent);
+            if (closestVisibleParentId) {
+              treeView.animateItemFromId(closestVisibleParentId);
+            }
+          }
+        }
         onTreeModified(true);
       },
       [onTreeModified, selectedItems]
