@@ -139,7 +139,7 @@ export class EventsFunctionFolderTreeViewItemContent
     return null;
   }
 
-  getDataSet(): ?HTMLDataset {
+  getDataset(): ?HTMLDataset {
     return {
       folderName: this.functionFolder.getFolderName(),
     };
