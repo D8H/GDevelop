@@ -760,11 +760,13 @@ const EventsFunctionsList = React.forwardRef<
         itemContent,
         eventsBasedBehavior,
         eventsBasedObject,
+        parentFolder,
         index,
       }: {|
         itemContent: ?TreeViewItemContent,
         eventsBasedBehavior: ?gdEventsBasedBehavior,
         eventsBasedObject: ?gdEventsBasedObject,
+        parentFolder: gdFunctionFolderOrFunction,
         index: number,
       |}) => {
         const eventBasedEntity = eventsBasedBehavior || eventsBasedObject;
@@ -796,8 +798,9 @@ const EventsFunctionsList = React.forwardRef<
                 eventsFunctionsContainer.hasEventsFunctionNamed(name)
               );
 
-            const eventsFunction = eventsFunctionsContainer.insertNewEventsFunction(
+            const eventsFunction = eventsFunctionsContainer.insertNewFunctionInFolder(
               eventsFunctionName,
+              parentFolder,
               index || eventsFunctionsContainer.getEventsFunctionsCount()
             );
             eventsFunction.setFunctionType(parameters.functionType);
@@ -1416,6 +1419,9 @@ const EventsFunctionsList = React.forwardRef<
                     itemContent: null,
                     eventsBasedBehavior: null,
                     eventsBasedObject: null,
+                    parentFolder: eventsFunctionsExtension
+                      .getEventsFunctions()
+                      .getRootFolder(),
                     index,
                   });
                 },

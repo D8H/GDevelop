@@ -49,6 +49,7 @@ export type EventFunctionFolderCommonProps = {|
     itemContent: ?TreeViewItemContent,
     eventsBasedBehavior: ?gdEventsBasedBehavior,
     eventsBasedObject: ?gdEventsBasedObject,
+    parentFolder: gdFunctionFolderOrFunction,
     index: number,
   |}) => void,
   onMovedFunctionFolderOrFunctionToAnotherFolderInSameContainer: (
@@ -251,6 +252,7 @@ export class EventsFunctionFolderTreeViewItemContent
             itemContent: this,
             eventsBasedBehavior,
             eventsBasedObject,
+            parentFolder: this.functionFolder,
             index: 0,
           }),
       },
