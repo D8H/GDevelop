@@ -222,11 +222,11 @@ export class EventsFunctionTreeViewItemContent implements TreeViewItemContent {
       case gd.EventsFunction.ActionWithOperator:
         switch (eventsFunction.getName()) {
           default:
-            return 'res/functions/action.svg';
+            return 'res/functions/action3_black.svg';
 
           case 'onSceneUnloading':
           case 'onDestroy':
-            return 'res/functions/destroy.svg';
+            return 'res/functions/destroy_black.svg';
 
           case 'onSceneResumed':
           case 'onActivate':
@@ -245,7 +245,7 @@ export class EventsFunctionTreeViewItemContent implements TreeViewItemContent {
           case 'onSceneLoaded':
           case 'onFirstSceneLoaded':
           case 'onCreated':
-            return 'res/functions/create.svg';
+            return 'res/functions/create_black.svg';
 
           case 'onHotReloading':
             return 'res/functions/reload.svg';
@@ -254,7 +254,7 @@ export class EventsFunctionTreeViewItemContent implements TreeViewItemContent {
         return 'res/functions/condition.svg';
       case gd.EventsFunction.Expression:
       case gd.EventsFunction.ExpressionAndCondition:
-        return 'res/functions/expression.svg';
+        return 'res/functions/expression_black.svg';
     }
   }
 
