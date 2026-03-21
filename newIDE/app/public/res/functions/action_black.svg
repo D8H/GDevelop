@@ -8,6 +8,6 @@
    </cc:Work>
   </rdf:RDF>
  </metadata>
- <path d="m4.75 4.75 4.5 7.5-4.5 7h4l4.5-7-4.5-7.5z" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
- <path d="m11.75 4.75 4.5 7.5-4.5 7h4l4.5-7-4.5-7.5z" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+ <path d="m8.25 18.25 3.9999-6m0 0-3.9999-6.5m0 0h-4l3.9999 6.5-3.9999 6h4" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+ <path d="m13.25 5.75 3.9999 6.5-3.9999 6h4l3.9999-6-3.9999-6.5z" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
 </svg>

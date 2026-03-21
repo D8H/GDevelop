@@ -80,7 +80,7 @@ export const getFunctionIconUrl = (
     case gd.EventsFunction.ActionWithOperator:
       switch (functionName) {
         default:
-          return 'res/functions/action3_black.svg';
+          return 'res/functions/action_black.svg';
 
         case 'onSceneUnloading':
         case 'onDestroy':
@@ -88,17 +88,17 @@ export const getFunctionIconUrl = (
 
         case 'onSceneResumed':
         case 'onActivate':
-          return 'res/functions/activate.svg';
+          return 'res/functions/activate_black.svg';
 
         case 'onScenePaused':
         case 'onDeActivate':
-          return 'res/functions/deactivate.svg';
+          return 'res/functions/deactivate_black.svg';
 
         case 'onScenePreEvents':
         case 'onScenePostEvents':
         case 'doStepPreEvents':
         case 'doStepPostEvents':
-          return 'res/functions/step.svg';
+          return 'res/functions/step_black.svg';
 
         case 'onSceneLoaded':
         case 'onFirstSceneLoaded':
@@ -106,10 +106,10 @@ export const getFunctionIconUrl = (
           return 'res/functions/create_black.svg';
 
         case 'onHotReloading':
-          return 'res/functions/reload.svg';
+          return 'res/functions/reload_black.svg';
       }
     case gd.EventsFunction.Condition:
-      return 'res/functions/condition.svg';
+      return 'res/functions/condition_black.svg';
     case gd.EventsFunction.Expression:
     case gd.EventsFunction.ExpressionAndCondition:
       return 'res/functions/expression_black.svg';
