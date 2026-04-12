@@ -312,6 +312,7 @@ enum VariablesContainer_SourceType {
   "VariablesContainer::ExtensionScene",
   "VariablesContainer::Parameters",
   "VariablesContainer::Properties",
+  "VariablesContainer::SharedProperties",
 };
 
 interface VariablesContainer {
@@ -754,6 +755,7 @@ interface ProjectScopedContainers {
         [Ref] ObjectsContainer parameterObjectsContainer,
         [Ref] VariablesContainer parameterVariablesContainer,
         [Ref] VariablesContainer propertyVariablesContainer,
+        [Ref] VariablesContainer sharedPropertyVariablesContainer,
         [Ref] ResourcesContainer parameterResourcesContainer,
         [Ref] ResourcesContainer propertyResourcesContainer);
 

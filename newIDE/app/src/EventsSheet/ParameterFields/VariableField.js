@@ -185,7 +185,10 @@ export const quicklyAnalyzeVariableName = (
       // $FlowFixMe[incompatible-type]
       return VariableNameQuickAnalyzeResults.PARAMETER_WITH_CHILD;
     }
-    if (variableSource === gd.VariablesContainer.Properties) {
+    if (
+      variableSource === gd.VariablesContainer.Properties ||
+      variableSource === gd.VariablesContainer.SharedProperties
+    ) {
       // $FlowFixMe[incompatible-type]
       return VariableNameQuickAnalyzeResults.PROPERTY_WITH_CHILD;
     }
@@ -212,6 +215,7 @@ export const getVariableSourceIcon = (
     case gd.VariablesContainer.Parameters:
       return ParameterIcon;
     case gd.VariablesContainer.Properties:
+    case gd.VariablesContainer.SharedProperties:
       return PropertyIcon;
     default:
       return UnknownTypeIcon;

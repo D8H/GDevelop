@@ -53,7 +53,8 @@ public:
       const gd::EventsBasedBehavior &eventsBasedBehavior,
       const gd::EventsFunction &eventsFunction,
       gd::VariablesContainer &parameterVariablesContainer,
-      gd::VariablesContainer &propertyVariablesContainer);
+      gd::VariablesContainer &propertyVariablesContainer,
+      gd::VariablesContainer &sharedPropertyVariablesContainer);
 
   static VariablesContainersList
   MakeNewVariablesContainersListForObjectEventsFunction(

@@ -19,6 +19,7 @@ export class ProjectScopedContainersAccessor {
   _parameterObjectsContainer: gdObjectsContainer | null;
   _parameterVariablesContainer: gdVariablesContainer | null;
   _propertyVariablesContainer: gdVariablesContainer | null;
+  _sharedPropertyVariablesContainer: gdVariablesContainer | null;
   _parameterResourcesContainer: gdResourcesContainer | null;
   _propertyResourcesContainer: gdResourcesContainer | null;
   _eventPath: Array<gdBaseEvent>;
@@ -28,6 +29,7 @@ export class ProjectScopedContainersAccessor {
     parameterObjectsContainer: gdObjectsContainer | null = null,
     parameterVariablesContainer: gdVariablesContainer | null = null,
     propertyVariablesContainer: gdVariablesContainer | null = null,
+    sharedPropertyVariablesContainer: gdVariablesContainer | null = null,
     parameterResourcesContainer: gdResourcesContainer | null = null,
     propertyResourcesContainer: gdResourcesContainer | null = null,
     eventPath: Array<gdBaseEvent> = []
@@ -36,6 +38,7 @@ export class ProjectScopedContainersAccessor {
     this._parameterObjectsContainer = parameterObjectsContainer;
     this._parameterVariablesContainer = parameterVariablesContainer;
     this._propertyVariablesContainer = propertyVariablesContainer;
+    this._sharedPropertyVariablesContainer = sharedPropertyVariablesContainer;
     this._parameterResourcesContainer = parameterResourcesContainer;
     this._propertyResourcesContainer = propertyResourcesContainer;
     this._eventPath = eventPath;
@@ -80,6 +83,11 @@ export class ProjectScopedContainersAccessor {
           );
         }
         if (eventsBasedBehavior) {
+          if (!this._sharedPropertyVariablesContainer) {
+            throw new Error(
+              'Extension scope used without a VariablesContainer for shared properties'
+            );
+          }
           if (!this._propertyVariablesContainer) {
             throw new Error(
               'Extension scope used without a VariablesContainer for properties'
@@ -98,6 +106,7 @@ export class ProjectScopedContainersAccessor {
             this._parameterObjectsContainer,
             this._parameterVariablesContainer,
             this._propertyVariablesContainer,
+            this._sharedPropertyVariablesContainer,
             this._parameterResourcesContainer,
             this._propertyResourcesContainer
           );
@@ -170,6 +179,7 @@ export class ProjectScopedContainersAccessor {
       this._parameterObjectsContainer,
       this._parameterVariablesContainer,
       this._propertyVariablesContainer,
+      this._sharedPropertyVariablesContainer,
       this._parameterResourcesContainer,
       this._propertyResourcesContainer,
       [...this._eventPath, event]

@@ -169,6 +169,7 @@ public:
       const gd::EventsFunctionsExtension &eventsFunctionsExtension,
       const gd::EventsBasedBehavior &eventsBasedBehavior,
       gd::VariablesContainer &propertyVariablesContainer,
+      gd::VariablesContainer &sharedPropertyVariablesContainer,
       gd::ArbitraryEventsWorkerWithContext &worker);
 
   /**

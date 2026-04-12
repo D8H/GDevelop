@@ -39,6 +39,7 @@ export enum VariablesContainer_SourceType {
   ExtensionScene = 6,
   Parameters = 7,
   Properties = 8,
+  SharedProperties = 9,
 }
 
 export enum ObjectsContainer_SourceType {
@@ -686,7 +687,7 @@ export class ProjectScopedContainers extends EmscriptenObject {
   static makeNewProjectScopedContainersForProject(project: Project): ProjectScopedContainers;
   static makeNewProjectScopedContainersForEventsFunctionsExtension(project: Project, eventsFunctionsExtension: EventsFunctionsExtension): ProjectScopedContainers;
   static makeNewProjectScopedContainersForFreeEventsFunction(project: Project, eventsFunctionsExtension: EventsFunctionsExtension, eventsFunction: EventsFunction, parameterObjectsContainer: ObjectsContainer, parameterVariablesContainer: VariablesContainer, parameterResourcesContainer: ResourcesContainer): ProjectScopedContainers;
-  static makeNewProjectScopedContainersForBehaviorEventsFunction(project: Project, eventsFunctionsExtension: EventsFunctionsExtension, eventsBasedBehavior: EventsBasedBehavior, eventsFunction: EventsFunction, parameterObjectsContainer: ObjectsContainer, parameterVariablesContainer: VariablesContainer, propertyVariablesContainer: VariablesContainer, parameterResourcesContainer: ResourcesContainer, propertyResourcesContainer: ResourcesContainer): ProjectScopedContainers;
+  static makeNewProjectScopedContainersForBehaviorEventsFunction(project: Project, eventsFunctionsExtension: EventsFunctionsExtension, eventsBasedBehavior: EventsBasedBehavior, eventsFunction: EventsFunction, parameterObjectsContainer: ObjectsContainer, parameterVariablesContainer: VariablesContainer, propertyVariablesContainer: VariablesContainer, sharedPropertyVariablesContainer: VariablesContainer, parameterResourcesContainer: ResourcesContainer, propertyResourcesContainer: ResourcesContainer): ProjectScopedContainers;
   static makeNewProjectScopedContainersForObjectEventsFunction(project: Project, eventsFunctionsExtension: EventsFunctionsExtension, eventsBasedObject: EventsBasedObject, eventsFunction: EventsFunction, parameterObjectsContainer: ObjectsContainer, parameterVariablesContainer: VariablesContainer, propertyVariablesContainer: VariablesContainer, parameterResourcesContainer: ResourcesContainer, propertyResourcesContainer: ResourcesContainer): ProjectScopedContainers;
   static makeNewProjectScopedContainersForEventsBasedObject(project: Project, eventsFunctionsExtension: EventsFunctionsExtension, eventsBasedObject: EventsBasedObject, outputObjectsContainer: ObjectsContainer): ProjectScopedContainers;
   static makeNewProjectScopedContainersWithLocalVariables(projectScopedContainers: ProjectScopedContainers, event: BaseEvent): ProjectScopedContainers;

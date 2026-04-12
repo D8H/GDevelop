@@ -80,6 +80,7 @@ class ProjectScopedContainers {
       gd::ObjectsContainer &parameterObjectsContainer,
       gd::VariablesContainer &parameterVariablesContainer,
       gd::VariablesContainer &propertyVariablesContainer,
+      gd::VariablesContainer &sharedPropertyVariablesContainer,
       gd::ResourcesContainer &parameterResourcesContainer,
       gd::ResourcesContainer &propertyResourcesContainer);
 

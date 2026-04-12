@@ -207,6 +207,8 @@ gd::String EventsCodeGenerator::GenerateBehaviorEventsFunctionCode(
       gd::VariablesContainer::SourceType::Parameters);
   gd::VariablesContainer propertyVariablesContainer(
       gd::VariablesContainer::SourceType::Properties);
+  gd::VariablesContainer sharedPropertyVariablesContainer(
+      gd::VariablesContainer::SourceType::SharedProperties);
   gd::ResourcesContainer parameterResourcesContainer(
       gd::ResourcesContainer::SourceType::Parameters);
   gd::ResourcesContainer propertyResourcesContainer(
@@ -220,6 +222,7 @@ gd::String EventsCodeGenerator::GenerateBehaviorEventsFunctionCode(
           parameterObjectsContainers,
           parameterVariablesContainer,
           propertyVariablesContainer,
+          sharedPropertyVariablesContainer,
           parameterResourcesContainer,
           propertyResourcesContainer);
 
@@ -1432,7 +1435,9 @@ gd::String EventsCodeGenerator::GenerateGetVariable(
                gd::VariablesContainer::SourceType::ExtensionScene) {
       variables = &variablesContainer;
       output = "eventsFunctionContext.sceneVariablesForExtension";
-    } else if (sourceType == gd::VariablesContainer::SourceType::Properties) {
+    } else if (sourceType == gd::VariablesContainer::SourceType::Properties ||
+               sourceType ==
+                   gd::VariablesContainer::SourceType::SharedProperties) {
       if (hasChild) {
         // Properties with children are not supported.
         return "gdjs.VariablesContainer.badVariablesContainer";

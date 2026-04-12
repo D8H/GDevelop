@@ -1262,13 +1262,16 @@ void WholeProjectRefactorer::ChangeEventsBasedBehaviorPropertyType(
   typeChangedPropertyNames.insert(propertyName);
   gd::VariablesContainer propertyVariablesContainer(
       gd::VariablesContainer::SourceType::Properties);
+  gd::VariablesContainer sharedPropertyVariablesContainer(
+      gd::VariablesContainer::SourceType::SharedProperties);
   gd::EventsVariableInstructionTypeSwitcher
       eventsVariableInstructionTypeSwitcher(project.GetCurrentPlatform(),
                                             typeChangedPropertyNames,
                                             propertyVariablesContainer);
   gd::ProjectBrowserHelper::ExposeEventsBasedBehaviorEvents(
       project, eventsFunctionsExtension, eventsBasedBehavior,
-      propertyVariablesContainer, eventsVariableInstructionTypeSwitcher);
+      propertyVariablesContainer, sharedPropertyVariablesContainer,
+      eventsVariableInstructionTypeSwitcher);
 }
 
 void WholeProjectRefactorer::ChangeEventsBasedObjectPropertyType(

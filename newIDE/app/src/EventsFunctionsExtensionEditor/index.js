@@ -183,6 +183,9 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
   _propertyVariablesContainer: gdVariablesContainer = new gd.VariablesContainer(
     gd.VariablesContainer.Properties
   );
+  _sharedPropertyVariablesContainer: gdVariablesContainer = new gd.VariablesContainer(
+    gd.VariablesContainer.SharedProperties
+  );
   _parameterResourcesContainer: gdResourcesContainer = new gd.ResourcesContainer(
     gd.ResourcesContainer.Parameters
   );
@@ -214,6 +217,8 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
       this._parameterVariablesContainer.delete();
     if (this._propertyVariablesContainer)
       this._propertyVariablesContainer.delete();
+    if (this._sharedPropertyVariablesContainer)
+      this._sharedPropertyVariablesContainer.delete();
     if (this._parameterResourcesContainer)
       this._parameterResourcesContainer.delete();
     if (this._propertyResourcesContainer)
@@ -252,6 +257,7 @@ export default class EventsFunctionsExtensionEditor extends React.Component<
       this._objectsContainer,
       this._parameterVariablesContainer,
       this._propertyVariablesContainer,
+      this._sharedPropertyVariablesContainer,
       this._parameterResourcesContainer,
       this._propertyResourcesContainer
     );

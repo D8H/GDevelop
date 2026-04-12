@@ -67,7 +67,9 @@ export default (React.forwardRef<ParameterFieldProps, ParameterFieldInterface>(
             variableContainer.getSourceType() !==
               gd.VariablesContainer.Parameters &&
             variableContainer.getSourceType() !==
-              gd.VariablesContainer.Properties
+              gd.VariablesContainer.Properties &&
+            variableContainer.getSourceType() !==
+              gd.VariablesContainer.SharedProperties
         );
       },
       [projectScopedContainersAccessor]

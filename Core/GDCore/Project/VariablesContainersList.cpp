@@ -66,14 +66,15 @@ VariablesContainersList VariablesContainersList::
         const gd::EventsBasedBehavior &eventsBasedBehavior,
         const gd::EventsFunction &eventsFunction,
         gd::VariablesContainer &parameterVariablesContainer,
-        gd::VariablesContainer &propertyVariablesContainer) {
+        gd::VariablesContainer &propertyVariablesContainer,
+        gd::VariablesContainer &sharedPropertyVariablesContainer) {
   VariablesContainersList variablesContainersList;
   variablesContainersList.Push(extension.GetGlobalVariables());
   variablesContainersList.Push(extension.GetSceneVariables());
 
   gd::EventsFunctionTools::PropertiesToVariablesContainer(
-      eventsBasedBehavior.GetSharedPropertyDescriptors(), propertyVariablesContainer);
-  variablesContainersList.Push(propertyVariablesContainer);
+      eventsBasedBehavior.GetSharedPropertyDescriptors(), sharedPropertyVariablesContainer);
+  variablesContainersList.Push(sharedPropertyVariablesContainer);
 
   gd::EventsFunctionTools::PropertiesToVariablesContainer(
       eventsBasedBehavior.GetPropertyDescriptors(), propertyVariablesContainer);

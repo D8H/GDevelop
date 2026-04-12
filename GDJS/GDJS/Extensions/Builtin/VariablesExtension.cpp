@@ -47,9 +47,11 @@ VariablesExtension::VariablesExtension() {
             variablesContainersList.GetVariablesContainerFromVariableOrPropertyOrParameterName(
                 variableName);
         const auto sourceType = variablesContainer.GetSourceType();
-        if (sourceType != gd::VariablesContainer::SourceType::Properties &&
+        if (sourceType !=
+                gd::VariablesContainer::SourceType::SharedProperties &&
+            sourceType != gd::VariablesContainer::SourceType::Properties &&
             sourceType != gd::VariablesContainer::SourceType::Parameters) {
-            getterCode += ".getAsNumber()";
+          getterCode += ".getAsNumber()";
         }
 
         return resultingBoolean + " = " +
@@ -78,9 +80,11 @@ VariablesExtension::VariablesExtension() {
             variablesContainersList.GetVariablesContainerFromVariableOrPropertyOrParameterName(
                 variableName);
         const auto sourceType = variablesContainer.GetSourceType();
-        if (sourceType != gd::VariablesContainer::SourceType::Properties &&
+        if (sourceType !=
+                gd::VariablesContainer::SourceType::SharedProperties &&
+            sourceType != gd::VariablesContainer::SourceType::Properties &&
             sourceType != gd::VariablesContainer::SourceType::Parameters) {
-            getterCode += ".getAsString()";
+          getterCode += ".getAsString()";
         }
 
         gd::String resultingBoolean =
@@ -110,9 +114,11 @@ VariablesExtension::VariablesExtension() {
             variablesContainersList.GetVariablesContainerFromVariableOrPropertyOrParameterName(
                 variableName);
         const auto sourceType = variablesContainer.GetSourceType();
-        if (sourceType != gd::VariablesContainer::SourceType::Properties &&
+        if (sourceType !=
+                gd::VariablesContainer::SourceType::SharedProperties &&
+            sourceType != gd::VariablesContainer::SourceType::Properties &&
             sourceType != gd::VariablesContainer::SourceType::Parameters) {
-            getterCode += ".getAsBoolean()";
+          getterCode += ".getAsBoolean()";
         }
 
         gd::String resultingBoolean =
@@ -184,11 +190,14 @@ VariablesExtension::VariablesExtension() {
             variablesContainersList.GetVariablesContainerFromVariableOrPropertyName(
                 variableName);
         const auto sourceType = variablesContainer.GetSourceType();
-        if (sourceType == gd::VariablesContainer::SourceType::Properties) {
-            const auto &propertiesContainersList =
-                codeGenerator.GetProjectScopedContainers().GetPropertiesContainersList();
-            const auto &propertiesContainerAndProperty =
-                propertiesContainersList.Get(variableName);
+        if (sourceType == gd::VariablesContainer::SourceType::Properties ||
+            sourceType ==
+                gd::VariablesContainer::SourceType::SharedProperties) {
+          const auto &propertiesContainersList =
+              codeGenerator.GetProjectScopedContainers()
+                  .GetPropertiesContainersList();
+          const auto &propertiesContainerAndProperty =
+              propertiesContainersList.Get(variableName);
 
           if (op == "True") {
             return codeGenerator.GeneratePropertySetterWithoutCasting(
@@ -247,11 +256,14 @@ VariablesExtension::VariablesExtension() {
             variablesContainersList.GetVariablesContainerFromVariableOrPropertyName(
                 variableName);
         const auto sourceType = variablesContainer.GetSourceType();
-        if (sourceType == gd::VariablesContainer::SourceType::Properties) {
-            const auto &propertiesContainersList =
-                codeGenerator.GetProjectScopedContainers().GetPropertiesContainersList();
-            const auto &propertiesContainerAndProperty =
-                propertiesContainersList.Get(variableName);
+        if (sourceType == gd::VariablesContainer::SourceType::Properties ||
+            sourceType ==
+                gd::VariablesContainer::SourceType::SharedProperties) {
+          const auto &propertiesContainersList =
+              codeGenerator.GetProjectScopedContainers()
+                  .GetPropertiesContainersList();
+          const auto &propertiesContainerAndProperty =
+              propertiesContainersList.Get(variableName);
 
           if (op == "=") {
             return codeGenerator.GeneratePropertySetterWithoutCasting(
@@ -307,11 +319,14 @@ VariablesExtension::VariablesExtension() {
             variablesContainersList.GetVariablesContainerFromVariableOrPropertyName(
                 variableName);
         const auto sourceType = variablesContainer.GetSourceType();
-        if (sourceType == gd::VariablesContainer::SourceType::Properties) {
-            const auto &propertiesContainersList =
-                codeGenerator.GetProjectScopedContainers().GetPropertiesContainersList();
-            const auto &propertiesContainerAndProperty =
-                propertiesContainersList.Get(variableName);
+        if (sourceType == gd::VariablesContainer::SourceType::Properties ||
+            sourceType ==
+                gd::VariablesContainer::SourceType::SharedProperties) {
+          const auto &propertiesContainersList =
+              codeGenerator.GetProjectScopedContainers()
+                  .GetPropertiesContainersList();
+          const auto &propertiesContainerAndProperty =
+              propertiesContainersList.Get(variableName);
 
           if (op == "=") {
             return codeGenerator.GeneratePropertySetterWithoutCasting(

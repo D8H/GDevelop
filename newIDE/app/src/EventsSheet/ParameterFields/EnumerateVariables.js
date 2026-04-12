@@ -77,7 +77,11 @@ export const enumerateVariablesOfContainersList = (
 ): Array<EnumeratedVariable> => {
   return enumerateVariablesOfContainersListExcludingSourceTypes(
     variablesContainersList,
-    [gd.VariablesContainer.Parameters, gd.VariablesContainer.Properties]
+    [
+      gd.VariablesContainer.Parameters,
+      gd.VariablesContainer.Properties,
+      gd.VariablesContainer.SharedProperties,
+    ]
   );
 };
 

@@ -141,7 +141,9 @@ void EventsFunctionTools::PropertiesToVariablesContainer(
     const PropertiesContainer &properties,
     gd::VariablesContainer &outputVariablesContainer) {
   if (outputVariablesContainer.GetSourceType() !=
-      gd::VariablesContainer::SourceType::Properties) {
+          gd::VariablesContainer::SourceType::Properties &&
+      outputVariablesContainer.GetSourceType() !=
+          gd::VariablesContainer::SourceType::SharedProperties) {
     throw std::logic_error("Tried to generate a variables container from "
                            "properties with the wrong source type.");
   }

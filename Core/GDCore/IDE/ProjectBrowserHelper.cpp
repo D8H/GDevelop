@@ -36,6 +36,7 @@ void ExposeEventsBasedBehaviorEventsImpl(
     const gd::EventsFunctionsExtension &eventsFunctionsExtension,
     const gd::EventsBasedBehavior &eventsBasedBehavior,
     gd::VariablesContainer &propertyVariablesContainer,
+    gd::VariablesContainer &sharedPropertyVariablesContainer,
     WorkerType &worker) {
   auto &behaviorEventsFunctions = eventsBasedBehavior.GetEventsFunctions();
   for (auto &&eventsFunction : behaviorEventsFunctions.GetInternalVector()) {
@@ -53,7 +54,8 @@ void ExposeEventsBasedBehaviorEventsImpl(
             project, eventsFunctionsExtension, eventsBasedBehavior,
             *eventsFunction, parameterObjectsContainers,
             parameterVariablesContainer, propertyVariablesContainer,
-            parameterResourcesContainer, propertyResourcesContainer);
+            sharedPropertyVariablesContainer, parameterResourcesContainer,
+            propertyResourcesContainer);
 
     worker.Launch(eventsFunction->GetEvents(), projectScopedContainers);
   }
@@ -121,9 +123,11 @@ void ExposeEventsFunctionsExtensionEventsImpl(
            .GetInternalVector()) {
     gd::VariablesContainer propertyVariablesContainer(
         gd::VariablesContainer::SourceType::Properties);
+    gd::VariablesContainer sharedPropertyVariablesContainer(
+        gd::VariablesContainer::SourceType::SharedProperties);
     ExposeEventsBasedBehaviorEventsImpl(
         project, eventsFunctionsExtension, *eventsBasedBehavior,
-        propertyVariablesContainer, worker);
+        propertyVariablesContainer, sharedPropertyVariablesContainer, worker);
   }
 
   // Add (object) events functions
@@ -336,10 +340,13 @@ void ProjectBrowserHelper::ExposeEventsBasedBehaviorEvents(
     gd::ArbitraryEventsWorkerWithContext &worker) {
   gd::VariablesContainer propertyVariablesContainer(
       gd::VariablesContainer::SourceType::Properties);
+  gd::VariablesContainer sharedPropertyVariablesContainer(
+      gd::VariablesContainer::SourceType::SharedProperties);
   gd::ProjectBrowserHelper::ExposeEventsBasedBehaviorEvents(
     project, eventsFunctionsExtension,
     eventsBasedBehavior,
     propertyVariablesContainer,
+    sharedPropertyVariablesContainer,
     worker);
 }
 
@@ -347,10 +354,11 @@ void ProjectBrowserHelper::ExposeEventsBasedBehaviorEvents(
     gd::Project &project, const gd::EventsFunctionsExtension &eventsFunctionsExtension,
     const gd::EventsBasedBehavior &eventsBasedBehavior,
     gd::VariablesContainer &propertyVariablesContainer,
+    gd::VariablesContainer &sharedPropertyVariablesContainer,
     gd::ArbitraryEventsWorkerWithContext &worker) {
   ExposeEventsBasedBehaviorEventsImpl(
       project, eventsFunctionsExtension, eventsBasedBehavior,
-      propertyVariablesContainer, worker);
+      propertyVariablesContainer, sharedPropertyVariablesContainer, worker);
 }
 
 void ProjectBrowserHelper::ExposeEventsBasedObjectEvents(
@@ -400,10 +408,13 @@ void ProjectBrowserHelper::ExposeEventsBasedBehaviorEvents(
     gd::ReadOnlyArbitraryEventsWorkerWithContext &worker) {
   gd::VariablesContainer propertyVariablesContainer(
       gd::VariablesContainer::SourceType::Properties);
+  gd::VariablesContainer sharedPropertyVariablesContainer(
+      gd::VariablesContainer::SourceType::SharedProperties);
   ExposeEventsBasedBehaviorEventsImpl(
     project, eventsFunctionsExtension,
     eventsBasedBehavior,
     propertyVariablesContainer,
+    sharedPropertyVariablesContainer,
     worker);
 }
 

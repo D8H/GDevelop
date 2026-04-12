@@ -107,6 +107,7 @@ ProjectScopedContainers::MakeNewProjectScopedContainersForBehaviorEventsFunction
     gd::ObjectsContainer &parameterObjectsContainer,
     gd::VariablesContainer &parameterVariablesContainer,
     gd::VariablesContainer &propertyVariablesContainer,
+    gd::VariablesContainer &sharedPropertyVariablesContainer,
     gd::ResourcesContainer &parameterResourcesContainer,
     gd::ResourcesContainer &propertyResourcesContainer) {
 
@@ -122,7 +123,8 @@ ProjectScopedContainers::MakeNewProjectScopedContainersForBehaviorEventsFunction
       VariablesContainersList::
           MakeNewVariablesContainersListForBehaviorEventsFunction(
               eventsFunctionsExtension, eventsBasedBehavior, eventsFunction,
-              parameterVariablesContainer, propertyVariablesContainer),
+              parameterVariablesContainer, propertyVariablesContainer,
+              sharedPropertyVariablesContainer),
       &eventsFunctionsExtension.GetGlobalVariables(),
       &eventsFunctionsExtension.GetSceneVariables(),
       PropertiesContainersList::MakeNewEmptyPropertiesContainersList(),
