@@ -18,7 +18,7 @@ import {
 } from '../UI/MobileSoftKeyboard';
 import { ProjectScopedContainersAccessor } from '../InstructionOrExpression/EventsScope';
 import PortalContainerContext from '../UI/PortalContainerContext';
-import { type VariableDialogOpeningProps } from './ParameterFields/VariableField';
+import { type VariableDialogOpeningProps } from '../VariablesList/VariablesEditorDialog';
 
 const gd: libGDevelop = global.gd;
 
