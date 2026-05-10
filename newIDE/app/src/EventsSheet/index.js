@@ -2271,6 +2271,7 @@ export class EventsSheetComponentWithoutHandle extends React.Component<
             }}
             onWillInstallExtension={this.props.onWillInstallExtension}
             onExtensionInstalled={this.props.onExtensionInstalled}
+            editEventsFunctionParameter={this.props.editEventsFunctionParameter}
           />
         )}
       </I18n>
