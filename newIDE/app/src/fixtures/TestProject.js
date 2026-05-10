@@ -699,7 +699,7 @@ export const makeTestProject = (gd /*: libGDevelop */) /*: TestProject */ => {
   testEventsFunction
     .getParameters()
     .insertNewParameter('MyNumber', 1)
-    .setType('expression')
+    .setType('number')
     .setDescription('Some number');
   testEventsFunction
     .getParameters()

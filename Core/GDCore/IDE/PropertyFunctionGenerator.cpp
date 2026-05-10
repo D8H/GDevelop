@@ -87,12 +87,8 @@ void PropertyFunctionGenerator::GenerateGetterAndSetter(
     auto &expressionType =
         gd::ValueTypeMetadata::ConvertPropertyTypeToValueType(
             property.GetType());
-    // TODO Stop replacing number by expression when it"s handled by the UI
-    // and released.
-    auto &legacyExpressionType =
-        expressionType == "number" ? "expression" : expressionType;
     getter.GetExpressionType()
-        .SetName(legacyExpressionType)
+        .SetName(expressionType)
         .SetExtraInfo(GetStringifiedExtraInfo(property));
     getter.SetFullName(propertyLabel).SetGroup(functionGroupName);
     if (primitiveType == "boolean") {

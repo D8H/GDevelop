@@ -596,7 +596,7 @@ describe('MetadataDeclarationHelper', () => {
     expect(condition.getParametersCount()).toBe(5);
     checkBehaviorDefaultParameters(condition);
     expect(condition.getParameter(2).getType()).toBe('relationalOperator');
-    expect(condition.getParameter(3).getType()).toBe('expression');
+    expect(condition.getParameter(3).getType()).toBe('number');
 
     extension.delete();
     project.delete();
@@ -660,7 +660,7 @@ describe('MetadataDeclarationHelper', () => {
     expect(action.getParametersCount()).toBe(5);
     checkBehaviorDefaultParameters(action);
     expect(action.getParameter(2).getType()).toBe('operator');
-    expect(action.getParameter(3).getType()).toBe('expression');
+    expect(action.getParameter(3).getType()).toBe('number');
 
     extension.delete();
     project.delete();
@@ -1477,7 +1477,7 @@ describe('MetadataDeclarationHelper', () => {
     expect(condition.getParametersCount()).toBe(4);
     checkObjectDefaultParameters(condition);
     expect(condition.getParameter(1).getType()).toBe('relationalOperator');
-    expect(condition.getParameter(2).getType()).toBe('expression');
+    expect(condition.getParameter(2).getType()).toBe('number');
 
     extension.delete();
     project.delete();
@@ -1539,7 +1539,7 @@ describe('MetadataDeclarationHelper', () => {
     expect(action.getParametersCount()).toBe(4);
     checkObjectDefaultParameters(action);
     expect(action.getParameter(1).getType()).toBe('operator');
-    expect(action.getParameter(2).getType()).toBe('expression');
+    expect(action.getParameter(2).getType()).toBe('number');
 
     extension.delete();
     project.delete();

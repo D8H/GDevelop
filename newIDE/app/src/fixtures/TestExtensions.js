@@ -227,7 +227,7 @@ export const makeTestExtensions = (gd: libGDevelop) => {
         '',
         'fake-icon.png'
       )
-      .addParameter('expression', 'First parameter (number)', '', false);
+      .addParameter('number', 'First parameter (number)', '', false);
     behavior
       .addStrExpression(
         'SomethingReturningStringWith1NumberParam',
@@ -236,7 +236,7 @@ export const makeTestExtensions = (gd: libGDevelop) => {
         '',
         'fake-icon.png'
       )
-      .addParameter('expression', 'First parameter (number)', '', false);
+      .addParameter('number', 'First parameter (number)', '', false);
 
     platform.addNewExtension(extension);
     extension.delete(); // Release the extension as it was copied inside gd.JsPlatform

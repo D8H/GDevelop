@@ -70,7 +70,7 @@ TEST_CASE("PropertyFunctionGenerator", "[common]") {
 
       REQUIRE(getter.GetFunctionType() ==
               gd::EventsFunction::ExpressionAndCondition);
-      REQUIRE(getter.GetExpressionType().GetName() == "expression");
+      REQUIRE(getter.GetExpressionType().GetName() == "number");
       REQUIRE(getter.GetFullName() == "Movement angle");
       REQUIRE(getter.GetGroup() ==
               "My events based behavior movement configuration");
@@ -318,7 +318,7 @@ TEST_CASE("PropertyFunctionGenerator", "[common]") {
 
       REQUIRE(getter.GetFunctionType() ==
               gd::EventsFunction::ExpressionAndCondition);
-      REQUIRE(getter.GetExpressionType().GetName() == "expression");
+      REQUIRE(getter.GetExpressionType().GetName() == "number");
       REQUIRE(getter.GetFullName() == "Movement angle");
       REQUIRE(getter.GetGroup() ==
               "My events based object movement configuration");
@@ -727,7 +727,7 @@ TEST_CASE("PropertyFunctionGenerator", "[common]") {
 
     REQUIRE(getter.GetFunctionType() ==
             gd::EventsFunction::ExpressionAndCondition);
-    REQUIRE(getter.GetExpressionType().GetName() == "expression");
+    REQUIRE(getter.GetExpressionType().GetName() == "number");
     REQUIRE(getter.GetFullName() == "MovementAngle");
     REQUIRE(getter.GetGroup() == "My events based behavior configuration");
     REQUIRE(getter.GetDescription() == "the movementAngle of the object.");
