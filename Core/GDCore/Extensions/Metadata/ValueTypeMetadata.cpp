@@ -28,6 +28,11 @@ void ValueTypeMetadata::SerializeTo(SerializerElement& element) const {
 
 void ValueTypeMetadata::UnserializeFrom(const SerializerElement& element) {
   name = element.GetStringAttribute("type");
+  // Compatibility with GD <= 5.6.269
+  if (name == "expression") {
+    name = "number";
+  }
+  // end of compatibility code
   supplementaryInformation =
       element.GetStringAttribute("supplementaryInformation");
   optional = element.GetBoolAttribute("optional");

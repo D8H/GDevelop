@@ -152,7 +152,7 @@ export default function CompactValueTypeEditor({
                       label={t`Behavior (for the previous object)`}
                     />
                   )}
-                  <SelectOption value="expression" label={t`Number`} />
+                  <SelectOption value="number" label={t`Number`} />
                   <SelectOption value="string" label={t`String (text)`} />
                   <SelectOption
                     value="stringWithSelector"
