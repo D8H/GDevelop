@@ -311,9 +311,7 @@ const CompactEventsFunctionParametersEditor: React.ComponentType<{
           projectScopedContainers,
           name || 'Parameter'
         );
-        parameters
-          .insertNewParameter(validatedNewName, index)
-          .setType(type === 'number' ? 'expression' : type);
+        parameters.insertNewParameter(validatedNewName, index).setType(type);
         forceUpdate();
         onParametersUpdated();
         setJustAddedParameterName(validatedNewName);
