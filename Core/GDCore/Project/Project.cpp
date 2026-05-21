@@ -74,6 +74,9 @@ Project::Project()
       gdMajorVersion(gd::VersionWrapper::Major()),
       gdMinorVersion(gd::VersionWrapper::Minor()),
       gdBuildVersion(gd::VersionWrapper::Build()),
+      initialGDMajorVersion(gd::VersionWrapper::Major()),
+      initialGDMinorVersion(gd::VersionWrapper::Minor()),
+      initialGDBuildVersion(gd::VersionWrapper::Build()),
       variables(gd::VariablesContainer::SourceType::Global),
       objectsContainer(gd::ObjectsContainer::SourceType::Global),
       resourcesContainer(gd::ResourcesContainer::SourceType::Global),
@@ -704,6 +707,21 @@ void Project::UnserializeFrom(const SerializerElement& element) {
     }
   }
 
+  if (element.HasChild("initialGDVersion")) {
+    const SerializerElement &gdVersionElement =
+        element.GetChild("initialGDVersion");
+    initialGDMajorVersion =
+        gdVersionElement.GetIntAttribute("major", initialGDMajorVersion);
+    initialGDMinorVersion =
+        gdVersionElement.GetIntAttribute("minor", initialGDMinorVersion);
+    initialGDBuildVersion =
+        gdVersionElement.GetIntAttribute("build", initialGDBuildVersion);
+  } else {
+    initialGDMajorVersion = 0;
+    initialGDMinorVersion = 0;
+    initialGDBuildVersion = 0;
+  }
+
   const SerializerElement& propElement =
       element.GetChild("properties", 0, "Info");
   SetName(propElement.GetChild("name", 0, "Nom").GetValue().GetString());
@@ -1099,6 +1117,15 @@ void Project::SerializeTo(SerializerElement& element) const {
   versionElement.SetAttribute("build", gd::VersionWrapper::Build());
   versionElement.SetAttribute("revision", gd::VersionWrapper::Revision());
 
+  if (initialGDMajorVersion != 0 || initialGDMinorVersion != 0 ||
+      initialGDBuildVersion != 0) {
+    SerializerElement &initialVersionElement =
+        element.AddChild("initialGDVersion");
+    initialVersionElement.SetAttribute("major", (int)initialGDMajorVersion);
+    initialVersionElement.SetAttribute("minor", (int)initialGDMinorVersion);
+    initialVersionElement.SetAttribute("build", (int)initialGDBuildVersion);
+  }
+
   SerializerElement& propElement = element.AddChild("properties");
   propElement.AddChild("name").SetValue(GetName());
   propElement.AddChild("description").SetValue(GetDescription());
@@ -1331,6 +1358,10 @@ void Project::Init(const gd::Project& game) {
   gdMajorVersion = game.gdMajorVersion;
   gdMinorVersion = game.gdMinorVersion;
   gdBuildVersion = game.gdBuildVersion;
+
+  initialGDMajorVersion = game.initialGDMajorVersion;
+  initialGDMinorVersion = game.initialGDMinorVersion;
+  initialGDBuildVersion = game.initialGDBuildVersion;
 
   currentPlatform = game.currentPlatform;
   platforms = game.platforms;

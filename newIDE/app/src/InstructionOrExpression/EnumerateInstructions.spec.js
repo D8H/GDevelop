@@ -18,8 +18,10 @@ const makeFakeI18n = (fakeI18n): I18nType => ({
 
 describe('EnumerateInstructions', () => {
   it('can enumerate instructions being conditions', () => {
+    const project = gd.ProjectHelper.createNewGDJSProject();
     const instructions = enumerateAllInstructions(
       true,
+      project,
       // $FlowFixMe[incompatible-type] The fake I18n translates groups to empty strings.
       null
     );
@@ -68,11 +70,14 @@ describe('EnumerateInstructions', () => {
         type: 'IsCursorOnObject',
       })
     );
+    project.delete();
   });
 
   it('can enumerate instructions being actions', () => {
+    const project = gd.ProjectHelper.createNewGDJSProject();
     const instructions = enumerateAllInstructions(
       false,
+      project,
       // $FlowFixMe[incompatible-type] The fake I18n translates groups to empty strings.
       null
     );
@@ -92,10 +97,16 @@ describe('EnumerateInstructions', () => {
         }),
       ])
     );
+    project.delete();
   });
 
   it('can create the tree of instructions', () => {
-    const instructions = enumerateAllInstructions(true, makeFakeI18n());
+    const project = gd.ProjectHelper.createNewGDJSProject();
+    const instructions = enumerateAllInstructions(
+      true,
+      project,
+      makeFakeI18n()
+    );
     const tree = createTree(instructions, makeFakeI18n());
     expect(tree).toHaveProperty('Advanced');
     expect(tree).toHaveProperty('Audio');
@@ -119,11 +130,13 @@ describe('EnumerateInstructions', () => {
         },
       },
     });
+    project.delete();
   });
 
   it('can find the object parameter, if any', () => {
-    const actions = enumerateAllInstructions(false, makeFakeI18n());
-    const conditions = enumerateAllInstructions(true, makeFakeI18n());
+    const project = gd.ProjectHelper.createNewGDJSProject();
+    const actions = enumerateAllInstructions(false, project, makeFakeI18n());
+    const conditions = enumerateAllInstructions(true, project, makeFakeI18n());
 
     const createInstruction = actions.filter(
       ({ type }) => type === 'Create'
@@ -155,12 +168,12 @@ describe('EnumerateInstructions', () => {
     )[0];
     expect(spriteAnimationEnded).not.toBeUndefined();
     expect(getObjectParameterIndex(spriteAnimationEnded.metadata)).toBe(0);
+    project.delete();
   });
 
   it('can enumerate instructions for an object (Sprite)', () => {
     makeTestExtensions(gd);
-    // $FlowFixMe[invalid-constructor]
-    const project = new gd.ProjectHelper.createNewGDJSProject();
+    const project = gd.ProjectHelper.createNewGDJSProject();
     const layout = project.insertNewLayout('Scene', 0);
     layout.getObjects().insertNewObject(project, 'Sprite', 'MySpriteObject', 0);
 
@@ -170,6 +183,7 @@ describe('EnumerateInstructions', () => {
       project.getObjects(),
       layout.getObjects(),
       'MySpriteObject',
+      project,
       makeFakeI18n()
     );
     expect(spriteInstructions).toEqual(
@@ -184,5 +198,6 @@ describe('EnumerateInstructions', () => {
         }),
       ])
     );
+    project.delete();
   });
 });

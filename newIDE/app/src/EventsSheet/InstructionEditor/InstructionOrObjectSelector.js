@@ -247,7 +247,7 @@ const InstructionOrObjectSelector: React.ComponentType<{
     const freeInstructionsInfoTreeRef = React.useRef<InstructionOrExpressionTreeNode>(
       createTree(
         filterEnumeratedInstructionOrExpressionMetadataByScope(
-          enumerateFreeInstructions(isCondition, i18n),
+          enumerateFreeInstructions(isCondition, project, i18n),
           scope
         ),
         i18n
@@ -275,7 +275,7 @@ const InstructionOrObjectSelector: React.ComponentType<{
       Array<EnumeratedInstructionMetadata>
     >(
       filterEnumeratedInstructionOrExpressionMetadataByScope(
-        enumerateAllInstructions(isCondition, i18n),
+        enumerateAllInstructions(isCondition, project, i18n),
         scope
       )
     );
@@ -367,14 +367,14 @@ const InstructionOrObjectSelector: React.ComponentType<{
       (i18n: I18nType) => {
         freeInstructionsInfoTreeRef.current = createTree(
           filterEnumeratedInstructionOrExpressionMetadataByScope(
-            enumerateFreeInstructions(isCondition, i18n),
+            enumerateFreeInstructions(isCondition, project, i18n),
             scope
           ),
           i18n
         );
         forceUpdate();
       },
-      [forceUpdate, isCondition, scope]
+      [forceUpdate, isCondition, project, scope]
     );
 
     React.useImperativeHandle(ref, () => ({ reEnumerateInstructions }));

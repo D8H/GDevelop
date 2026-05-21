@@ -148,10 +148,16 @@ class GD_CORE_API PlatformExtension {
   }
 
   /**
-   * \brief Mark this extension as deprecated: the IDE will hide it from the
-   * user.
+   * \brief Mark this extension as deprecated: the IDE will hide it from users
+   * in new projects.
    */
-  void MarkAsDeprecated() { deprecated = true; }
+  PlatformExtension& MarkAsDeprecatedSince(int major, int minor, int build) {
+    deprecated = true;
+    depreciationGDMajorVersion = major;
+    depreciationGDMinorVersion = minor;
+    depreciationGDBuildVersion = build;
+    return *this;
+  }
 
   ///@}
 
@@ -477,6 +483,27 @@ class GD_CORE_API PlatformExtension {
   bool IsDeprecated() const { return deprecated; }
 
   /**
+   * Get the major version of GDevelop when this extension got deprecated.
+   */
+  unsigned int GetDepreciationGDMajorVersion() {
+    return depreciationGDMajorVersion;
+  };
+
+  /**
+   * Get the minor version of GDevelop when this extension got deprecated.
+   */
+  unsigned int GetDepreciationGDMinorVersion() {
+    return depreciationGDMinorVersion;
+  };
+
+  /**
+   * Get the minor version of GDevelop when this extension got deprecated.
+   */
+  unsigned int GetDepreciationGDBuildVersion() {
+    return depreciationGDBuildVersion;
+  };
+
+  /**
    * \brief Get the namespace of the extension.
    * \note The namespace is simply the name of the extension concatenated with
    * "::" at the end.
@@ -739,8 +766,11 @@ static gd::String GetVariantFullType(const gd::String& extensionName,
   gd::String category;
   gd::String author;   ///< Author displayed to users in the editor.
   gd::String license;  ///< License name displayed to users in the editor.
-  bool deprecated;     ///< true if the extension is deprecated and shouldn't be
-                       ///< shown in IDE.
+  bool deprecated = false; ///< true if the extension is deprecated and
+                           ///< shouldn't be shown in IDE.
+  int depreciationGDMajorVersion = 0;
+  int depreciationGDMinorVersion = 0;
+  int depreciationGDBuildVersion = 0;
   gd::String helpPath;  ///< The relative path to the help for this extension in
                         ///< the documentation.
   gd::String iconUrl;   ///< The URL to the icon to be shown for this extension.

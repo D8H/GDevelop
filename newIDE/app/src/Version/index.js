@@ -13,3 +13,18 @@ export const getGDCoreVersion = (): string => {
   gdCoreVersionString = gd ? gd.VersionWrapper.fullString() : 'Unknown';
   return gdCoreVersionString;
 };
+
+export const shouldHideExtension = (
+  project: gdProject,
+  extension: gdPlatformExtension
+): boolean => {
+  return (
+    extension.isDeprecated() &&
+    (extension.getDepreciationGDMajorVersion() <
+      project.getInitialGDMajorVersion() ||
+      extension.getDepreciationGDMinorVersion() <
+        project.getInitialGDMinorVersion() ||
+      extension.getDepreciationGDBuildVersion() <=
+        project.getInitialGDBuildVersion())
+  );
+};

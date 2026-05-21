@@ -56,6 +56,9 @@ declare class gdProject {
   getUseDeprecatedZeroAsDefaultStringVariable(): boolean;
   areEffectsHiddenInEditor(): boolean;
   setEffectsHiddenInEditor(enable: boolean): void;
+  getInitialGDMajorVersion(): number;
+  getInitialGDMinorVersion(): number;
+  getInitialGDBuildVersion(): number;
   setLastCompilationDirectory(path: string): void;
   getLastCompilationDirectory(): string;
   getExtensionProperties(): gdExtensionProperties;

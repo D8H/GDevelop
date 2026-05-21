@@ -611,6 +611,9 @@ interface Project {
     boolean GetUseDeprecatedZeroAsDefaultStringVariable();
     boolean AreEffectsHiddenInEditor();
     void SetEffectsHiddenInEditor(boolean enable);
+    long GetInitialGDMajorVersion();
+    long GetInitialGDMinorVersion();
+    long GetInitialGDBuildVersion();
 
     void SetLastCompilationDirectory([Const] DOMString path);
     [Const, Ref] DOMString GetLastCompilationDirectory();
@@ -2332,7 +2335,12 @@ interface PlatformExtension {
     [Ref] PlatformExtension SetDimension([Const] DOMString dimension);
     [Const, Ref] DOMString GetDimension();
     [Ref] InstructionOrExpressionGroupMetadata AddInstructionOrExpressionGroupMetadata([Const] DOMString name);
-    void MarkAsDeprecated();
+    [Ref] PlatformExtension MarkAsDeprecatedSince(long major, long minor, long build);
+
+    boolean IsDeprecated();
+    long GetDepreciationGDMajorVersion();
+    long GetDepreciationGDMinorVersion();
+    long GetDepreciationGDBuildVersion();
 
     [Const, Ref] VectorString GetTags();
     [Ref] PlatformExtension SetTags([Const] DOMString csvTags);

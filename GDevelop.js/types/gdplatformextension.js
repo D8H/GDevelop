@@ -10,7 +10,11 @@ declare class gdPlatformExtension {
   setDimension(dimension: string): gdPlatformExtension;
   getDimension(): string;
   addInstructionOrExpressionGroupMetadata(name: string): gdInstructionOrExpressionGroupMetadata;
-  markAsDeprecated(): void;
+  markAsDeprecatedSince(major: number, minor: number, build: number): gdPlatformExtension;
+  isDeprecated(): boolean;
+  getDepreciationGDMajorVersion(): number;
+  getDepreciationGDMinorVersion(): number;
+  getDepreciationGDBuildVersion(): number;
   getTags(): gdVectorString;
   setTags(csvTags: string): gdPlatformExtension;
   addExpressionAndCondition(type: string, name: string, fullname: string, description: string, sentenceName: string, group: string, icon: string): gdMultipleInstructionMetadata;
