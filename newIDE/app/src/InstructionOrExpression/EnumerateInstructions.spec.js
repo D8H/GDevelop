@@ -6,6 +6,11 @@ import {
   enumerateObjectAndBehaviorsInstructions,
   getObjectParameterIndex,
 } from './EnumerateInstructions';
+import {
+  serializeToJSObject,
+  unserializeFromJSObject,
+} from '../Utils/Serializer';
+
 const gd: libGDevelop = global.gd;
 
 // $FlowFixMe[incompatible-type]
@@ -96,6 +101,99 @@ describe('EnumerateInstructions', () => {
           type: 'Rotate',
         }),
       ])
+    );
+    project.delete();
+  });
+
+  it('can enumerate instructions of deprecated extensions in old projects', () => {
+    const project = gd.ProjectHelper.createNewGDJSProject();
+    const serializedProject = serializeToJSObject(project);
+    serializedProject.initialGDVersion = { major: 5, minor: 6, build: 269 };
+    unserializeFromJSObject(project, serializedProject);
+
+    const instructions = enumerateAllInstructions(
+      false,
+      project,
+      // $FlowFixMe[incompatible-type] The fake I18n translates groups to empty strings.
+      null
+    );
+
+    expect(
+      instructions.some(instruction => instruction.type === 'Inventory::Add')
+    );
+    expect(
+      instructions.some(
+        instruction =>
+          instruction.type ===
+          'PhysicsBehavior::ApplyForceUsingPolarCoordinates'
+      )
+    );
+    expect(
+      instructions.some(
+        instruction => instruction.type === 'TextEntryObject::String'
+      )
+    );
+    project.delete();
+  });
+
+  it('can enumerate instructions of deprecated extensions in very old projects', () => {
+    const project = gd.ProjectHelper.createNewGDJSProject();
+    const serializedProject = serializeToJSObject(project);
+    delete serializedProject.initialGDVersion;
+    unserializeFromJSObject(project, serializedProject);
+
+    const instructions = enumerateAllInstructions(
+      false,
+      project,
+      // $FlowFixMe[incompatible-type] The fake I18n translates groups to empty strings.
+      null
+    );
+
+    expect(
+      instructions.some(instruction => instruction.type === 'Inventory::Add')
+    );
+    expect(
+      instructions.some(
+        instruction =>
+          instruction.type ===
+          'PhysicsBehavior::ApplyForceUsingPolarCoordinates'
+      )
+    );
+    expect(
+      instructions.some(
+        instruction => instruction.type === 'TextEntryObject::String'
+      )
+    );
+    project.delete();
+  });
+
+  it('can enumerate instructions hiding deprecated extensions in new projects', () => {
+    const project = gd.ProjectHelper.createNewGDJSProject();
+    const serializedProject = serializeToJSObject(project);
+    serializedProject.initialGDVersion = { major: 5, minor: 6, build: 270 };
+    unserializeFromJSObject(project, serializedProject);
+
+    const instructions = enumerateAllInstructions(
+      false,
+      project,
+      // $FlowFixMe[incompatible-type] The fake I18n translates groups to empty strings.
+      null
+    );
+
+    expect(
+      instructions.every(instruction => instruction.type !== 'Inventory::Add')
+    );
+    expect(
+      instructions.every(
+        instruction =>
+          instruction.type !==
+          'PhysicsBehavior::ApplyForceUsingPolarCoordinates'
+      )
+    );
+    expect(
+      instructions.every(
+        instruction => instruction.type !== 'TextEntryObject::String'
+      )
     );
     project.delete();
   });

@@ -9,6 +9,11 @@ import {
 import { createTree, type TreeNode } from './CreateTree';
 import { makeTestExtensions } from '../fixtures/TestExtensions';
 import { type EnumeratedExpressionMetadata } from './EnumeratedInstructionOrExpressionMetadata';
+import {
+  serializeToJSObject,
+  unserializeFromJSObject,
+} from '../Utils/Serializer';
+
 const gd: libGDevelop = global.gd;
 
 // $FlowFixMe[incompatible-type]
@@ -144,6 +149,46 @@ describe('EnumerateExpressions', () => {
         type: 'SomethingReturningStringWith1NumberParam',
       })
     );
+  });
+
+  it('can enumerate expressions hiding deprecated extensions in new projects', () => {
+    const project = gd.ProjectHelper.createNewGDJSProject();
+    const serializedProject = serializeToJSObject(project);
+    serializedProject.initialGDVersion = { major: 5, minor: 6, build: 270 };
+    unserializeFromJSObject(project, serializedProject);
+
+    const freeExpressions = enumerateFreeExpressions(
+      'string',
+      project,
+      makeFakeI18n()
+    );
+
+    expect(
+      freeExpressions.every(
+        expression => expression.type !== 'Inventory::Count'
+      )
+    );
+
+    const allExpressions = enumerateAllExpressions(
+      'string',
+      project,
+      makeFakeI18n()
+    );
+
+    expect(
+      allExpressions.every(expression => expression.type !== 'Inventory::Count')
+    );
+    expect(
+      allExpressions.every(
+        expression => expression.type !== 'PhysicsBehavior::VelocityX'
+      )
+    );
+    expect(
+      allExpressions.every(
+        expression => expression.type !== 'TextEntryObject::String'
+      )
+    );
+    project.delete();
   });
 
   it('can create the tree of some object expressions', () => {
