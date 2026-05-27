@@ -25,7 +25,7 @@ void DeclarePhysicsBehaviorExtension(gd::PlatformExtension& extension) {
       .SetDimension("2D")
       .SetCategory("Movement")
       .SetExtensionHelpPath("/behaviors/physics")
-      .MarkAsDeprecatedSince(5, 6, 270);
+      .MarkAsDeprecatedSince("5.6.270");
   extension.AddInstructionOrExpressionGroupMetadata(("Physics Engine (deprecated)"))
       .SetIcon("res/physics-deprecated16.png");
 

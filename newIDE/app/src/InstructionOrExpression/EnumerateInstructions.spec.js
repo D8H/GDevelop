@@ -108,7 +108,7 @@ describe('EnumerateInstructions', () => {
   it('can enumerate instructions of deprecated extensions in old projects', () => {
     const project = gd.ProjectHelper.createNewGDJSProject();
     const serializedProject = serializeToJSObject(project);
-    serializedProject.initialGDVersion = { major: 5, minor: 6, build: 269 };
+    serializedProject.initialGDVersion = '5.6.269';
     unserializeFromJSObject(project, serializedProject);
 
     const instructions = enumerateAllInstructions(
@@ -170,7 +170,7 @@ describe('EnumerateInstructions', () => {
   it('can enumerate instructions hiding deprecated extensions in new projects', () => {
     const project = gd.ProjectHelper.createNewGDJSProject();
     const serializedProject = serializeToJSObject(project);
-    serializedProject.initialGDVersion = { major: 5, minor: 6, build: 270 };
+    serializedProject.initialGDVersion = '5.6.270';
     unserializeFromJSObject(project, serializedProject);
 
     const instructions = enumerateAllInstructions(

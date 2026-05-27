@@ -1,5 +1,6 @@
 // @flow
 import VersionMetadata from './VersionMetadata';
+import semverLowerThan from 'semver/functions/lt';
 
 export const getIDEVersion = (): string => VersionMetadata.version;
 export const getIDEVersionWithHash = (): string =>
@@ -18,13 +19,12 @@ export const shouldHideExtension = (
   project: gdProject,
   extension: gdPlatformExtension
 ): boolean => {
-  return (
+  const initialGDVersion = project.getInitialGDVersion();
+  return (initialGDVersion &&
     extension.isDeprecated() &&
-    (extension.getDepreciationGDMajorVersion() <
-      project.getInitialGDMajorVersion() ||
-      extension.getDepreciationGDMinorVersion() <
-        project.getInitialGDMinorVersion() ||
-      extension.getDepreciationGDBuildVersion() <=
-        project.getInitialGDBuildVersion())
+    !semverLowerThan(
+      extension.getDeprecationGDVersion(),
+      initialGDVersion
+    )
   );
 };

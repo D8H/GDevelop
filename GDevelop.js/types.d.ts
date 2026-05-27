@@ -607,9 +607,7 @@ export class Project extends EmscriptenObject {
   getUseDeprecatedZeroAsDefaultStringVariable(): boolean;
   areEffectsHiddenInEditor(): boolean;
   setEffectsHiddenInEditor(enable: boolean): void;
-  getInitialGDMajorVersion(): number;
-  getInitialGDMinorVersion(): number;
-  getInitialGDBuildVersion(): number;
+  getInitialGDVersion(): string;
   setLastCompilationDirectory(path: string): void;
   getLastCompilationDirectory(): string;
   getExtensionProperties(): ExtensionProperties;
@@ -1850,11 +1848,9 @@ export class PlatformExtension extends EmscriptenObject {
   setDimension(dimension: string): PlatformExtension;
   getDimension(): string;
   addInstructionOrExpressionGroupMetadata(name: string): InstructionOrExpressionGroupMetadata;
-  markAsDeprecatedSince(major: number, minor: number, build: number): PlatformExtension;
+  markAsDeprecatedSince(version: string): PlatformExtension;
   isDeprecated(): boolean;
-  getDepreciationGDMajorVersion(): number;
-  getDepreciationGDMinorVersion(): number;
-  getDepreciationGDBuildVersion(): number;
+  getDeprecationGDVersion(): string;
   getTags(): VectorString;
   setTags(csvTags: string): PlatformExtension;
   addExpressionAndCondition(type: string, name: string, fullname: string, description: string, sentenceName: string, group: string, icon: string): MultipleInstructionMetadata;

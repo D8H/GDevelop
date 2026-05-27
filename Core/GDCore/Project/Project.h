@@ -679,19 +679,9 @@ class GD_CORE_API Project {
   unsigned int GetLastSaveGDBuildVersion() { return gdBuildVersion; };
 
   /**
-   * Get the major version of GDevelop used to create the project.
+   * Get the version of GDevelop used to create the project.
    */
-  unsigned int GetInitialGDMajorVersion() { return initialGDMajorVersion; };
-
-  /**
-   * Get the minor version of GDevelop used to create the project.
-   */
-  unsigned int GetInitialGDMinorVersion() { return initialGDMinorVersion; };
-
-  /**
-   * Get the minor version of GDevelop used to create the project.
-   */
-  unsigned int GetInitialGDBuildVersion() { return initialGDBuildVersion; };
+  const gd::String& GetInitialGDVersion() const { return initialGDVersion; };
 
   /** \name External events management
    * Members functions related to external events management.
@@ -1232,12 +1222,7 @@ class GD_CORE_API Project {
   mutable unsigned int gdBuildVersion =
       0;  ///< The GD build version used the last
           ///< time the project was saved.
-  mutable unsigned int initialGDMajorVersion =
-      0;  ///< The GD major version used to create the project.
-  mutable unsigned int initialGDMinorVersion =
-      0;  ///< The GD minor version used to create the project.
-  mutable unsigned int initialGDBuildVersion =
-      0;  ///< The GD build version used to create the project.
+  gd::String initialGDVersion; ///< The GD version used to create the project.
   bool areEffectsHiddenInEditor =
       false; ///< When false effects are not shown and a default light is used
              ///< for 3D layers.

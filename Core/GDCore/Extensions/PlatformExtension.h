@@ -151,11 +151,9 @@ class GD_CORE_API PlatformExtension {
    * \brief Mark this extension as deprecated: the IDE will hide it from users
    * in new projects.
    */
-  PlatformExtension& MarkAsDeprecatedSince(int major, int minor, int build) {
+  PlatformExtension& MarkAsDeprecatedSince(const gd::String& version) {
     deprecated = true;
-    depreciationGDMajorVersion = major;
-    depreciationGDMinorVersion = minor;
-    depreciationGDBuildVersion = build;
+    deprecationGDVersion = version;
     return *this;
   }
 
@@ -483,24 +481,10 @@ class GD_CORE_API PlatformExtension {
   bool IsDeprecated() const { return deprecated; }
 
   /**
-   * Get the major version of GDevelop when this extension got deprecated.
+   * Get the version of GDevelop when this extension got deprecated.
    */
-  unsigned int GetDepreciationGDMajorVersion() {
-    return depreciationGDMajorVersion;
-  };
-
-  /**
-   * Get the minor version of GDevelop when this extension got deprecated.
-   */
-  unsigned int GetDepreciationGDMinorVersion() {
-    return depreciationGDMinorVersion;
-  };
-
-  /**
-   * Get the minor version of GDevelop when this extension got deprecated.
-   */
-  unsigned int GetDepreciationGDBuildVersion() {
-    return depreciationGDBuildVersion;
+  const gd::String& GetDeprecationGDVersion() {
+    return deprecationGDVersion;
   };
 
   /**
@@ -768,9 +752,7 @@ static gd::String GetVariantFullType(const gd::String& extensionName,
   gd::String license;  ///< License name displayed to users in the editor.
   bool deprecated = false; ///< true if the extension is deprecated and
                            ///< shouldn't be shown in IDE.
-  int depreciationGDMajorVersion = 0;
-  int depreciationGDMinorVersion = 0;
-  int depreciationGDBuildVersion = 0;
+  gd::String deprecationGDVersion;
   gd::String helpPath;  ///< The relative path to the help for this extension in
                         ///< the documentation.
   gd::String iconUrl;   ///< The URL to the icon to be shown for this extension.

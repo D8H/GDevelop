@@ -154,7 +154,7 @@ describe('EnumerateExpressions', () => {
   it('can enumerate expressions hiding deprecated extensions in new projects', () => {
     const project = gd.ProjectHelper.createNewGDJSProject();
     const serializedProject = serializeToJSObject(project);
-    serializedProject.initialGDVersion = { major: 5, minor: 6, build: 270 };
+    serializedProject.initialGDVersion = '5.6.270';
     unserializeFromJSObject(project, serializedProject);
 
     const freeExpressions = enumerateFreeExpressions(
