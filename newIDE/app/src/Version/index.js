@@ -20,11 +20,9 @@ export const shouldHideExtension = (
   extension: gdPlatformExtension
 ): boolean => {
   const initialGDVersion = project.getInitialGDVersion();
-  return (initialGDVersion &&
+  return (
+    !!initialGDVersion &&
     extension.isDeprecated() &&
-    !semverLowerThan(
-      extension.getDeprecationGDVersion(),
-      initialGDVersion
-    )
+    !semverLowerThan(extension.getDeprecationGDVersion(), initialGDVersion)
   );
 };
