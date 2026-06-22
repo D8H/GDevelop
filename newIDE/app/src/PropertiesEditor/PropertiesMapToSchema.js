@@ -321,8 +321,12 @@ const createField = (
   } else if (valueType === 'objectanimationname') {
     return {
       getChoices: () => {
+        const noAnimationChoice: FieldChoices = {
+          value: '',
+          label: '(no animation)',
+        };
         if (!object) {
-          return [];
+          return [noAnimationChoice];
         }
         // $FlowFixMe[incompatible-type]
         const choices: Array<FieldChoices> = mapFor(
@@ -338,7 +342,7 @@ const createField = (
                 };
           }
         ).filter(Boolean);
-        choices.push({ value: '', label: '(no animation)' });
+        choices.push(noAnimationChoice);
         return choices;
       },
       name,
