@@ -152,6 +152,7 @@ export const CompactBehaviorPropertiesEditor = ({
           layersContainer,
           visibility: 'All',
           showcaseNonDefaultValues: true,
+          shouldDisabledFieldsWithMixedValues: false,
         });
       }
       const behaviorMetadataProperties = behaviorMetadata.getProperties();
@@ -169,6 +170,7 @@ export const CompactBehaviorPropertiesEditor = ({
         object,
         layersContainer,
         visibility: 'All',
+        shouldDisabledFieldsWithMixedValues: true,
       });
     },
     [

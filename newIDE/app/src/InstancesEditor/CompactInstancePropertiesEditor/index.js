@@ -271,6 +271,7 @@ export const CompactInstancePropertiesEditor = ({
             objectsContainer
           ),
         layersContainer,
+        shouldDisabledFieldsWithMixedValues: false,
       });
 
       const reorderedInstanceSchemaForCustomProperties = reorderInstanceSchemaForCustomProperties(
