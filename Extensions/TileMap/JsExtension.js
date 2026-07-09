@@ -16,11 +16,52 @@
  */
 
 /**
+ * @param {GDNamespace.PlatformExtension} extension
+ * @param {(translationSource: string) => string} _
+ * @param {GDNamespace} gd
+ */
+const defineTileMapCapability = function (extension, _, gd) {
+  const capability = extension
+    .addBehavior(
+      'TileMapBehavior',
+      _('Tile map capability'),
+      'TileMap',
+      _(
+        'Common features for all tile map objects.'
+      ),
+      '',
+      'JsPlatform/Extensions/tile_map.svg',
+      'TileMapBehavior',
+      new gd.Behavior(),
+      new gd.BehaviorsSharedData()
+    )
+    .setHidden()
+    .setIncludeFile('Extensions/TileMap/TileMapBehavior.js');
+
+  capability
+    .addExpression(
+      'GridX',
+      _('Tile map grid column coordinate'),
+      _(
+        'Get the grid column coordinates in the tile map corresponding to the scene coordinates.'
+      ),
+      '',
+      'JsPlatform/Extensions/tile_map.svg'
+    )
+    .addParameter('object', _('3D object'), '', false)
+    .addParameter('behavior', _('Behavior'), 'TileMapBehavior')
+    .addParameter('number', _('Position X'), '', false)
+    .addParameter('number', _('Position Y'), '', false)
+    .setFunctionName('getColumnIndexAtPosition');
+}
+
+
+/**
  * @param {gd.PlatformExtension} extension
  * @param {(translationSource: string) => string} _
  * @param {GDNamespace} gd
  */
-const defineTileMap = function (extension, _, gd) {
+const defineExternalTileMap = function (extension, _, gd) {
   var objectTileMap = new gd.ObjectJsImplementation();
   objectTileMap.updateProperty = function (propertyName, newValue) {
     const objectContent = this.content;
@@ -62,6 +103,14 @@ const defineTileMap = function (extension, _, gd) {
     }
     if (propertyName === 'animationFps') {
       objectContent.animationFps = parseFloat(newValue);
+      return true;
+    }
+    if (propertyName === 'collisionMaskTag') {
+      objectContent.collisionMaskTag = newValue;
+      return true;
+    }
+    if (propertyName === 'isCollisionEnabled') {
+      objectContent.isCollisionEnabled = newValue === '1';
       return true;
     }
 
@@ -150,6 +199,25 @@ const defineTileMap = function (extension, _, gd) {
         .setLabel(_('Animation FPS'))
         .setGroup(_('Animation'))
     );
+    objectProperties.set(
+      'collisionMaskTag',
+      new gd.PropertyDescriptor(objectContent.collisionMaskTag)
+        .setType('string')
+        .setLabel(_('Class filter'))
+        .setDescription(
+          _(
+            'Only the tiles with the given class (set in Tiled 1.9+) will have hitboxes created.'
+          )
+        )
+        .setGroup(_('Collision'))
+    );
+    objectProperties.set(
+      'isCollisionEnabled',
+      new gd.PropertyDescriptor(objectContent.collisionMaskTag)
+        .setType('boolean')
+        .setLabel(_('Enable collision'))
+        .setGroup(_('Collision'))
+    );
 
     return objectProperties;
   };
@@ -162,6 +230,8 @@ const defineTileMap = function (extension, _, gd) {
     levelIndex: 0,
     animationSpeedScale: 1,
     animationFps: 4,
+    collisionMaskTag: '',
+    isCollisionEnabled: true,
   };
 
   objectTileMap.updateInitialInstanceProperty = function (
@@ -1542,7 +1612,8 @@ module.exports = {
       .addInstructionOrExpressionGroupMetadata(_('Tilemap'))
       .setIcon('JsPlatform/Extensions/tile_map.svg');
 
-    defineTileMap(extension, _, gd);
+    defineTileMapCapability(extension, _, gd);
+    defineExternalTileMap(extension, _, gd);
     defineSimpleTileMap(extension, _, gd);
     defineCollisionMask(extension, _, gd);
 
