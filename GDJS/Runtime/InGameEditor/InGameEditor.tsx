@@ -827,23 +827,21 @@ namespace gdjs {
     getAABB(): AABB3D | null {
       let aabb: AABB3D | null = null;
       for (const object of this._selectedObjects) {
-        if (is3D(object)) {
-          const aabb2D = object.getAABB();
-          const minZ = object.getUnrotatedAABBMinZ();
-          const maxZ = object.getUnrotatedAABBMaxZ();
-          if (aabb) {
-            aabb.min[0] = Math.min(aabb.min[0], aabb2D.min[0]);
-            aabb.min[1] = Math.min(aabb.min[1], aabb2D.min[1]);
-            aabb.min[2] = Math.min(aabb.min[2], minZ);
-            aabb.max[0] = Math.max(aabb.max[0], aabb2D.max[0]);
-            aabb.max[1] = Math.max(aabb.max[1], aabb2D.max[1]);
-            aabb.max[2] = Math.max(aabb.max[2], maxZ);
-          } else {
-            aabb = {
-              min: [aabb2D.min[0], aabb2D.min[1], minZ],
-              max: [aabb2D.max[0], aabb2D.max[1], maxZ],
-            };
-          }
+        const aabb2D = object.getAABB();
+        const minZ = is3D(object) ? object.getUnrotatedAABBMinZ() : 0;
+        const maxZ = is3D(object) ? object.getUnrotatedAABBMaxZ() : 0;
+        if (aabb) {
+          aabb.min[0] = Math.min(aabb.min[0], aabb2D.min[0]);
+          aabb.min[1] = Math.min(aabb.min[1], aabb2D.min[1]);
+          aabb.min[2] = Math.min(aabb.min[2], minZ);
+          aabb.max[0] = Math.max(aabb.max[0], aabb2D.max[0]);
+          aabb.max[1] = Math.max(aabb.max[1], aabb2D.max[1]);
+          aabb.max[2] = Math.max(aabb.max[2], maxZ);
+        } else {
+          aabb = {
+            min: [aabb2D.min[0], aabb2D.min[1], minZ],
+            max: [aabb2D.max[0], aabb2D.max[1], maxZ],
+          };
         }
       }
       return aabb;
@@ -1083,9 +1081,8 @@ namespace gdjs {
     private _windowHadFocus = true;
 
     // The controls shown to manipulate the selection.
-    private _selectionControls: SelectionControls3D = new SelectionControls3D(
-      this
-    );
+    private _selectionControls: SelectionControls =
+      this.buildSelectionControls();
     private _editorGrid: EditorGrid;
     // TODO Move in SelectionControls3D?
     _selectionControlsMovementTotalDelta: {
@@ -1399,6 +1396,11 @@ namespace gdjs {
       this._currentScene.onGameResolutionResized();
     }
 
+    private buildSelectionControls(): SelectionControls {
+      //return new SelectionControls3D(this);
+      return new SelectionControls2D(this);
+    }
+
     async switchToSceneOrVariant(
       editorId: string | null,
       sceneName: string | null,
@@ -1420,7 +1422,7 @@ namespace gdjs {
       // Clear any reference to `RuntimeObject` from the unloaded scene.
       this._selectionBoxes.clear();
       this._hiddenInstanceMarkers.clear();
-      this._selectionControls = new SelectionControls3D(this);
+      this._selectionControls = this.buildSelectionControls();
       this._draggedNewObject = null;
       this._draggedSelectedObject = null;
       this._objectToDuplicateOnDrag = null;
@@ -3778,6 +3780,7 @@ namespace gdjs {
       this._handleContextMenu();
       this._handleShortcuts();
       this._updateMouseCursor();
+      this._selectionControls.faceCamera();
 
       const domElementContainer = this._runtimeGame
         .getRenderer()
@@ -5730,7 +5733,27 @@ namespace gdjs {
     }
   }
 
-  class SelectionControls3D {
+  interface SelectionControls {
+    getTransformControlsMode(): 'translate' | 'rotate' | 'scale';
+
+    setTransformControlsMode(mode: 'translate' | 'rotate' | 'scale'): void;
+
+    isHovered(): boolean;
+
+    forceUpdate(): void;
+
+    shouldDragSelectedObject(): boolean;
+
+    update(): void;
+
+    remove(): void;
+
+    isShown(): boolean;
+
+    faceCamera(): void;
+  }
+
+  class SelectionControls3D implements SelectionControls {
     private editor: InGameEditor;
     object: gdjs.RuntimeObject | null = null;
     dummyThreeObject: THREE.Object3D = new THREE.Object3D();
@@ -5754,12 +5777,11 @@ namespace gdjs {
       }
       this.threeTransformControls.mode = mode;
 
-      const lastEditableSelectedObject =
-        this.editor.getLastSelectedObject({
-          ignoreIf: (object) =>
-            this.editor.isInstanceLocked(object) ||
-            this.editor.isInstanceSealed(object),
-        });
+      const lastEditableSelectedObject = this.editor.getLastSelectedObject({
+        ignoreIf: (object) =>
+          this.editor.isInstanceLocked(object) ||
+          this.editor.isInstanceSealed(object),
+      });
       if (!lastEditableSelectedObject) {
         return;
       }
@@ -5780,7 +5802,7 @@ namespace gdjs {
       );
     }
 
-    forceUpdate() {
+    forceUpdate(): void {
       if (this._isShown) {
         this.remove();
       }
@@ -5798,7 +5820,7 @@ namespace gdjs {
       );
     }
 
-    update() {
+    update(): void {
       const inputManager = this.editor.getRuntimeGame().getInputManager();
       const currentScene = this.editor.getCurrentScene();
       if (!currentScene) return;
@@ -6239,7 +6261,7 @@ namespace gdjs {
       this._isShown = false;
     }
 
-    isShown() {
+    isShown(): boolean {
       return this._isShown;
     }
 
@@ -6274,6 +6296,279 @@ namespace gdjs {
             ? lastEditableSelectedObject.getZ()
             : 0
         );
+      }
+    }
+
+    faceCamera(): void {}
+  }
+
+  class SelectionControls2D implements SelectionControls {
+    private editor: InGameEditor;
+    private _isShown = false;
+    selectionHandle = new SelectionHandle2D();
+
+    constructor(editor: InGameEditor) {
+      this.editor = editor;
+    }
+
+    getTransformControlsMode(): 'scale' | 'translate' | 'rotate' {
+      return 'translate';
+    }
+
+    setTransformControlsMode(mode: 'scale' | 'translate' | 'rotate'): void {}
+
+    isHovered(): boolean {
+      return false;
+    }
+
+    forceUpdate(): void {
+      if (this._isShown) {
+        this.remove();
+      }
+      this.update();
+    }
+
+    shouldDragSelectedObject(): boolean {
+      return false;
+    }
+
+    update(): void {
+      const selectedObjects = this.editor.getSelectedObjects();
+      if (selectedObjects.length === 0) {
+        return;
+      }
+      const cameraLayer = this.editor._getCameraLayer(
+        selectedObjects[0].getLayer()
+      );
+      if (!cameraLayer) {
+        return;
+      }
+      const runtimeLayerRender = cameraLayer ? cameraLayer.getRenderer() : null;
+      const threeCamera = runtimeLayerRender
+        ? runtimeLayerRender.getThreeCamera()
+        : null;
+      const threeScene = runtimeLayerRender
+        ? runtimeLayerRender.getThreeScene()
+        : null;
+      if (!threeCamera || !threeScene) {
+        return;
+      }
+      const aabb = this.editor.getSelectionAABB();
+      if (!aabb) {
+        return;
+      }
+      this.selectionHandle.setAABB(aabb);
+      threeScene.add(this.selectionHandle);
+      this._isShown = true;
+    }
+
+    remove(): void {
+      if (!this._isShown) {
+        return;
+      }
+      this.selectionHandle.removeFromParent();
+      this._isShown = false;
+    }
+
+    isShown(): boolean {
+      return this._isShown;
+    }
+
+    faceCamera(): void {
+      const selectedObjects = this.editor.getSelectedObjects();
+      if (selectedObjects.length === 0) {
+        return;
+      }
+      const cameraLayer = this.editor._getCameraLayer(
+        selectedObjects[0].getLayer()
+      );
+      if (!cameraLayer) {
+        return;
+      }
+      const runtimeLayerRender = cameraLayer ? cameraLayer.getRenderer() : null;
+      const threeCamera = runtimeLayerRender
+        ? runtimeLayerRender.getThreeCamera()
+        : null;
+      const threeScene = runtimeLayerRender
+        ? runtimeLayerRender.getThreeScene()
+        : null;
+      if (!threeCamera || !threeScene) {
+        return;
+      }
+      this.selectionHandle.update(
+        threeCamera,
+        this.editor.getRuntimeGame().getGameResolutionHeight()
+      );
+    }
+  }
+
+  const selectionStyle = {
+    bigButtonSize: 10,
+    smallButtonSize: 8,
+    buttonPadding: 5,
+    hitAreaPadding: 5,
+  };
+
+  class SelectionHandle2D extends THREE.Object3D {
+    squares: Array<ThreeSquare> = [];
+    area: ThreeSquare;
+
+    constructor() {
+      super();
+      this.area = new ThreeSquare(0x6868e8, 0.3, 0x6868e8, 0.8);
+      this.add(this.area);
+      for (let index = 0; index < 8; index++) {
+        const square = new ThreeSquare(0xffffff, 1, 0x6868e8, 1);
+        this.squares.push(square);
+        this.add(square);
+      }
+    }
+
+    setAABB(aabb: AABB3D) {
+      const margin = 5;
+      let minX = aabb.min[0] - margin - selectionStyle.bigButtonSize / 2;
+      let minY = aabb.min[1] - margin - selectionStyle.bigButtonSize / 2;
+      let maxX = aabb.max[0] + margin + selectionStyle.bigButtonSize / 2;
+      let maxY = aabb.max[1] + margin + selectionStyle.bigButtonSize / 2;
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      this.squares[0].position.x = minX;
+      this.squares[0].position.y = minY;
+      this.squares[1].position.x = maxX;
+      this.squares[1].position.y = minY;
+      this.squares[2].position.x = maxX;
+      this.squares[2].position.y = maxY;
+      this.squares[3].position.x = minX;
+      this.squares[3].position.y = maxY;
+
+      minX = aabb.min[0] - margin - selectionStyle.smallButtonSize / 2;
+      minY = aabb.min[1] - margin - selectionStyle.smallButtonSize / 2;
+      maxX = aabb.max[0] + margin + selectionStyle.smallButtonSize / 2;
+      maxY = aabb.max[1] + margin + selectionStyle.smallButtonSize / 2;
+
+      this.squares[4].position.x = centerX;
+      this.squares[4].position.y = minY;
+      this.squares[5].position.x = maxX;
+      this.squares[5].position.y = centerY;
+      this.squares[6].position.x = centerX;
+      this.squares[6].position.y = maxY;
+      this.squares[7].position.x = minX;
+      this.squares[7].position.y = centerY;
+
+      this.area.position.x = centerX;
+      this.area.position.y = centerY;
+      this.area.scale.x = aabb.max[0] - aabb.min[0];
+      this.area.scale.y = aabb.max[1] - aabb.min[1];
+    }
+
+    update(
+      threeCamera: THREE.PerspectiveCamera | THREE.OrthographicCamera,
+      canvasHeight: float
+    ) {
+      let cameraFactor;
+      let cameraForward;
+      let cameraToObject;
+      if (threeCamera instanceof THREE.PerspectiveCamera) {
+        cameraForward = new THREE.Vector3(0, 0, -1);
+        cameraForward.applyQuaternion(threeCamera.quaternion);
+
+        cameraToObject = new THREE.Vector3();
+
+        cameraFactor =
+          (196 * Math.tan((threeCamera.fov * Math.PI) / 360)) /
+          (threeCamera.zoom * canvasHeight);
+      } else {
+        cameraFactor =
+          (threeCamera.top - threeCamera.bottom) / threeCamera.zoom;
+      }
+      for (let index = 0; index < this.squares.length; index++) {
+        const square = this.squares[index];
+
+        let factor = cameraFactor;
+        if (threeCamera instanceof THREE.PerspectiveCamera) {
+          square.getWorldPosition(cameraToObject).sub(threeCamera.position);
+          factor = cameraFactor * cameraToObject.dot(cameraForward);
+        }
+
+        square.rotation.order = threeCamera.rotation.order;
+        square.rotation.x = -threeCamera.rotation.x;
+        square.rotation.y = threeCamera.rotation.y;
+        square.rotation.z = -threeCamera.rotation.z;
+
+        const size =
+          index < 4
+            ? selectionStyle.bigButtonSize
+            : selectionStyle.smallButtonSize;
+        const scale = size * factor;
+        square.scale.set(scale, scale, 1);
+      }
+    }
+  }
+
+  class ThreeSquare extends THREE.Object3D {
+    constructor(
+      fillColor: THREE.ColorRepresentation | null,
+      fillOpacity: number,
+      strokeColor: THREE.ColorRepresentation | null,
+      strokeOpacity: number
+    ) {
+      super();
+
+      if (fillColor) {
+        const fillMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(),
+          new THREE.MeshBasicMaterial({
+            color: fillColor,
+            opacity: fillOpacity,
+            toneMapped: false,
+            depthTest: false,
+            transparent: true,
+          })
+        );
+        fillMesh.renderOrder = Number.MAX_SAFE_INTEGER;
+        this.add(fillMesh);
+      }
+      if (strokeColor) {
+        const indices = new Uint16Array([0, 1, 1, 2, 2, 3, 3, 0]);
+        const positions = new Float32Array([
+          -0.5,
+          -0.5,
+          0, //
+          0.5,
+          -0.5,
+          0, //
+          0.5,
+          0.5,
+          0, //
+          -0.5,
+          0.5,
+          0, //
+        ]);
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+        geometry.setAttribute(
+          'position',
+          new THREE.BufferAttribute(positions, 3)
+        );
+
+        const contourLine = new THREE.LineSegments<
+          THREE.BufferGeometry,
+          THREE.LineBasicMaterial
+        >(
+          geometry,
+          new THREE.LineBasicMaterial({
+            color: strokeColor,
+            opacity: strokeOpacity,
+            toneMapped: false,
+            depthTest: false,
+            transparent: true,
+          })
+        );
+
+        contourLine.renderOrder = Number.MAX_SAFE_INTEGER;
+        this.add(contourLine);
       }
     }
   }
