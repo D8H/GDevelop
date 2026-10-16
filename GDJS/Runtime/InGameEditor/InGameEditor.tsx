@@ -7050,7 +7050,6 @@ namespace gdjs {
     }
 
     step() {
-      this.faceCamera();
       this.selectionHandle.step(this.editor);
     }
 
@@ -7097,11 +7096,6 @@ namespace gdjs {
       if (!threeCamera || !threeScene) {
         return;
       }
-      const aabb = this.editor.getSelectionAABB();
-      if (!aabb) {
-        return;
-      }
-      this.selectionHandle.setAABB(aabb);
       threeScene.add(this.selectionHandle);
       this._isShown = true;
     }
@@ -7117,29 +7111,6 @@ namespace gdjs {
 
     isShown(): boolean {
       return this._isShown;
-    }
-
-    faceCamera(): void {
-      const selectedObjects = this.editor.getSelectedObjects();
-      if (selectedObjects.length === 0) {
-        return;
-      }
-      const currentScene = this.editor.getCurrentScene();
-      if (!currentScene) {
-        return;
-      }
-      const topLayer =
-        currentScene._orderedLayers[currentScene._orderedLayers.length - 1];
-      const runtimeLayerRender = topLayer.getRenderer();
-      const threeCamera = runtimeLayerRender.getThreeCamera();
-      const threeScene = runtimeLayerRender.getThreeScene();
-      if (!threeCamera || !threeScene) {
-        return;
-      }
-      this.selectionHandle.update(
-        threeCamera,
-        this.editor.getRuntimeGame().getGameResolutionHeight()
-      );
     }
   }
 
@@ -7210,12 +7181,15 @@ namespace gdjs {
       }
     }
 
-    setAABB(aabb: AABB3D) {
-      const margin = 5;
-      let minX = aabb.min[0] - margin - selectionStyle.bigButtonSize / 2;
-      let minY = aabb.min[1] - margin - selectionStyle.bigButtonSize / 2;
-      let maxX = aabb.max[0] + margin + selectionStyle.bigButtonSize / 2;
-      let maxY = aabb.max[1] + margin + selectionStyle.bigButtonSize / 2;
+    private update(
+      aabb: AABB3D,
+      threeCamera: THREE.PerspectiveCamera | THREE.OrthographicCamera,
+      canvasHeight: float
+    ) {
+      let minX = aabb.min[0];
+      let minY = aabb.min[1];
+      let maxX = aabb.max[0];
+      let maxY = aabb.max[1];
       const centerX = (minX + maxX) / 2;
       const centerY = (minY + maxY) / 2;
 
@@ -7227,11 +7201,6 @@ namespace gdjs {
       this.buttons[ButtonLocation.BottomRight].position.y = maxY;
       this.buttons[ButtonLocation.BottomLeft].position.x = minX;
       this.buttons[ButtonLocation.BottomLeft].position.y = maxY;
-
-      minX = aabb.min[0] - margin - selectionStyle.smallButtonSize / 2;
-      minY = aabb.min[1] - margin - selectionStyle.smallButtonSize / 2;
-      maxX = aabb.max[0] + margin + selectionStyle.smallButtonSize / 2;
-      maxY = aabb.max[1] + margin + selectionStyle.smallButtonSize / 2;
 
       this.buttons[ButtonLocation.Top].position.x = centerX;
       this.buttons[ButtonLocation.Top].position.y = minY;
@@ -7246,12 +7215,7 @@ namespace gdjs {
       this.area.position.y = centerY;
       this.area.scale.x = aabb.max[0] - aabb.min[0];
       this.area.scale.y = aabb.max[1] - aabb.min[1];
-    }
 
-    update(
-      threeCamera: THREE.PerspectiveCamera | THREE.OrthographicCamera,
-      canvasHeight: float
-    ) {
       let cameraFactor;
       let cameraForward;
       let cameraToObject;
@@ -7290,19 +7254,57 @@ namespace gdjs {
           : selectionStyle.smallButtonSize;
         const scale = size * factor;
         button.scale.set(scale, scale, 1);
+
+        const unitX =
+          buttonLocation & ButtonLocation.Left
+            ? -1
+            : buttonLocation & ButtonLocation.Right
+              ? 1
+              : 0;
+        const unitY =
+          buttonLocation & ButtonLocation.Top
+            ? -1
+            : buttonLocation & ButtonLocation.Bottom
+              ? 1
+              : 0;
+        const margin = 5;
+        button.position.x += unitX * (size / 2 + margin) * factor;
+        button.position.y += unitY * (size / 2 + margin) * factor;
       }
     }
 
     step(editor: InGameEditor) {
+      const selectedObjects = editor.getSelectedObjects();
+      if (selectedObjects.length === 0) {
+        return;
+      }
+      const currentScene = editor.getCurrentScene();
+      if (!currentScene) {
+        return;
+      }
+      const topLayer =
+        currentScene._orderedLayers[currentScene._orderedLayers.length - 1];
+      const runtimeLayerRender = topLayer.getRenderer();
+      const threeCamera = runtimeLayerRender.getThreeCamera();
+      const threeScene = runtimeLayerRender.getThreeScene();
+      if (!threeCamera || !threeScene) {
+        return;
+      }
+      const aabb = editor.getSelectionAABB();
+      if (!aabb) {
+        return;
+      }
+      this.update(
+        aabb,
+        threeCamera,
+        editor.getRuntimeGame().getGameResolutionHeight()
+      );
+
       const inputManager = editor.getRuntimeGame().getInputManager();
       const isLeftButtonPressed = inputManager.isMouseButtonPressed(0);
       if (!isLeftButtonPressed || editor.isLeftMouseButtonCaptured()) {
         this.draggedButtonLocation = null;
         editor._selectionControlsMovementTotalDelta = null;
-        return;
-      }
-      const currentScene = editor.getCurrentScene();
-      if (!currentScene) {
         return;
       }
 
@@ -7394,7 +7396,6 @@ namespace gdjs {
         newAABB.max[1] = cursorY;
         totalDeltaY = newAABB.max[1] - oldAABB.max[1];
       }
-      this.setAABB(newAABB);
 
       const grabbingRelativeX =
         this.draggedButtonLocation & ButtonLocation.Left
