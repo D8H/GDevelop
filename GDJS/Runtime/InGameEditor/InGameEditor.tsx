@@ -909,6 +909,15 @@ namespace gdjs {
     }
   }
 
+  const isAABBInsidePolygon = (
+    polygon: gdjs.Polygon,
+    aabb: gdjs.AABB
+  ): boolean =>
+    gdjs.Polygon.isPointInside(polygon, aabb.min[0], aabb.min[1]) &&
+    gdjs.Polygon.isPointInside(polygon, aabb.min[0], aabb.max[1]) &&
+    gdjs.Polygon.isPointInside(polygon, aabb.max[0], aabb.max[1]) &&
+    gdjs.Polygon.isPointInside(polygon, aabb.max[0], aabb.min[1]);
+
   interface ObjectMover<MovementDelta> {
     startMove(): void;
 
@@ -2696,6 +2705,45 @@ namespace gdjs {
           // Selection rectangle ended.
 
           const objects = new Set<gdjs.RuntimeObject>();
+          // TODO Cut the selection box part that is over the horizon.
+          const projectedSelectionBox: gdjs.Polygon = new gdjs.Polygon();
+          projectedSelectionBox.vertices.push(
+            this._getProjectedPoint(
+              this._getUnormalizedScreenPoint([
+                this._selectionBox.startPoint.x,
+                this._selectionBox.startPoint.y,
+              ])
+            ) as FloatPoint,
+            this._getProjectedPoint(
+              this._getUnormalizedScreenPoint([
+                this._selectionBox.startPoint.x,
+                this._selectionBox.endPoint.y,
+              ])
+            ) as FloatPoint,
+            this._getProjectedPoint(
+              this._getUnormalizedScreenPoint([
+                this._selectionBox.endPoint.x,
+                this._selectionBox.endPoint.y,
+              ])
+            ) as FloatPoint,
+            this._getProjectedPoint(
+              this._getUnormalizedScreenPoint([
+                this._selectionBox.endPoint.x,
+                this._selectionBox.startPoint.y,
+              ])
+            ) as FloatPoint
+          );
+          if (!projectedSelectionBox.vertices.every(Boolean)) {
+            return;
+          }
+          for (const object of editedInstanceContainer.getAdhocListOfAllInstances()) {
+            if (
+              !is3D(object) &&
+              isAABBInsidePolygon(projectedSelectionBox, object.getAABB())
+            ) {
+              objects.add(object);
+            }
+          }
           for (const selectThreeObject of this._selectionBox.select()) {
             // TODO Select the object if all its meshes are inside the rectangle
             // instead of if any is.
@@ -3616,6 +3664,48 @@ namespace gdjs {
       return [cursorX, cursorY];
     }
 
+    /**
+     * @returns The canvas point projected on the plane Z = 0 or `null` if the canvas point is in the sky.
+     */
+    _getProjectedPoint(cursor: FloatPoint): FloatPoint | null {
+      const currentScene = this._currentScene;
+      if (!currentScene) return null;
+
+      const layer = this._getCameraLayer('');
+      if (!layer) {
+        return null;
+      }
+      const projectedCursor = layer.convertCoords(
+        cursor[0],
+        cursor[1],
+        0,
+        cursor
+      );
+
+      const cameraX = layer.getCameraX();
+      const cameraY = layer.getCameraY();
+      const cameraZ = getCameraZ(currentScene, layer.getName(), 0);
+
+      const cursorX = projectedCursor[0];
+      const cursorY = projectedCursor[1];
+
+      const threeCamera = layer.getRenderer().getThreeCamera();
+      if (!threeCamera) {
+        return projectedCursor;
+      }
+      const { forward } = getCameraForwardVector(threeCamera);
+      const deltaX = cursorX - cameraX;
+      const deltaY = cursorY - cameraY;
+      const deltaZ = 0 - cameraZ;
+      // It happens when the cursor is over the horizon and projected on the plane Z = 0.
+      const isCursorBehindTheCamera =
+        forward.dot(new THREE.Vector3(deltaX, deltaY, deltaZ)) < 1;
+      if (isCursorBehindTheCamera) {
+        return null;
+      }
+      return projectedCursor;
+    }
+
     reloadInstances(instances: Array<InstanceData>) {
       const editedInstanceContainer = this.getEditedInstanceContainer();
       if (!editedInstanceContainer) return;
@@ -4077,6 +4167,20 @@ namespace gdjs {
 
     private _getNormalizedScreenY(y: float): float {
       return -(y / this._runtimeGame.getGameResolutionHeight()) * 2 + 1;
+    }
+
+    private _getUnormalizedScreenX(x: float): float {
+      return ((x + 1) / 2) * this._runtimeGame.getGameResolutionWidth();
+    }
+
+    private _getUnormalizedScreenY(y: float): float {
+      return ((-y + 1) / 2) * this._runtimeGame.getGameResolutionHeight();
+    }
+
+    private _getUnormalizedScreenPoint(point: FloatPoint): FloatPoint {
+      point[0] = this._getUnormalizedScreenX(point[0]);
+      point[1] = this._getUnormalizedScreenY(point[1]);
+      return point;
     }
 
     getObjectUnderCursor(): gdjs.RuntimeObject | null {
