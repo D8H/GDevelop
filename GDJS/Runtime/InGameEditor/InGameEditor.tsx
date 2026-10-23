@@ -1204,10 +1204,10 @@ namespace gdjs {
         const initialInstanceOriginPosition =
           this._getOrCreateInstanceOriginPosition(selectedInstance);
 
-        // TODO
-        const proportional = false;
+        const inputManager = this.editor.getRuntimeGame().getInputManager();
+        const shouldSnap = isShiftPressed(inputManager);
         let degreeAngle = rotationZ + initialAngle;
-        if (proportional) {
+        if (shouldSnap) {
           degreeAngle = Math.round(degreeAngle / 15) * 15;
         }
         // We round the angle to the nearest degree when an instance is rotated in the editor.
@@ -1257,9 +1257,9 @@ namespace gdjs {
         scaleY
       );
 
-      // TODO
-      const proportional = false;
-      const hasRotatedInstance = false;
+      const inputManager = this.editor.getRuntimeGame().getInputManager();
+      const proportional = isShiftPressed(inputManager);
+      const hasRotatedInstance = areAnyInstancesNotStraight(selectedObjects);
 
       for (const selectedInstance of selectedObjects) {
         const initialUnrotatedInstanceAABB =
@@ -1366,6 +1366,17 @@ namespace gdjs {
           selectedInstance.getHeight()
         );
       }
+    }
+
+    private areAnyInstancesNotStraight(
+      objects: Array<gdjs.RuntimeObject>
+    ): boolean {
+      for (const object of objects) {
+        if (object.getAngle() % 90 !== 0) {
+          return true;
+        }
+      }
+      return false;
     }
 
     _getOrCreateUnrotatedInstanceAABB(instance: gdjs.RuntimeObject): AABB3D {
@@ -2803,7 +2814,7 @@ namespace gdjs {
           this._editorGrid.setTreeScene(threeScene);
         }
         this._editorGrid.setVisible(true);
-        if (this._editorGrid.isSpanningEnabled(inputManager)) {
+        if (this._editorGrid.isSnappingEnabled(inputManager)) {
           intersectionX = this._editorGrid.getSnappedX(intersectionX);
           intersectionY = this._editorGrid.getSnappedY(intersectionY);
         }
@@ -3778,7 +3789,7 @@ namespace gdjs {
             this._editorGrid.setTreeScene(threeScene);
           }
           this._editorGrid.setVisible(true);
-          if (this._editorGrid.isSpanningEnabled(inputManager, isAltPressed)) {
+          if (this._editorGrid.isSnappingEnabled(inputManager, isAltPressed)) {
             const snappedX = this._editorGrid.getSnappedX(cursorX);
             const snappedY = this._editorGrid.getSnappedY(cursorY);
             if (is3D(this._draggedNewObject)) {
@@ -5280,6 +5291,7 @@ namespace gdjs {
     gridColor: integer = 0;
     gridAlpha: float = 1;
     isSnappingEnabledByDefault = false;
+    gridType: 'rectangular' | 'isometric' = 'rectangular';
     threeScene: THREE.Scene | null = null;
 
     constructor(editor: gdjs.InGameEditor) {
@@ -5301,6 +5313,7 @@ namespace gdjs {
       this.gridColor = instancesEditorSettings.gridColor;
       this.gridAlpha = instancesEditorSettings.gridAlpha;
       this.isSnappingEnabledByDefault = instancesEditorSettings.snap;
+      this.gridType = instancesEditorSettings.gridType;
       this.rebuildGrid();
     }
 
@@ -5400,7 +5413,7 @@ namespace gdjs {
       return snap(z, gridDepth || 0, gridOffsetZ);
     }
 
-    isSpanningEnabled(
+    isSnappingEnabled(
       inputManager: gdjs.InputManager,
       considerAltPressed?: boolean
     ): boolean {
@@ -5409,6 +5422,134 @@ namespace gdjs {
           ? isAltPressed(inputManager)
           : considerAltPressed;
       return this.isSnappingEnabledByDefault !== altPressed;
+    }
+
+    roundPositionsToGrid(
+      pos: [number, number],
+      noGridSnap: boolean = false
+    ): [number, number] {
+      const newPos = pos;
+
+      if (
+        !this.isForcefullyHidden &&
+        this.isSnappingEnabledByDefault &&
+        !noGridSnap
+      ) {
+        console.log('Actually round');
+        this.roundPosition(
+          newPos,
+          this.gridWidth,
+          this.gridHeight,
+          this.gridOffsetX,
+          this.gridOffsetY,
+          this.gridType
+        );
+      } else {
+        // Without a grid, the position is still rounded to the nearest pixel.
+        // The size of the instance (or selection of instances) might not be round,
+        // so the magnet corner is still relevant.
+        newPos[0] = Math.round(newPos[0]);
+        newPos[1] = Math.round(newPos[1]);
+      }
+      return newPos;
+    }
+
+    roundPosition(
+      pos: [number, number],
+      gridWidth: number,
+      gridHeight: number,
+      gridOffsetX: number,
+      gridOffsetY: number,
+      gridType: string
+    ): void {
+      if (gridType === 'isometric') {
+        if (gridWidth <= 0 || gridHeight <= 0) {
+          pos[0] = Math.round(pos[0]);
+          pos[1] = Math.round(pos[1]);
+          return;
+        }
+        // Why do we need this?
+        // Take a 2x2 squares, put a diamond inside each square,
+        // there is a 5th diamond in the center
+        // So, half cells are needed, but some are not to be used.
+        // It makes a pattern in diagonal like this:
+        // o-o-o-
+        // -o-o-o
+        // o-o-o-
+        let cellX = Math.round(((pos[0] - gridOffsetX) * 2) / gridWidth);
+        let cellY = Math.round(((pos[1] - gridOffsetY) * 2) / gridHeight);
+
+        if ((((cellX + cellY) % 2) + 2) % 2 === 1) {
+          // This cell should not be used, find the nearest one
+          const deltaX =
+            (pos[0] - ((cellX / 2) * gridWidth + gridOffsetX)) / gridWidth;
+          const deltaY =
+            (pos[1] - ((cellY / 2) * gridHeight + gridOffsetY)) / gridHeight;
+
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            if (deltaX > 0) {
+              cellX++;
+            } else {
+              cellX--;
+            }
+          } else {
+            if (deltaY > 0) {
+              cellY++;
+            } else {
+              cellY--;
+            }
+          }
+        }
+        // magnet to the half cell
+        pos[0] = (cellX / 2) * gridWidth + gridOffsetX;
+        pos[1] = (cellY / 2) * gridHeight + gridOffsetY;
+      } else {
+        if (gridWidth <= 0) {
+          pos[0] = Math.round(pos[0]);
+        } else {
+          pos[0] =
+            Math.round((pos[0] - gridOffsetX) / gridWidth) * gridWidth +
+            gridOffsetX;
+        }
+
+        if (gridHeight <= 0) {
+          pos[1] = Math.round(pos[1]);
+        } else {
+          pos[1] =
+            Math.round((pos[1] - gridOffsetY) / gridHeight) * gridHeight +
+            gridOffsetY;
+        }
+      }
+    }
+
+    private roundPositionForResizing(
+      pos: [number, number],
+      gridWidth: number,
+      gridHeight: number,
+      gridOffsetX: number,
+      gridOffsetY: number,
+      gridType: string
+    ): void {
+      if (gridType === 'isometric') {
+        // There is no point to align on the isometric grid when resizing.
+        // Use half cells to give a bit more of freedom than for positioning.
+        return this.roundPosition(
+          pos,
+          gridWidth / 2,
+          gridHeight / 2,
+          gridOffsetX,
+          gridOffsetY,
+          'rectangular'
+        );
+      }
+      return this.roundPosition(
+        pos,
+        gridWidth,
+        gridHeight,
+        gridOffsetX,
+        gridOffsetY,
+        gridType
+      );
     }
   }
 
@@ -7059,7 +7200,7 @@ namespace gdjs {
                 const isMovingOnX = threeTransformControls.axis.includes('X');
                 const isMovingOnY = threeTransformControls.axis.includes('Y');
                 const isMovingOnZ = threeTransformControls.axis.includes('Z');
-                if (editorGrid.isSpanningEnabled(inputManager)) {
+                if (editorGrid.isSnappingEnabled(inputManager)) {
                   if (isMovingOnX) {
                     translationX =
                       editorGrid.getSnappedX(initialObjectX + translationX) -
@@ -7098,7 +7239,7 @@ namespace gdjs {
               if (
                 this._transformControlsMode === 'scale' &&
                 threeTransformControls.axis &&
-                editorGrid.isSpanningEnabled(inputManager)
+                editorGrid.isSnappingEnabled(inputManager)
               ) {
                 // Three.js computes the scale as a ratio of the pointer distances
                 // to the gizmo, which barely changes the size of small objects.
@@ -7486,6 +7627,17 @@ namespace gdjs {
       }
       threeScene.add(this.selectionHandle);
       this._isShown = true;
+
+      // Update the grid.
+      const editorGrid = this.editor.getEditorGrid();
+      editorGrid.setNormal('Z');
+      editorGrid.setPosition(
+        this.selectionHandle.getCenterX(),
+        this.selectionHandle.getCenterY(),
+        0
+      );
+      editorGrid.setTreeScene(threeScene);
+      editorGrid.setVisible(true);
     }
 
     remove(): void {
@@ -7581,6 +7733,14 @@ namespace gdjs {
       }
       this.rotationButton = new ThreeCircle(0xffffff, 1, 0x6868e8, 1);
       this.add(this.rotationButton);
+    }
+
+    getCenterX() {
+      return this.area.position.x;
+    }
+
+    getCenterY() {
+      return this.area.position.y;
     }
 
     private update(
@@ -7759,16 +7919,19 @@ namespace gdjs {
                 ? 'ns-resize'
                 : isHorizontal
                   ? 'ew-resize'
-                  : index & ButtonLocation.Top
-                    ? 'nesw-resize'
-                    : 'nwse-resize'
+                  : (index & ButtonLocation.Top) ===
+                      (index & ButtonLocation.Left)
+                    ? 'nwse-resize'
+                    : 'nesw-resize'
             );
             break;
           }
         }
         if (intersect.object.parent === this.rotationButton) {
           isRotationButtonHovered = true;
-          editor.setCursorIcon(`url("${getSvgIconUrl(editor.getRuntimeGame(), 'InGameEditor-rotate24_black')}"),auto`);
+          editor.setCursorIcon(
+            `url("${getSvgIconUrl(editor.getRuntimeGame(), 'InGameEditor-rotate24_black')}"),auto`
+          );
           break;
         }
       }
@@ -7848,11 +8011,42 @@ namespace gdjs {
       if (this.state === 'panning') {
         const cursorX = gdjs.evtTools.input.getCursorX(currentScene, '', 0);
         const cursorY = gdjs.evtTools.input.getCursorY(currentScene, '', 0);
+        const initialCursorX = this.initialCursorPosition[0];
+        const initialCursorY = this.initialCursorPosition[1];
 
-        // TODO Handle grid
+        let translationX = cursorX - initialCursorX;
+        let translationY = cursorY - initialCursorY;
 
-        const translationX = cursorX - this.initialCursorPosition[0];
-        const translationY = cursorY - this.initialCursorPosition[1];
+        const editorGrid = editor.getEditorGrid();
+        if (editorGrid.isSnappingEnabled(inputManager)) {
+          const initialSelectionLeft = this.initialSelectionAABB.min[0];
+          const initialSelectionRight = this.initialSelectionAABB.max[0];
+          const initialSelectionTop = this.initialSelectionAABB.min[1];
+          const initialSelectionBottom = this.initialSelectionAABB.max[1];
+          const initialSelectionCenterX =
+            (initialSelectionLeft + initialSelectionRight) / 2;
+          const initialSelectionCenterY =
+            (initialSelectionTop + initialSelectionBottom) / 2;
+          const magnetLeft = initialCursorX < initialSelectionCenterX;
+          const magnetTop = initialCursorY < initialSelectionCenterY;
+
+          const initialMagnetX = magnetLeft
+            ? initialSelectionLeft
+            : initialSelectionRight;
+          const initialMagnetY = magnetTop
+            ? initialSelectionTop
+            : initialSelectionBottom;
+          const magnetPosition: FloatPoint = [0, 0];
+          magnetPosition[0] = initialMagnetX + translationX;
+          magnetPosition[1] = initialMagnetY + translationY;
+          editorGrid.roundPositionsToGrid(
+            magnetPosition,
+            !editorGrid.isSnappingEnabled(inputManager)
+          );
+          translationX = magnetPosition[0] - initialMagnetX;
+          translationY = magnetPosition[1] - initialMagnetY;
+        }
+
         this._hasActuallyMoved =
           this._hasActuallyMoved || translationX !== 0 || translationY !== 0;
         this._objectMover.translate(
