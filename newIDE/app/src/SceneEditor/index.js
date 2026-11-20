@@ -523,6 +523,8 @@ export default class SceneEditor extends React.Component<Props, State> {
         defaultWidth,
         defaultHeight,
         defaultDepth,
+        stringProperties,
+        numberProperties,
       } = instanceData;
       const instance = getInstanceInLayoutWithPersistentUuid(
         this.props.initialInstances,
@@ -555,6 +557,13 @@ export default class SceneEditor extends React.Component<Props, State> {
       instance.setDefaultWidth(defaultWidth || 0);
       instance.setDefaultHeight(defaultHeight || 0);
       instance.setDefaultDepth(defaultDepth || 0);
+
+      for (const property of stringProperties) {
+        instance.setRawStringProperty(property.name, property.value);
+      }
+      for (const property of numberProperties) {
+        instance.setRawDoubleProperty(property.name, property.value);
+      }
 
       modifiedInstances.push(instance);
     });
@@ -1769,6 +1778,22 @@ export default class SceneEditor extends React.Component<Props, State> {
 
   onSelectTileMapTile = (tileMapTileSelection: ?TileMapTileSelection) => {
     this.setState({ tileMapTileSelection });
+
+    const { previewDebuggerServer } = this.props;
+    if (previewDebuggerServer) {
+      previewDebuggerServer
+        .getExistingEmbeddedGameFrameDebuggerIds()
+        .forEach(debuggerId => {
+          previewDebuggerServer.sendMessage(debuggerId, {
+            command: 'sendExtensionMessage',
+            extension: 'TileMap::SimpleTileMap',
+            payload: {
+              command: 'setTool',
+              payload: tileMapTileSelection,
+            },
+          });
+        });
+    }
   };
 
   _setSelectedInstances = (

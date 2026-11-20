@@ -217,6 +217,11 @@ namespace gdjs {
       { count: integer; lastSentTime: number }
     >();
 
+    private extensionMessageListeners = new Map<
+      string,
+      gdjs.AbstractDebuggerClient.ExtensionMessageListener
+    >();
+
     constructor(runtimeGame: RuntimeGame) {
       this._runtimegame = runtimeGame;
       this._hotReloader = new gdjs.HotReloader(runtimeGame);
@@ -589,6 +594,28 @@ namespace gdjs {
               this.sendRaycastResult(data.messageId, data.payload)
             );
           }
+        } else if (data.command === 'sendExtensionMessage') {
+          if (inGameEditor) {
+            let extensionMessageListener = this.extensionMessageListeners.get(
+              data.extension
+            );
+            if (!extensionMessageListener) {
+              extensionMessageListener =
+                gdjs.AbstractDebuggerClient.createExtensionMessageListener(
+                  data.extension,
+                  inGameEditor
+                );
+              if (extensionMessageListener) {
+                this.extensionMessageListeners.set(
+                  data.extension,
+                  extensionMessageListener
+                );
+              }
+            }
+            if (extensionMessageListener) {
+              extensionMessageListener.handleCommand(data.payload);
+            }
+          }
         } else if (data.command === 'gameplayTest.run') {
           if (gdjs.gameplayTests) {
             gdjs.gameplayTests
@@ -632,6 +659,16 @@ namespace gdjs {
       } catch (error) {
         this.onUncaughtException(error as Error);
       }
+    }
+
+    registerExtensionMessageListener(
+      extensionName: string,
+      extensionMessageListener: gdjs.AbstractDebuggerClient.ExtensionMessageListener
+    ) {
+      this.extensionMessageListeners.set(
+        extensionName,
+        extensionMessageListener
+      );
     }
 
     /**
@@ -1323,5 +1360,52 @@ namespace gdjs {
         location.reload();
       }
     }
+  }
+
+  export namespace AbstractDebuggerClient {
+    /** @internal */
+    export interface ExtensionMessage {
+      command: string;
+      payload: any;
+    }
+
+    /** @internal */
+    export class ExtensionMessageListener {
+      inGameEditor: gdjs.InGameEditor;
+
+      constructor(inGameEditor: gdjs.InGameEditor) {
+        this.inGameEditor = inGameEditor;
+      }
+      handleCommand(data: ExtensionMessage): void {}
+    }
+
+    /** @internal */
+    export const extensionMessageListenerClasses = new Map<
+      string,
+      typeof ExtensionMessageListener
+    >();
+
+    /** @internal */
+    export const createExtensionMessageListener = (
+      editorExtensionName: string,
+      inGameEditor: gdjs.InGameEditor
+    ): ExtensionMessageListener | undefined => {
+      const listenerClass =
+        gdjs.AbstractDebuggerClient.extensionMessageListenerClasses.get(
+          editorExtensionName
+        );
+      return listenerClass ? new listenerClass(inGameEditor) : undefined;
+    };
+
+    /** @internal */
+    export const registerExtensionMessageListener = (
+      editorExtensionName: string,
+      Ctor: typeof ExtensionMessageListener
+    ): void => {
+      gdjs.AbstractDebuggerClient.extensionMessageListenerClasses.set(
+        editorExtensionName,
+        Ctor
+      );
+    };
   }
 }

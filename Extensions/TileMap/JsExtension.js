@@ -1141,7 +1141,9 @@ const defineSimpleTileMap = function (extension, _, gd) {
     .addIncludeFile('Extensions/TileMap/pixi-tilemap/dist/pixi-tilemap.umd.js')
     .addIncludeFile('Extensions/TileMap/collision/TransformedTileMap.js')
     .addIncludeFile('Extensions/TileMap/pako/dist/pako.min.js')
-    .addIncludeFile('Extensions/TileMap/helper/TileMapHelper.js');
+    .addIncludeFile('Extensions/TileMap/helper/TileMapHelper.js')
+    // TODO Only export it for the editor
+    .addIncludeFile('Extensions/TileMap/SimpleTileMapEditor.js');
 
   object
     .addExpression(

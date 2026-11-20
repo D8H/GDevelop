@@ -3466,7 +3466,11 @@ namespace gdjs {
         flippedZ: oldData ? oldData.flippedZ : undefined,
         // TODO: how to transmit/should we transmit other properties?
         numberProperties: [],
-        stringProperties: [],
+        //@ts-ignore
+        stringProperties: runtimeObject.getStringProperties
+          ? //@ts-ignore
+            runtimeObject.getStringProperties()
+          : [],
         initialVariables: [],
         // @ts-ignore
         defaultWidth,

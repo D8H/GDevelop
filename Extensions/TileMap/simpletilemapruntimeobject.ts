@@ -219,6 +219,17 @@ namespace gdjs {
       }
     }
 
+    getStringProperties(): Array<InstanceStringProperty> {
+      return this._tileMap
+        ? [
+            {
+              name: 'tilemap',
+              value: JSON.stringify(this._tileMap.toJSObject()),
+            },
+          ]
+        : [];
+    }
+
     override extraInitializationFromInitialInstance(
       initialInstanceData: InstanceData
     ): void {

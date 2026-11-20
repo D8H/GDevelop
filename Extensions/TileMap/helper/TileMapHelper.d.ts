@@ -8,6 +8,7 @@ import {
   TileMapManager,
   TileTextureCache,
   TiledTileset,
+  FlippingHelper,
 } from './dts/index';
 
 declare global {
@@ -22,6 +23,7 @@ declare global {
       TileMapManager,
       TileTextureCache,
       TiledTileset,
+      FlippingHelper,
     };
   }
 }
