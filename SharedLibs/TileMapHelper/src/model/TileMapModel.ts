@@ -56,7 +56,7 @@ export class EditableTileMap {
     dimY: integer,
     // TODO should the tile set be built internally?
     // It's not meant to change and it avoid to do a copy.
-    tileSet: Map<integer, TileDefinition>
+    tileSet: Map<integer, TileDefinition>,
   ) {
     this.tileWidth = tileWidth;
     this.tileHeight = tileHeight;
@@ -72,7 +72,7 @@ export class EditableTileMap {
       this.tileHeight,
       this.dimX,
       this.dimY,
-      this._tileSet
+      this._tileSet,
     );
     for (const layer of this._layers) {
       tileMap._layers.push(layer.clone(tileMap, layer.id));
@@ -98,7 +98,7 @@ export class EditableTileMap {
       tileSize: number;
       tileSetColumnCount: number;
       tileSetRowCount: number;
-    }
+    },
   ): EditableTileMap {
     const tileSet = new Map<number, TileDefinition>();
 
@@ -109,7 +109,7 @@ export class EditableTileMap {
       tileSetRowCount <= 0
     ) {
       throw new Error(
-        `Tilemap object badly configured. Tile size ${tileSize} is not compatible with atlas image dimensions, resulting in having ${tileSetColumnCount} columns and ${tileSetRowCount} rows.`
+        `Tilemap object badly configured. Tile size ${tileSize} is not compatible with atlas image dimensions, resulting in having ${tileSetColumnCount} columns and ${tileSetRowCount} rows.`,
       );
     }
     // TODO: Actually save and load tile set when useful.
@@ -124,7 +124,7 @@ export class EditableTileMap {
       tileSize || editableTileMapAsJsObject.tileHeight,
       editableTileMapAsJsObject.dimX || 1,
       editableTileMapAsJsObject.dimY || 1,
-      tileSet
+      tileSet,
     );
 
     if (editableTileMapAsJsObject.layers) {
@@ -133,8 +133,8 @@ export class EditableTileMap {
           EditableTileMapLayer.from(
             layerAsJsObject,
             tileMap,
-            (tileId) => tileId < tileSetColumnCount * tileSetRowCount
-          )
+            (tileId) => tileId < tileSetColumnCount * tileSetRowCount,
+          ),
         );
       });
     } else {
@@ -225,7 +225,7 @@ export class EditableTileMap {
     columnsToAppend: number,
     columnsToUnshift: number,
     rowsToAppend: number,
-    rowsToUnshift: number
+    rowsToUnshift: number,
   ): void {
     if (
       columnsToAppend < 0 ||
@@ -246,7 +246,7 @@ export class EditableTileMap {
           columnsToAppend,
           columnsToUnshift,
           rowsToAppend,
-          rowsToUnshift
+          rowsToUnshift,
         );
       }
     }
@@ -442,13 +442,13 @@ export class EditableTileMap {
   }
 
   trimEmptyColumnsAndRowToFitLayer(
-    layerId: integer
+    layerId: integer,
   ):
     | {
-        poppedRows: number;
-        poppedColumns: number;
-        shiftedRows: number;
-        shiftedColumns: number;
+        poppedColumns: integer;
+        poppedRows: integer;
+        shiftedColumns: integer;
+        shiftedRows: integer;
       }
     | undefined {
     const layer = this.getTileLayer(layerId);
@@ -465,7 +465,7 @@ export class EditableTileMap {
           trimmingData.columnsToPop,
           trimmingData.columnsToShift,
           trimmingData.rowsToPop,
-          trimmingData.rowsToShift
+          trimmingData.rowsToShift,
         );
       }
     }
@@ -617,21 +617,21 @@ export class TileObject {
   setFlippedHorizontally(flippedHorizontally: boolean): void {
     this.tileId = FlippingHelper.setFlippedHorizontally(
       this.tileId,
-      flippedHorizontally
+      flippedHorizontally,
     );
   }
 
   setFlippedVertically(flippedVertically: boolean): void {
     this.tileId = FlippingHelper.setFlippedVertically(
       this.tileId,
-      flippedVertically
+      flippedVertically,
     );
   }
 
   setFlippedDiagonally(flippedDiagonally: boolean): void {
     this.tileId = FlippingHelper.setFlippedDiagonally(
       this.tileId,
-      flippedDiagonally
+      flippedDiagonally,
     );
   }
 
@@ -657,12 +657,40 @@ export class TileObject {
   }
 }
 
+const chunkTileIndexBitCount = 5;
+const chunkSize = 1 << chunkTileIndexBitCount;
+const chunkLength = chunkSize * chunkSize;
+const chunkTileIndexMask = 0x1f;
+
+class EditableTileMapLayerChuck {
+  isKnownToBeEmpty = true;
+  tiles: Int32Array;
+
+  constructor() {
+    this.tiles = new Int32Array(chunkLength).fill(0);
+  }
+
+  isEmpty(): boolean {
+    if (this.isKnownToBeEmpty) {
+      return true;
+    }
+    this.isKnownToBeEmpty = this.tiles.every((tileId) => tileId === 0);
+    return this.isKnownToBeEmpty;
+  }
+}
+
 /**
  * A tile map layer with tile organized in grid.
  */
 export class EditableTileMapLayer extends AbstractEditableLayer {
-  private _tiles: Int32Array[];
+  private _chunks: Array<Array<EditableTileMapLayerChuck>>;
   private _alpha: float;
+  private tileOffsetX: integer = 0;
+  private tileOffsetY: integer = 0;
+  private chunkOffsetX: integer = 0;
+  private chunkOffsetY: integer = 0;
+  private dimensionX: integer;
+  private dimensionY: integer;
 
   /**
    * @param tileMap The layer tile map.
@@ -670,21 +698,42 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
    */
   constructor(tileMap: EditableTileMap, id: integer) {
     super(tileMap, id);
-    const dimensionX = this.tileMap.getDimensionX();
-    const dimensionY = this.tileMap.getDimensionY();
-    this._tiles = [];
-    this._tiles.length = dimensionY;
-    for (let index = 0; index < this._tiles.length; index++) {
-      this._tiles[index] = new Int32Array(dimensionX);
+    this.dimensionX = this.tileMap.getDimensionX();
+    this.dimensionY = this.tileMap.getDimensionY();
+    const chunkCountX = (this.dimensionX >> chunkTileIndexBitCount) + 1;
+    const chunkCountY = (this.dimensionY >> chunkTileIndexBitCount) + 1;
+    this._chunks = [];
+    this._chunks.length = chunkCountY;
+    for (let chunkY = 0; chunkY < chunkCountY; chunkY++) {
+      const chunks = [];
+      for (let chunkX = 0; chunkX < chunkCountX; chunkX++) {
+        chunks[chunkX] = new EditableTileMapLayerChuck();
+      }
+      this._chunks[chunkY] = chunks;
     }
     this._alpha = 1;
   }
 
   clone(tileMap: EditableTileMap, id: integer): EditableTileMapLayer {
     const layer = new EditableTileMapLayer(tileMap, id);
-    for (let index = 0; index < layer._tiles.length; index++) {
-      layer._tiles[index].set(this._tiles[index]);
+    // TODO Make a trimmed clone
+    for (let y = 0; y < this._chunks.length; y++) {
+      const thisChunks = this._chunks[y];
+      const otherChunks = layer._chunks[y];
+      for (let x = 0; x < thisChunks.length; x++) {
+        const thisChunk = thisChunks[x];
+        const otherChunk = otherChunks[x];
+        otherChunk.isKnownToBeEmpty = thisChunk.isKnownToBeEmpty;
+        // TODO It can be skipped when it's empty.
+        otherChunk.tiles.set(thisChunk.tiles);
+      }
     }
+    layer.tileOffsetX = this.tileOffsetX;
+    layer.tileOffsetY = this.tileOffsetY;
+    layer.chunkOffsetX = this.chunkOffsetX;
+    layer.chunkOffsetY = this.chunkOffsetY;
+    layer.dimensionX = this.dimensionX;
+    layer.dimensionY = this.dimensionY;
     layer._alpha = this._alpha;
     return layer;
   }
@@ -692,11 +741,11 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
   static from(
     editableTileMapLayerAsJsObject: EditableTileMapLayerAsJsObject,
     tileMap: EditableTileMap,
-    isTileIdValid: (tileId: number) => boolean
+    isTileIdValid: (tileId: number) => boolean,
   ): EditableTileMapLayer {
     const layer = new EditableTileMapLayer(
       tileMap,
-      editableTileMapLayerAsJsObject.id
+      editableTileMapLayerAsJsObject.id,
     );
     layer.setAlpha(editableTileMapLayerAsJsObject.alpha);
     editableTileMapLayerAsJsObject.tiles.forEach((row: number[], y: number) =>
@@ -705,27 +754,30 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
         if (isTileIdValid(tileId)) {
           layer.setTileGID(x, y, tileGID);
         }
-      })
+      }),
     );
     return layer;
   }
 
   toJSObject(): EditableTileMapLayerAsJsObject {
+    // Array.from is needed to convert Int32Array to Array. Otherwise, JSON.stringify
+    // serializes it as an object with index as keys.
+    const tiles: Array<Array<number>> = [];
+    tiles.length = this.dimensionY;
+    for (let y = 0; y < this.dimensionY; y++) {
+      const row: Array<number> = [];
+      row.length = this.dimensionX;
+      tiles[y] = row;
+      for (let x = 0; x < this.dimensionX; x++) {
+        const tileGID = this.getTileGID(x, y);
+        // -1 corresponds to null value
+        row[x] = tileGID === undefined ? -1 : tileGID;
+      }
+    }
     return {
       id: this.id,
       alpha: this._alpha,
-      tiles: this._tiles.map((row, y) =>
-        // Array.from is needed to convert Int32Array to Array. Otherwise, JSON.stringify
-        // serializes it as an object with index as keys.
-        Array.from(
-          row.map((_, x) => {
-            const tileGID = this.getTileGID(x, y);
-            // -1 corresponds to null value
-            if (tileGID === undefined) return -1;
-            return tileGID;
-          })
-        )
-      ),
+      tiles,
     };
   }
 
@@ -744,75 +796,98 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
   }
 
   isEmpty(): boolean {
-    return this._tiles.every((row) => row.every((cell) => cell === 0));
+    return this._chunks.every((row) => row.every((chunk) => chunk.isEmpty()));
   }
 
   reduceDimensions(
     columnsToPop: number,
     columnsToShift: number,
     rowsToPop: number,
-    rowsToShift: number
+    rowsToShift: number,
   ) {
-    if (rowsToPop > 0 || rowsToShift > 0) {
-      this._tiles = this._tiles.slice(
-        rowsToShift,
-        rowsToPop ? -rowsToPop : undefined
-      );
+    const deltaChunkOffsetX = columnsToShift >> chunkTileIndexBitCount;
+    this.chunkOffsetX += deltaChunkOffsetX;
+    this.tileOffsetX +=
+      columnsToShift - (deltaChunkOffsetX << chunkTileIndexBitCount);
+    if (this.tileOffsetX >= chunkSize) {
+      this.chunkOffsetX++;
+      this.tileOffsetX -= chunkSize;
     }
-    if (columnsToPop > 0 || columnsToShift > 0) {
-      this._tiles.forEach((row, rowIndex) => {
-        this._tiles[rowIndex] = this._tiles[rowIndex].slice(
-          columnsToShift,
-          columnsToPop ? -columnsToPop : undefined
-        );
-      });
+    const deltaChunkOffsetY = rowsToShift >> chunkTileIndexBitCount;
+    this.chunkOffsetY += deltaChunkOffsetY;
+    this.tileOffsetY +=
+      rowsToShift - (deltaChunkOffsetY << chunkTileIndexBitCount);
+    if (this.tileOffsetY >= chunkSize) {
+      this.chunkOffsetY++;
+      this.tileOffsetY -= chunkSize;
     }
+    this.dimensionX -= columnsToPop + columnsToShift;
+    this.dimensionY -= rowsToPop + rowsToShift;
   }
 
   increaseDimensions(
     columnsToAppend: number,
     columnsToUnshift: number,
     rowsToAppend: number,
-    rowsToUnshift: number
+    rowsToUnshift: number,
   ) {
-    const initialRowCount = this._tiles.length;
-    const initialColumnCount = this._tiles[0].length;
-    if (columnsToAppend > 0 || columnsToUnshift > 0) {
-      this._tiles.forEach((row, rowIndex) => {
-        const newRow = new Int32Array(
-          initialColumnCount + columnsToAppend + columnsToUnshift
-        ).fill(0);
-        newRow.set(row, columnsToUnshift);
-        this._tiles[rowIndex] = newRow;
-      });
-    }
-    if (rowsToAppend > 0 || rowsToUnshift > 0) {
-      // TODO: Consider over-provisioning columns and rows to avoid this operation being made
-      // too often, especially in a case where tiles are added towards the outside.
-      // Beware of over-provisioning rows above and/or columns on the left as it is supposed
-      // to change the object position.
-      this._tiles.unshift(
-        ...new Array(rowsToUnshift)
-          .fill(0)
-          .map(() =>
-            new Int32Array(
-              initialColumnCount + columnsToAppend + columnsToUnshift
-            ).fill(0)
-          )
-      );
+    // TODO Clear the tiles that are reused.
 
-      this._tiles.length = initialRowCount + rowsToAppend + rowsToUnshift;
+    const oldMinX =
+      (this.chunkOffsetX << chunkTileIndexBitCount) + this.tileOffsetX;
+    const newMinX = oldMinX - columnsToUnshift;
+    const deltaChunkMinX = -(
+      (newMinX >> chunkTileIndexBitCount) -
+      (oldMinX >> chunkTileIndexBitCount)
+    );
+    this.chunkOffsetX -= deltaChunkMinX;
+    this.tileOffsetX = newMinX & chunkTileIndexMask;
 
-      for (
-        let rowIndex = initialRowCount + rowsToUnshift;
-        rowIndex < this._tiles.length;
-        rowIndex++
-      ) {
-        this._tiles[rowIndex] = new Int32Array(
-          initialColumnCount + columnsToAppend + columnsToUnshift
-        ).fill(0);
+    const newChunksDimX =
+      ((Math.max(0, this.chunkOffsetX) +
+        (this.tileOffsetX + this.dimensionX + columnsToAppend)) >>
+        chunkTileIndexBitCount) +
+      1;
+
+    if (this.chunkOffsetX < 0 || newChunksDimX > this._chunks.length) {
+      const createChunk = () => new EditableTileMapLayerChuck();
+      for (const row of this._chunks) {
+        shiftArray(row, -this.chunkOffsetX, newChunksDimX, createChunk);
       }
+      this.chunkOffsetX = Math.max(0, this.chunkOffsetX);
     }
+
+    const oldMinY =
+      (this.chunkOffsetY << chunkTileIndexBitCount) + this.tileOffsetY;
+    const newMinY = oldMinY - rowsToUnshift;
+    const deltaChunkMinY = -(
+      (newMinY >> chunkTileIndexBitCount) -
+      (oldMinY >> chunkTileIndexBitCount)
+    );
+    this.chunkOffsetY -= deltaChunkMinY;
+    this.tileOffsetY = newMinY & chunkTileIndexMask;
+
+    const newChunksDimY =
+      ((Math.max(0, this.chunkOffsetY) +
+        (this.tileOffsetY + this.dimensionY + rowsToAppend)) >>
+        chunkTileIndexBitCount) +
+      1;
+
+    if (this.chunkOffsetY < 0 || newChunksDimY > this._chunks.length) {
+      const createRow = () => {
+        const newRow: Array<EditableTileMapLayerChuck> = [];
+        newRow.length = newChunksDimY;
+        for (let index = 0; index < newRow.length; index++) {
+          newRow[index] = new EditableTileMapLayerChuck();
+        }
+        return newRow;
+      };
+      shiftArray(this._chunks, -this.chunkOffsetY, newChunksDimY, createRow);
+      this.chunkOffsetY = Math.max(0, this.chunkOffsetY);
+    }
+
+    this.dimensionX += columnsToUnshift + columnsToAppend;
+    this.dimensionY += rowsToUnshift + rowsToAppend;
   }
 
   /**
@@ -826,14 +901,39 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
       console.error(`Invalid tile definition index: ${tileId}`);
       return;
     }
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length) {
-      // Coordinates are out of bounds, don't do anything.
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
       return;
     }
-
     // +1 because 0 means null
-    tilesRow[x] = tileId + 1;
+    chunk.tiles[this.getChunkTileIndex(x, y)] = tileId + 1;
+    chunk.isKnownToBeEmpty = false;
+  }
+
+  private getChunksDimX() {
+    return ((this.tileOffsetX + this.dimensionX) >> chunkTileIndexBitCount) + 1;
+  }
+
+  private getChunksDimY() {
+    return ((this.tileOffsetY + this.dimensionY) >> chunkTileIndexBitCount) + 1;
+  }
+
+  private getChunkForTile(
+    x: integer,
+    y: integer,
+  ): EditableTileMapLayerChuck | undefined {
+    x += this.tileOffsetX;
+    y += this.tileOffsetY;
+    const chunkX = (x >> chunkTileIndexBitCount) + this.chunkOffsetX;
+    const chunkY = (y >> chunkTileIndexBitCount) + this.chunkOffsetY;
+    const chunksRow = this._chunks[chunkY];
+    return chunksRow && chunksRow[chunkX];
+  }
+
+  private getChunkTileIndex(x: integer, y: integer): integer {
+    const localX = (x + this.tileOffsetX) & chunkTileIndexMask;
+    const localY = (y + this.tileOffsetY) & chunkTileIndexMask;
+    return (localY << chunkTileIndexBitCount) + localX;
   }
 
   /**
@@ -842,108 +942,97 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
    * @param tileGID The tile GID.
    */
   setTileGID(x: integer, y: integer, tileGID: integer): void {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length) {
-      // Coordinates are out of bounds, don't do anything.
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
       return;
     }
-
     // +1 because 0 means null
-    tilesRow[x] = tileGID + 1;
+    chunk.tiles[this.getChunkTileIndex(x, y)] = tileGID + 1;
+    chunk.isKnownToBeEmpty = false;
   }
 
   getTrimmingData(): {
-    rowsToShift: number;
     columnsToShift: number;
-    rowsToPop: number;
+    rowsToShift: number;
     columnsToPop: number;
+    rowsToPop: number;
   } {
-    let minX = this.getDimensionX();
-    let minY = this.getDimensionY();
-    let maxX = -1;
-    let maxY = -1;
+    const {
+      emptyLeftColumns: emptyLeftChunkColumns,
+      emptyTopRows: emptyTopChunkRows,
+      emptyRightColumns: emptyRightChunkColumns,
+      emptyBottomRows: emptyBottomChunkRows,
+    } = findEmptyCells(
+      (x: integer, y: integer) => {
+        const chunk = this.getChunkForTile(x, y);
+        return chunk ? chunk.isKnownToBeEmpty : true;
+      },
+      this.getChunksDimX(),
+      this.getChunksDimY(),
+    );
+    console.log(
+      "chunk",
+      emptyLeftChunkColumns,
+      emptyTopChunkRows,
+      emptyRightChunkColumns,
+      emptyBottomChunkRows,
+    );
 
-    // Scan from the bottom
-    for (let y = this._tiles.length - 1; y >= 0; y--) {
-      const row = this._tiles[y];
-      let cell = 0;
-      // from right to left
-      for (let x = row.length - 1; x >= 0; x--) {
-        cell = row[x];
-        if (cell !== 0) {
-          maxX = x;
-          maxY = y;
-          break;
-        }
-      }
-      if (cell !== 0) {
-        break;
-      }
-    }
-    // The layer is empty.
-    if (maxY === -1) {
-      return {
-        columnsToShift: 0,
-        rowsToShift: 0,
-        columnsToPop: this.getDimensionX() - 1,
-        rowsToPop: this.getDimensionY() - 1,
-      };
-    }
-    // Scan from the top
-    for (let y = 0; y <= maxY; y++) {
-      const row = this._tiles[y];
-      let cell = 0;
-      // from left to right
-      for (let x = 0; x < row.length; x++) {
-        cell = row[x];
-        if (cell !== 0) {
-          minX = x;
-          minY = y;
-          break;
-        }
-      }
-      if (cell !== 0) {
-        break;
-      }
-    }
-    // When only 1 row remains, we already found the bounds.
-    if (minY !== maxY) {
-      let cell = 0;
-      // Scan from the right
-      for (let x = this.getDimensionX() - 1; x > maxX; x--) {
-        // maxY is already covered
-        for (let y = minY; y < maxY; y++) {
-          cell = this._tiles[y][x];
-          if (cell !== 0) {
-            maxX = x;
-            break;
-          }
-        }
-        if (cell !== 0) {
-          break;
-        }
-      }
-      // Scan from the left
-      for (let x = 0; x < minX; x++) {
-        let cell = 0;
-        // minY is already covered
-        for (let y = minY + 1; y <= maxY; y++) {
-          cell = this._tiles[y][x];
-          if (cell !== 0) {
-            minX = x;
-            break;
-          }
-        }
-        if (cell !== 0) {
-          break;
-        }
+    const offsetX = emptyLeftChunkColumns << chunkTileIndexBitCount;
+    const offsetY = emptyTopChunkRows << chunkTileIndexBitCount;
+    const dimensionX =
+      this.dimensionX -
+      ((emptyLeftChunkColumns + emptyRightChunkColumns) <<
+        chunkTileIndexBitCount);
+    const dimensionY =
+      this.dimensionY -
+      ((emptyTopChunkRows + emptyBottomChunkRows) << chunkTileIndexBitCount);
+
+    const {
+      emptyLeftColumns: emptyLeftTileColumns,
+      emptyTopRows: emptyTopTileRows,
+      emptyRightColumns: emptyRightTileColumns,
+      emptyBottomRows: emptyBottomTileRows,
+    } = findEmptyCells(
+      (x: integer, y: integer) =>
+        this.getTileId(x + offsetX, y + offsetY) === undefined,
+      dimensionX,
+      dimensionY,
+    );
+    console.log(
+      "tiles",
+      emptyLeftTileColumns,
+      emptyTopTileRows,
+      emptyRightTileColumns,
+      emptyBottomTileRows,
+    );
+
+    // TODO Set isKnownToBeEmpty on other sides
+    // TODO or just give up on isKnownToBeEmpty and keep try on the area that
+    // has been edited to make a fast crop before trimming
+    const extraEmptyLeftChunkColumns =
+      emptyLeftTileColumns >> chunkTileIndexBitCount;
+    for (let x = 0; x < extraEmptyLeftChunkColumns; x++) {
+      for (
+        let y = emptyTopChunkRows;
+        y < this._chunks.length - emptyBottomChunkRows;
+        y++
+      ) {
+        this._chunks[y][emptyLeftChunkColumns + x].isKnownToBeEmpty = true;
       }
     }
+
     return {
-      rowsToShift: minY,
-      columnsToShift: minX,
-      rowsToPop: this.getDimensionY() - 1 - maxY,
-      columnsToPop: this.getDimensionX() - 1 - maxX,
+      columnsToShift:
+        (emptyLeftChunkColumns << chunkTileIndexBitCount) +
+        emptyLeftTileColumns,
+      rowsToShift:
+        (emptyTopChunkRows << chunkTileIndexBitCount) + emptyTopTileRows,
+      columnsToPop:
+        (emptyRightChunkColumns << chunkTileIndexBitCount) +
+        emptyRightTileColumns,
+      rowsToPop:
+        (emptyBottomChunkRows << chunkTileIndexBitCount) + emptyBottomTileRows,
     };
   }
 
@@ -952,14 +1041,12 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
    * @param y The layer row.
    */
   removeTile(x: integer, y: integer): void {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length) {
-      // Coordinates are out of bounds, don't do anything.
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
       return;
     }
-
     // 0 means null
-    tilesRow[x] = 0;
+    chunk.tiles[this.getChunkTileIndex(x, y)] = 0;
   }
 
   /**
@@ -970,22 +1057,22 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
   setFlippedHorizontally(
     x: integer,
     y: integer,
-    flippedHorizontally: boolean
+    flippedHorizontally: boolean,
   ): void {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length) {
-      // Coordinates are out of bounds, don't do anything.
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
       return;
     }
-
-    const tileId = tilesRow[x];
+    const index = this.getChunkTileIndex(x, y);
+    const tileId = chunk.tiles[index];
     if (tileId === 0) {
       return;
     }
-    tilesRow[x] = FlippingHelper.setFlippedHorizontally(
+    chunk.tiles[index] = FlippingHelper.setFlippedHorizontally(
       tileId,
-      flippedHorizontally
+      flippedHorizontally,
     );
+    chunk.isKnownToBeEmpty = false;
   }
 
   /**
@@ -996,22 +1083,22 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
   setFlippedVertically(
     x: integer,
     y: integer,
-    flippedVertically: boolean
+    flippedVertically: boolean,
   ): void {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length) {
-      // Coordinates are out of bounds, don't do anything.
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
       return;
     }
-
-    const tileId = tilesRow[x];
+    const index = this.getChunkTileIndex(x, y);
+    const tileId = chunk.tiles[index];
     if (tileId === 0) {
       return;
     }
-    tilesRow[x] = FlippingHelper.setFlippedVertically(
+    chunk.tiles[index] = FlippingHelper.setFlippedVertically(
       tileId,
-      flippedVertically
+      flippedVertically,
     );
+    chunk.isKnownToBeEmpty = false;
   }
 
   /**
@@ -1022,22 +1109,22 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
   setFlippedDiagonally(
     x: integer,
     y: integer,
-    flippedDiagonally: boolean
+    flippedDiagonally: boolean,
   ): void {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length) {
-      // Coordinates are out of bounds, don't do anything.
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
       return;
     }
-
-    const tileId = tilesRow[x];
+    const index = this.getChunkTileIndex(x, y);
+    const tileId = chunk.tiles[index];
     if (tileId === 0) {
       return;
     }
-    tilesRow[x] = FlippingHelper.setFlippedDiagonally(
+    chunk.tiles[index] = FlippingHelper.setFlippedDiagonally(
       tileId,
-      flippedDiagonally
+      flippedDiagonally,
     );
+    chunk.isKnownToBeEmpty = false;
   }
 
   /**
@@ -1046,13 +1133,13 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
    * @returns true if the tile is flipped horizontally.
    */
   isFlippedHorizontally(x: integer, y: integer): boolean {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length) {
-      // Coordinates are out of bounds, don't do anything.
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
       return false;
     }
-
-    return FlippingHelper.isFlippedHorizontally(tilesRow[x]);
+    return FlippingHelper.isFlippedHorizontally(
+      chunk.tiles[this.getChunkTileIndex(x, y)],
+    );
   }
 
   /**
@@ -1061,13 +1148,13 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
    * @returns true if the tile is flipped vertically.
    */
   isFlippedVertically(x: integer, y: integer): boolean {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length) {
-      // Coordinates are out of bounds, don't do anything.
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
       return false;
     }
-
-    return FlippingHelper.isFlippedVertically(tilesRow[x]);
+    return FlippingHelper.isFlippedVertically(
+      chunk.tiles[this.getChunkTileIndex(x, y)],
+    );
   }
 
   /**
@@ -1076,13 +1163,13 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
    * @returns true if the tile is flipped diagonally.
    */
   isFlippedDiagonally(x: integer, y: integer): boolean {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length) {
-      // Coordinates are out of bounds, don't do anything.
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
       return false;
     }
-
-    return FlippingHelper.isFlippedDiagonally(tilesRow[x]);
+    return FlippingHelper.isFlippedDiagonally(
+      chunk.tiles[this.getChunkTileIndex(x, y)],
+    );
   }
 
   /**
@@ -1091,12 +1178,16 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
    * @returns The tile's GID (id + flipping bits).
    */
   getTileGID(x: integer, y: integer): integer | undefined {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length || tilesRow[x] === 0) {
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
+      return undefined;
+    }
+    const tileValue = chunk.tiles[this.getChunkTileIndex(x, y)];
+    if (tileValue === 0) {
       return undefined;
     }
     // -1 because 0 is keep for null.
-    return tilesRow[x] - 1;
+    return tileValue - 1;
   }
 
   /**
@@ -1105,27 +1196,30 @@ export class EditableTileMapLayer extends AbstractEditableLayer {
    * @returns The tile's id.
    */
   getTileId(x: integer, y: integer): integer | undefined {
-    const tilesRow = this._tiles[y];
-    if (!tilesRow || x >= tilesRow.length || tilesRow[x] === 0) {
+    const chunk = this.getChunkForTile(x, y);
+    if (!chunk) {
+      return undefined;
+    }
+    const tileValue = chunk.tiles[this.getChunkTileIndex(x, y)];
+    if (tileValue === 0) {
       return undefined;
     }
     // -1 because 0 is keep for null.
-    const tileId = FlippingHelper.getTileId(tilesRow[x] - 1);
-    return tileId;
+    return FlippingHelper.getTileId(tileValue - 1);
   }
 
   /**
    * The number of tile columns in the layer.
    */
   getDimensionX(): integer {
-    return this._tiles.length === 0 ? 0 : this._tiles[0].length;
+    return this.dimensionX;
   }
 
   /**
    * The number of tile rows in the layer.
    */
   getDimensionY(): integer {
-    return this._tiles.length;
+    return this.dimensionY;
   }
 
   /**
@@ -1182,7 +1276,7 @@ export class TileDefinition {
   addHitBox(
     tag: string,
     polygon: PolygonVertices,
-    hasFullHitBox: boolean
+    hasFullHitBox: boolean,
   ): void {
     let taggedHitBox = this.taggedHitBoxes.find((hitbox) => hitbox.tag === tag);
     if (!taggedHitBox) {
@@ -1210,7 +1304,7 @@ export class TileDefinition {
    */
   getHitBoxes(tag: string): PolygonVertices[] | undefined {
     const taggedHitBox = this.taggedHitBoxes.find(
-      (hitbox) => hitbox.tag === tag
+      (hitbox) => hitbox.tag === tag,
     );
     return taggedHitBox && taggedHitBox.polygons;
   }
@@ -1222,7 +1316,7 @@ export class TileDefinition {
    */
   hasFullHitBox(tag: string): boolean {
     const taggedHitBox = this.taggedHitBoxes.find(
-      (hitbox) => hitbox.tag === tag
+      (hitbox) => hitbox.tag === tag,
     );
     return !!taggedHitBox && taggedHitBox.hasFullHitBox;
   }
@@ -1266,4 +1360,120 @@ export class TileDefinition {
     this.stackedTiles = tiles;
     this.stackTileId = stackTileId;
   }
+}
+
+function shiftArray<T>(
+  array: Array<T>,
+  offset: integer,
+  newLength: integer,
+  buildNewValue: () => T,
+): void {
+  const oldLength = array.length;
+  array.length = newLength;
+  for (let index = offset; index < offset + oldLength; index++) {
+    array[index] = array[index - offset];
+  }
+  for (let index = 0; index < offset; index++) {
+    array[index] = buildNewValue();
+  }
+  for (let index = offset + oldLength; index < array.length; index++) {
+    array[index] = buildNewValue();
+  }
+}
+
+function findEmptyCells(
+  isEmpty: (x: integer, y: integer) => boolean,
+  dimX: number,
+  dimY: number,
+): {
+  emptyLeftColumns: number;
+  emptyTopRows: number;
+  emptyRightColumns: number;
+  emptyBottomRows: number;
+} {
+  let minX = dimX;
+  let minY = dimY;
+  let maxX = -1;
+  let maxY = -1;
+
+  // Scan from the bottom
+  for (let y = dimY - 1; y >= 0; y--) {
+    let hasFoundValue = false;
+    // from right to left
+    for (let x = dimX - 1; x >= 0; x--) {
+      hasFoundValue = !isEmpty(x, y);
+      if (hasFoundValue) {
+        maxX = x;
+        maxY = y;
+        break;
+      }
+    }
+    if (hasFoundValue) {
+      break;
+    }
+  }
+  // The layer is empty.
+  if (maxY === -1) {
+    return {
+      emptyTopRows: 0,
+      emptyLeftColumns: 0,
+      emptyBottomRows: dimX - 1,
+      emptyRightColumns: dimY - 1,
+    };
+  }
+  // Scan from the top
+  for (let y = 0; y <= maxY; y++) {
+    let hasFoundValue = false;
+    // from left to right
+    for (let x = 0; x < dimX; x++) {
+      hasFoundValue = !isEmpty(x, y);
+      if (hasFoundValue) {
+        minX = x;
+        minY = y;
+        break;
+      }
+    }
+    if (hasFoundValue) {
+      break;
+    }
+  }
+  // When only 1 row remains, we already found the bounds.
+  if (minY !== maxY) {
+    let hasFoundValue = false;
+    // Scan from the right
+    for (let x = dimX - 1; x > maxX; x--) {
+      // maxY is already covered
+      for (let y = minY; y < maxY; y++) {
+        hasFoundValue = !isEmpty(x, y);
+        if (hasFoundValue) {
+          maxX = x;
+          break;
+        }
+      }
+      if (hasFoundValue) {
+        break;
+      }
+    }
+    // Scan from the left
+    for (let x = 0; x < minX; x++) {
+      let hasFoundValue = false;
+      // minY is already covered
+      for (let y = minY + 1; y <= maxY; y++) {
+        hasFoundValue = !isEmpty(x, y);
+        if (hasFoundValue) {
+          minX = x;
+          break;
+        }
+      }
+      if (hasFoundValue) {
+        break;
+      }
+    }
+  }
+  return {
+    emptyTopRows: minY,
+    emptyLeftColumns: minX,
+    emptyBottomRows: dimY - 1 - maxY,
+    emptyRightColumns: dimX - 1 - maxX,
+  };
 }

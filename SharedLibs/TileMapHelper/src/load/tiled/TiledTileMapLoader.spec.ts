@@ -1,6 +1,7 @@
 import {
   EditableTileMap,
   EditableTileMapLayer,
+  TileDefinition,
 } from "../../model/TileMapModel";
 import { TiledTileMap } from "./TiledFormat";
 import { TiledTileMapLoader } from "./TiledTileMapLoader";
@@ -56,7 +57,7 @@ describe("TiledTileMapLoader", function () {
       width: 4,
     };
 
-    const tileMap: EditableTileMap = TiledTileMapLoader.load(tiledMap, null);
+    const tileMap = TiledTileMapLoader.load(tiledMap, null) as EditableTileMap;
 
     it("can load map dimensions", function () {
       expect(tileMap.getDimensionX()).to.be(4);
@@ -380,7 +381,7 @@ describe("TiledTileMapLoader", function () {
       width: 4,
     };
 
-    const tileMap: EditableTileMap = TiledTileMapLoader.load(tiledMap, null);
+    const tileMap = TiledTileMapLoader.load(tiledMap, null) as EditableTileMap;
 
     it("can load map dimensions", function () {
       expect(tileMap.getDimensionX()).to.be(4);
@@ -392,7 +393,7 @@ describe("TiledTileMapLoader", function () {
     });
 
     it("can load a tile set with a rectangle collision mask", function () {
-      const tileDefinition = tileMap.getTileDefinition(0);
+      const tileDefinition = tileMap.getTileDefinition(0) as TileDefinition;
       expect(tileDefinition).to.be.ok();
       expect(tileDefinition.hasTaggedHitBox("obstacle")).to.be(true);
       expect(tileDefinition.hasTaggedHitBox("lava")).to.be(false);
@@ -407,7 +408,7 @@ describe("TiledTileMapLoader", function () {
     });
 
     it("can load a tile set with an empty collision mask", function () {
-      const tileDefinition = tileMap.getTileDefinition(1);
+      const tileDefinition = tileMap.getTileDefinition(1) as TileDefinition;;
       expect(tileDefinition).to.be.ok();
       expect(tileDefinition.hasTaggedHitBox("obstacle")).to.be(false);
       expect(tileDefinition.hasTaggedHitBox("lava")).to.be(false);
@@ -415,7 +416,7 @@ describe("TiledTileMapLoader", function () {
 
     it("can load a tile set with a polygon collision mask", function () {
       {
-        const tileDefinition = tileMap.getTileDefinition(2);
+        const tileDefinition = tileMap.getTileDefinition(2) as TileDefinition;;
         expect(tileDefinition).to.be.ok();
         expect(tileDefinition.hasTaggedHitBox("obstacle")).to.be(true);
         expect(tileDefinition.hasTaggedHitBox("lava")).to.be(false);
@@ -430,7 +431,7 @@ describe("TiledTileMapLoader", function () {
     });
 
     it("can load a tile set with a 2 polygons collision mask", function () {
-      const tileDefinition = tileMap.getTileDefinition(3);
+      const tileDefinition = tileMap.getTileDefinition(3) as TileDefinition;;
       expect(tileDefinition).to.be.ok();
       expect(tileDefinition.hasTaggedHitBox("obstacle")).to.be(true);
       expect(tileDefinition.hasTaggedHitBox("lava")).to.be(false);
@@ -449,7 +450,7 @@ describe("TiledTileMapLoader", function () {
     });
 
     it("can load a tile set with several collision mask filter tags", function () {
-      const tileDefinition = tileMap.getTileDefinition(4);
+      const tileDefinition = tileMap.getTileDefinition(4) as TileDefinition;;
       expect(tileDefinition).to.be.ok();
       expect(tileDefinition.hasTaggedHitBox("obstacle")).to.be(true);
       expect(tileDefinition.hasTaggedHitBox("lava")).to.be(true);
@@ -470,7 +471,7 @@ describe("TiledTileMapLoader", function () {
     });
 
     it("can load a tile set with only the other filter tag", function () {
-      const tileDefinition = tileMap.getTileDefinition(5);
+      const tileDefinition = tileMap.getTileDefinition(5) as TileDefinition;;
       expect(tileDefinition).to.be.ok();
       expect(tileDefinition.hasTaggedHitBox("obstacle")).to.be(false);
       expect(tileDefinition.hasTaggedHitBox("lava")).to.be(true);
@@ -622,7 +623,7 @@ describe("TiledTileMapLoader", function () {
       width: 4,
     };
 
-    const tileMap: EditableTileMap = TiledTileMapLoader.load(tiledMap, null);
+    const tileMap = TiledTileMapLoader.load(tiledMap, null) as EditableTileMap;
 
     it("can load flipped tiles", function () {
       const layers = new Array(...tileMap.getLayers());
@@ -766,7 +767,7 @@ describe("TiledTileMapLoader", function () {
       width: 1,
     };
 
-    const tileMap: EditableTileMap = TiledTileMapLoader.load(tiledMap, null);
+    const tileMap = TiledTileMapLoader.load(tiledMap, null) as EditableTileMap;
 
     it("anchors the shapes at the bottom-left of the cell", function () {
       const hitBoxes = tileMap.getTileDefinition(0)!.getHitBoxes("")!;
