@@ -119,6 +119,93 @@ namespace gdjs {
     setPickedTilesFlippedVertically(flipVertically: boolean): void {
       this.arePickedTilesFlippedVertically = flipVertically;
     }
+
+    expandTileMapToCamera(): FloatPoint {
+      if (!this.object) {
+        return [0, 0];
+      }
+      const tileMap = this.object.getTileMap();
+      if (!tileMap) {
+        return [0, 0];
+      }
+      const game = this.inGameEditor.getRuntimeGame();
+
+      const zoomFactor = this.inGameEditor.getZoomFactor();
+      const cameraTilesRadius =
+        Math.floor(
+          Math.max(
+            game.getGameResolutionWidth() /
+              Math.max(8, tileMap.getTileHeight() * zoomFactor),
+            game.getGameResolutionHeight() /
+              Math.max(8, tileMap.getTileWidth() * zoomFactor)
+          )
+        ) /
+          2 +
+        1;
+      const cameraCenter = this.inGameEditor.getCameraCenterFor2D();
+
+      const tileOffsetX =
+        (cameraCenter ? cameraCenter[0] - this.object.getX() : 0) /
+        tileMap.getTileWidth();
+      const tileOffsetY =
+        (cameraCenter ? cameraCenter[1] - this.object.getY() : 0) /
+        tileMap.getTileHeight();
+
+      const tileMinX = Math.floor(tileOffsetX - cameraTilesRadius);
+      const tileMinY = Math.floor(tileOffsetY - cameraTilesRadius);
+      const tileMaxX = Math.ceil(tileOffsetX + cameraTilesRadius);
+      const tileMaxY = Math.ceil(tileOffsetY + cameraTilesRadius);
+
+      const columnsToUnshift = Math.abs(Math.min(tileMinX, 0));
+      const rowsToUnshift = Math.abs(Math.min(tileMinY, 0));
+      const columnsToAppend = Math.max(0, tileMaxX - tileMap.getDimensionX());
+      const rowsToAppend = Math.max(0, tileMaxY - tileMap.getDimensionY());
+
+      tileMap.increaseDimensions(
+        columnsToAppend,
+        columnsToUnshift,
+        rowsToAppend,
+        rowsToUnshift
+      );
+      this.object.setX(
+        this.object.getX() - columnsToUnshift * tileMap.getTileWidth()
+      );
+      this.object.setY(
+        this.object.getY() - rowsToUnshift * tileMap.getTileHeight()
+      );
+
+      console.log(
+        columnsToUnshift,
+        rowsToUnshift,
+        columnsToAppend,
+        rowsToAppend
+      );
+      return [columnsToUnshift, rowsToUnshift];
+    }
+
+    trimTileMap(): FloatPoint {
+      if (!this.object) {
+        return [0, 0];
+      }
+      const tileMap = this.object.getTileMap();
+      if (!tileMap) {
+        return [0, 0];
+      }
+      const result = tileMap.trimEmptyColumnsAndRowToFitLayer(0);
+      console.log("trimTileMap", result);
+      if (!result) {
+        return [0, 0];
+      }
+      const shiftedColumns = result.shiftedColumns;
+      const shiftedRows = result.shiftedRows;
+      this.object.setX(
+        this.object.getX() + shiftedColumns * tileMap.getTileWidth()
+      );
+      this.object.setY(
+        this.object.getY() + shiftedRows * tileMap.getTileHeight()
+      );
+      return [-shiftedColumns, -shiftedRows];
+    }
   }
 
   /** @internal */
@@ -152,18 +239,28 @@ namespace gdjs {
         if (!cursor) {
           return;
         }
+
         const [cursorX, cursorY] = cursor;
-        const [cursorTileX, cursorTileY] =
+        let [cursorTileX, cursorTileY] =
           object.getGridCoordinatesFromSceneCoordinates(cursorX, cursorY);
 
         const hasCursorMoved =
           cursorTileX !== this.oldCursorTileX ||
           cursorTileY !== this.oldCursorTileY;
         const isLeftMouseButtonPressed = inputManager.isMouseButtonPressed(0);
+        const isLeftMouseButtonReleased = inputManager.isMouseButtonReleased(0);
 
         if (hasCursorMoved) {
           this.restoreTilesUnderCursor();
         }
+
+        {
+          const [tileOffsetX, tileOffsetY] =
+            this.tileMapEditor.expandTileMapToCamera();
+          cursorTileX += tileOffsetX;
+          cursorTileY += tileOffsetY;
+        }
+
         if (
           isLeftMouseButtonPressed &&
           (!this.wasLeftMouseButtonPressed || hasCursorMoved)
@@ -173,9 +270,17 @@ namespace gdjs {
           // Avoid to revert the changes when the cursor moves.
           this.saveTilesUnderCursor(cursorTileX, cursorTileY);
 
-          editor._sendSelectionUpdate({
-            hasSelectedObjectBeenModified: true,
-          });
+        }
+        if (isLeftMouseButtonReleased) {
+          const tileMap = object.getTileMap();
+          if (tileMap) {
+            const [tileOffsetX, tileOffsetY] = this.tileMapEditor.trimTileMap();
+            cursorTileX += tileOffsetX;
+            cursorTileY += tileOffsetY;
+            editor._sendSelectionUpdate({
+              hasSelectedObjectBeenModified: true,
+            });
+          }
         }
         if (hasCursorMoved) {
           this.saveTilesUnderCursor(cursorTileX, cursorTileY);
@@ -188,6 +293,7 @@ namespace gdjs {
 
       onStopBeingUsed() {
         this.restoreTilesUnderCursor();
+        this.tileMapEditor.trimTileMap();
       }
 
       /**

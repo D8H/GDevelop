@@ -4681,6 +4681,49 @@ namespace gdjs {
       this._getEditorCamera().restoreCameraState(editorCamera3D);
     }
 
+    getZoomFactor(): number {
+      const currentScene = this.getCurrentScene();
+      if (!currentScene) {
+        return 1;
+      }
+      const topVisibleLayer = this.getTopVisibleLayer();
+      if (!topVisibleLayer) {
+        return 1;
+      }
+      const game = this.getRuntimeGame();
+      let cameraCenter: FloatPoint | null = [
+        game.getGameResolutionWidth() / 2,
+        game.getGameResolutionHeight() / 2,
+      ];
+      cameraCenter = this._getProjectedPoint(cameraCenter);
+      // Allow a stable grid divisions count when orbitting the camera in 3D.
+      const cameraZ = gdjs.scene3d.camera.getCameraZ(currentScene, '', 0);
+      const cameraDistance = cameraCenter
+        ? Math.hypot(
+            topVisibleLayer.getCameraX() - cameraCenter[0],
+            topVisibleLayer.getCameraY() - cameraCenter[1],
+            cameraZ
+          )
+        : Math.abs(cameraZ);
+      return Math.min(
+        Number.MAX_SAFE_INTEGER,
+        (0.5 * topVisibleLayer.getHeight()) /
+          (cameraDistance *
+            Math.tan(
+              0.5 * gdjs.toRad(topVisibleLayer.getCamera3DFieldOfView())
+            ))
+      );
+    }
+
+    getCameraCenterFor2D(): FloatPoint | null {
+      const game = this.getRuntimeGame();
+      let cameraCenter: FloatPoint | null = [
+        game.getGameResolutionWidth() / 2,
+        game.getGameResolutionHeight() / 2,
+      ];
+      return this._getProjectedPoint(cameraCenter);
+    }
+
     private _handleTransformControlsMode() {
       const inputManager = this._runtimeGame.getInputManager();
       if (
@@ -8401,33 +8444,13 @@ namespace gdjs {
       const editorGrid = this.editor.getEditorGrid();
       editorGrid.setNormal('Z');
       const game = this.editor.getRuntimeGame();
-      let cameraCenter: FloatPoint | null = [
-        game.getGameResolutionWidth() / 2,
-        game.getGameResolutionHeight() / 2,
-      ];
-      cameraCenter = this.editor._getProjectedPoint(cameraCenter);
+      const cameraCenter = this.editor.getCameraCenterFor2D();
       if (cameraCenter) {
         editorGrid.setPosition(cameraCenter[0], cameraCenter[1], 0);
       }
       editorGrid.setTreeScene(threeScene);
       editorGrid.setVisible(true);
-      // Allow a stable grid divisions count when orbitting the camera in 3D.
-      const cameraZ = gdjs.scene3d.camera.getCameraZ(currentScene, '', 0);
-      const cameraDistance = cameraCenter
-        ? Math.hypot(
-            topVisibleLayer.getCameraX() - cameraCenter[0],
-            topVisibleLayer.getCameraY() - cameraCenter[1],
-            cameraZ
-          )
-        : Math.abs(cameraZ);
-      const zoomFactor = Math.min(
-        Number.MAX_SAFE_INTEGER,
-        (0.5 * topVisibleLayer.getHeight()) /
-          (cameraDistance *
-            Math.tan(
-              0.5 * gdjs.toRad(topVisibleLayer.getCamera3DFieldOfView())
-            ))
-      );
+      const zoomFactor = this.editor.getZoomFactor();
       editorGrid.setDivisionsCount(
         Math.floor(
           Math.max(
