@@ -7453,16 +7453,17 @@ namespace gdjs {
   class ObjectSelectionBoxHelper2D implements ObjectSelectionBoxHelper {
     editor: gdjs.InGameEditor;
     object: gdjs.RuntimeObject;
-    area: ThreeSquare;
+    area: gdjs.InGameEditor.ThreeSquare;
     isVisible: boolean = false;
 
     constructor(editor: gdjs.InGameEditor, object: gdjs.RuntimeObject) {
       this.editor = editor;
       this.object = object;
-      this.area = new ThreeSquare(0x6868e8, 0.3, 0x6868e8, 0.8);
+      this.area = new gdjs.InGameEditor.ThreeSquare(0x6868e8, 0.3, 0x6868e8, 0.8);
     }
 
     update(): void {
+      // Is it usefull?
       const worldScale = this.object
         .getRuntimeScene()
         .getRenderer3DWorldScale();
@@ -8536,17 +8537,6 @@ namespace gdjs {
     ButtonLocation.BottomLeft,
   ];
 
-  // class SelectionHandleButton2D {
-  //   buttonLocation: ButtonLocation;
-  //   threeObject: ThreeSquare;
-
-  //   constructor (buttonLocation: ButtonLocation,
-  //   threeObject: ThreeSquare) {
-  //     this.buttonLocation = buttonLocation;
-  //     this.threeObject = threeObject;
-  //   }
-  // }
-
   const areAnyInstancesNotStraight = (objects: gdjs.RuntimeObject[]) => {
     for (const object of objects) {
       if (object.getAngle() % 90 !== 0) {
@@ -8557,7 +8547,7 @@ namespace gdjs {
   };
 
   class SelectionHandle2D extends THREE.Object3D {
-    buttons: Array<ThreeSquare> = [];
+    buttons: Array<gdjs.InGameEditor.ThreeSquare> = [];
     rotationButton: ThreeCircle;
 
     state: 'idle' | 'resizing' | 'panning' | 'rotating' = 'idle';
@@ -8575,7 +8565,7 @@ namespace gdjs {
       this._objectMover = objectMover;
 
       for (const buttonLocation of buttonLocations) {
-        const button = new ThreeSquare(0xffffff, 1, 0x6868e8, 1);
+        const button = new gdjs.InGameEditor.ThreeSquare(0xffffff, 1, 0x6868e8, 1);
         this.buttons[buttonLocation] = button;
         this.add(button);
       }
@@ -9147,7 +9137,8 @@ namespace gdjs {
     }
   }
 
-  class ThreeSquare extends THREE.Object3D {
+  export namespace InGameEditor {
+  export class ThreeSquare extends THREE.Object3D {
     private contourLine: THREE.LineSegments<
       THREE.BufferGeometry,
       THREE.LineBasicMaterial
@@ -9292,6 +9283,7 @@ namespace gdjs {
       fillMesh.material.needsUpdate = true;
     }
   }
+}
 
   class ThreeCircle extends THREE.Object3D {
     constructor(

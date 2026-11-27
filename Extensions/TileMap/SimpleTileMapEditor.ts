@@ -17,12 +17,23 @@ namespace gdjs {
     arePickedTilesFlippedHorizontally = false;
     arePickedTilesFlippedVertically = false;
 
+    cursor: gdjs.InGameEditor.ThreeSquare;
+    isCursorVisible: boolean = false;
+
     constructor(inGameEditor: gdjs.InGameEditor) {
       this.inGameEditor = inGameEditor;
       this.tilesRestorer = new gdjs.SimpleTileMapEditor.TilesRestorer(this);
       this.freeHandTool = new gdjs.SimpleTileMapEditor.FreeHandTool(this);
       this.rectangleTool = new gdjs.SimpleTileMapEditor.RectangleTool(this);
       this.floodFillTool = new gdjs.SimpleTileMapEditor.FloodFillTool(this);
+
+      this.cursor = new gdjs.InGameEditor.ThreeSquare(
+        0xffd200,
+        0.5,
+        0xffd200,
+        1
+      );
+      this.cursor.setStrokeColor
 
       if (gdjs.registerInGameEditorPostStepCallback) {
         gdjs.registerInGameEditorPostStepCallback((editor) =>
@@ -90,9 +101,11 @@ namespace gdjs {
     ) {
       if (this.currentTool) {
         this.currentTool.onStopBeingUsed();
+        this.setCursorVisible(false);
       }
       this.currentTool = tool;
       if (this.currentTool) {
+        this.setCursorVisible(true);
         this.currentTool.onStartBeingUsed();
       }
     }
@@ -211,6 +224,57 @@ namespace gdjs {
       );
       return [-shiftedColumns, -shiftedRows];
     }
+
+    setCursorPosition(
+      tileMinX: integer,
+      tileMinY: integer,
+      tileDimX: integer,
+      tileDimY: integer
+    ): void {
+      if (!this.object) {
+        return;
+      }
+      let minX = this.object.getSceneXCoordinateOfTileCenter(
+        tileMinX - 0.5,
+        tileMinY - 0.5
+      );
+      let minY = this.object.getSceneYCoordinateOfTileCenter(
+        tileMinX - 0.5,
+        tileMinY - 0.5
+      );
+      let maxX = this.object.getSceneXCoordinateOfTileCenter(
+        tileMinX + tileDimX - 0.5,
+        tileMinY + tileDimY - 0.5
+      );
+      let maxY = this.object.getSceneYCoordinateOfTileCenter(
+        tileMinX + tileDimX - 0.5,
+        tileMinY + tileDimY - 0.5
+      );
+      this.cursor.position.x = (minX + maxX) / 2;
+      this.cursor.position.y = (minY + maxY) / 2;
+      this.cursor.scale.x = maxX - minX;
+      this.cursor.scale.y = maxY - minY;
+    }
+
+    setCursorVisible(visible: boolean): void {
+      if (visible === this.isCursorVisible) {
+        return;
+      }
+      this.isCursorVisible = visible;
+      if (visible) {
+        const currentScene = this.inGameEditor.getCurrentScene();
+        if (!currentScene) return;
+
+        const topVisibleLayer = this.inGameEditor.getTopVisibleLayer();
+        if (!topVisibleLayer) return;
+
+        const threeGroup = topVisibleLayer.getRenderer().getThreeGroup();
+        if (!threeGroup) return;
+        threeGroup.add(this.cursor);
+      } else {
+        this.cursor.removeFromParent();
+      }
+    }
   }
 
   /** @internal */
@@ -320,6 +384,13 @@ namespace gdjs {
         this.oldCursorTileX = cursorTileX;
         this.oldCursorTileY = cursorTileY;
         this.wasLeftMouseButtonPressed = isLeftMouseButtonPressed;
+
+        this.tileMapEditor.setCursorPosition(
+          cursorTileX,
+          cursorTileY,
+          this.tileMapEditor.getPickedTilesDimX(),
+          this.tileMapEditor.getPickedTilesDimY()
+        );
       }
 
       /**
@@ -470,6 +541,28 @@ namespace gdjs {
         this.oldCursorTileX = cursorTileX;
         this.oldCursorTileY = cursorTileY;
         this.wasLeftMouseButtonPressed = isLeftMouseButtonPressed;
+
+        let rectangleMinX: integer;
+        let rectangleMinY: integer;
+        let rectangleDimX: integer;
+        let rectangleDimY: integer;
+        if (this.isDrawing) {
+          rectangleMinX = Math.min(cursorTileX, this.startTileX);
+          rectangleMinY = Math.min(cursorTileY, this.startTileY);
+          rectangleDimX = Math.abs(cursorTileX - this.startTileX) + 1;
+          rectangleDimY = Math.abs(cursorTileY - this.startTileY) + 1;
+        } else {
+          rectangleMinX = cursorTileX;
+          rectangleMinY = cursorTileY;
+          rectangleDimX = this.tileMapEditor.getPickedTilesDimX();
+          rectangleDimY = this.tileMapEditor.getPickedTilesDimY();
+        }
+        this.tileMapEditor.setCursorPosition(
+          rectangleMinX,
+          rectangleMinY,
+          rectangleDimX,
+          rectangleDimY
+        );
       }
 
       /**
@@ -637,6 +730,13 @@ namespace gdjs {
         }
         this.oldCursorTileX = cursorTileX;
         this.oldCursorTileY = cursorTileY;
+
+        this.tileMapEditor.setCursorPosition(
+          cursorTileX,
+          cursorTileY,
+          this.tileMapEditor.getPickedTilesDimX(),
+          this.tileMapEditor.getPickedTilesDimY()
+        );
       }
 
       private floodFillAt(cursorTileX: integer, cursorTileY: integer): void {
