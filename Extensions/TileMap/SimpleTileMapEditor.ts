@@ -640,15 +640,15 @@ namespace gdjs {
 
             // Tiling
             let pickedTileX =
-              offsetX === 0
+              offsetX === 0 || pickedTilesDimX < 2
                 ? 0
-                : offsetX === rectangleDimX - 1
+                : offsetX === rectangleDimX - 1 || pickedTilesDimX < 3
                   ? pickedTilesDimX - 1
                   : 1 + ((offsetX - 1) % (pickedTilesDimX - 2));
             let pickedTileY =
-              offsetY === 0
+              offsetY === 0 || pickedTilesDimY < 2
                 ? 0
-                : offsetY === rectangleDimY - 1
+                : offsetY === rectangleDimY - 1 || pickedTilesDimY < 3
                   ? pickedTilesDimY - 1
                   : 1 + ((offsetY - 1) % (pickedTilesDimY - 2));
 
