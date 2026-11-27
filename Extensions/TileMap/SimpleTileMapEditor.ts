@@ -3,8 +3,11 @@ namespace gdjs {
   export class SimpleTileMapEditor {
     inGameEditor: gdjs.InGameEditor;
     object: gdjs.SimpleTileMapRuntimeObject | null = null;
-    currentTool: gdjs.SimpleTileMapEditor.SimpleTileMapEditorTool | null = null;
-    freeHandTool: gdjs.SimpleTileMapEditor.FreeHandTool;
+    tilesRestorer: gdjs.SimpleTileMapEditor.TilesRestorer;
+    private currentTool: gdjs.SimpleTileMapEditor.SimpleTileMapEditorTool | null =
+      null;
+    private freeHandTool: gdjs.SimpleTileMapEditor.FreeHandTool;
+    private rectangleTool: gdjs.SimpleTileMapEditor.RectangleTool;
 
     pickedTilesMinX: integer = 0;
     pickedTilesMinY: integer = 0;
@@ -15,7 +18,9 @@ namespace gdjs {
 
     constructor(inGameEditor: gdjs.InGameEditor) {
       this.inGameEditor = inGameEditor;
+      this.tilesRestorer = new gdjs.SimpleTileMapEditor.TilesRestorer(this);
       this.freeHandTool = new gdjs.SimpleTileMapEditor.FreeHandTool(this);
+      this.rectangleTool = new gdjs.SimpleTileMapEditor.RectangleTool(this);
 
       if (gdjs.registerInGameEditorPostStepCallback) {
         gdjs.registerInGameEditorPostStepCallback((editor) =>
@@ -73,6 +78,8 @@ namespace gdjs {
       if (this.currentTool) {
         this.currentTool.onStopBeingUsed();
       }
+      this.currentTool = this.rectangleTool;
+      this.currentTool.onStartBeingUsed();
     }
 
     switchToFloodFill(): void {
@@ -271,6 +278,8 @@ namespace gdjs {
             this.tileMapEditor.expandTileMapToCamera();
           cursorTileX += tileOffsetX;
           cursorTileY += tileOffsetY;
+          this.oldCursorTileX += tileOffsetX;
+          this.oldCursorTileY += tileOffsetY;
         }
 
         if (
@@ -278,7 +287,23 @@ namespace gdjs {
           (!this.wasLeftMouseButtonPressed || hasCursorMoved)
         ) {
           // Paint tiles
-          this.displayCursorTiles(cursorTileX, cursorTileY);
+          if (this.oldCursorTileY === cursorTileY) {
+            const minX = Math.min(this.oldCursorTileX, cursorTileX);
+            const maxX = Math.max(this.oldCursorTileX, cursorTileX);
+            for (let x = minX; x <= maxX; x++) {
+              this.displayCursorTiles(x, cursorTileY);
+            }
+          } else if (this.oldCursorTileX === cursorTileX) {
+            const minY = Math.min(this.oldCursorTileY, cursorTileY);
+            const maxY = Math.max(this.oldCursorTileY, cursorTileY);
+            for (let y = minY; y <= maxY; y++) {
+              // Paint tiles
+              this.displayCursorTiles(cursorTileX, y);
+            }
+          } else {
+            // TODO Handle oblique lines.
+            this.displayCursorTiles(cursorTileX, cursorTileY);
+          }
           // Avoid to revert the changes when the cursor moves.
           this.saveTilesUnderCursor(cursorTileX, cursorTileY);
         }
@@ -307,40 +332,19 @@ namespace gdjs {
        * cursor moves.
        */
       private saveTilesUnderCursor(cursorTileX: integer, cursorTileY: integer) {
-        const object = this.tileMapEditor.object;
-        if (!object) {
-          return;
-        }
-        const pickedTilesDimX = this.tileMapEditor.getPickedTilesDimX();
-        const pickedTilesDimY = this.tileMapEditor.getPickedTilesDimY();
+        this.tileMapEditor.tilesRestorer.saveTilesUnderCursor(
+          cursorTileX,
+          cursorTileY,
+          this.tileMapEditor.getPickedTilesDimX(),
+          this.tileMapEditor.getPickedTilesDimY()
+        );
+      }
 
-        for (let offsetY = 0; offsetY < pickedTilesDimY; offsetY++) {
-          for (let offsetX = 0; offsetX < pickedTilesDimX; offsetX++) {
-            const tileX = cursorTileX + offsetX;
-            const tileY = cursorTileY + offsetY;
-            const tileId = object.getTileAtGridCoordinates(tileX, tileY);
-            const isFlippedOnX = object.isTileFlippedOnXAtGridCoordinates(
-              tileX,
-              tileY
-            );
-            const isFlippedOnY = object.isTileFlippedOnYAtGridCoordinates(
-              tileX,
-              tileY
-            );
-            const flippedTileId =
-              tileId === -1
-                ? -1
-                : TileMapHelper.FlippingHelper.setFlippedHorizontally(
-                    TileMapHelper.FlippingHelper.setFlippedVertically(
-                      tileId,
-                      isFlippedOnY
-                    ),
-                    isFlippedOnX
-                  );
-            this.underCursorTiles[offsetY * pickedTilesDimX + offsetX] =
-              flippedTileId;
-          }
-        }
+      /**
+       * Revert displaying picked tiles at the cursor
+       */
+      private restoreTilesUnderCursor() {
+        this.tileMapEditor.tilesRestorer.restoreTilesUnderCursor();
       }
 
       /**
@@ -377,24 +381,281 @@ namespace gdjs {
           }
         }
       }
+    }
+
+    /** @internal */
+    export class RectangleTool implements SimpleTileMapEditorTool {
+      tileMapEditor: SimpleTileMapEditor;
+      oldCursorTileX: integer = Number.NaN;
+      oldCursorTileY: integer = Number.NaN;
+      wasLeftMouseButtonPressed = false;
+
+      isDrawing = false;
+      startTileX: integer = 0;
+      startTileY: integer = 0;
+
+      constructor(tileMapEditor: SimpleTileMapEditor) {
+        this.tileMapEditor = tileMapEditor;
+      }
+
+      onStartBeingUsed(): void {
+        this.tileMapEditor.inGameEditor.setSelectionVisible(false);
+      }
+
+      onStopBeingUsed() {
+        this.restoreTilesUnderCursor();
+        this.tileMapEditor.trimTileMap();
+        this.tileMapEditor.inGameEditor.setSelectionVisible(true);
+      }
+
+      update(): void {
+        const object = this.tileMapEditor.object;
+        const editor = this.tileMapEditor.inGameEditor;
+        if (!object) {
+          return;
+        }
+        const inputManager = editor.getRuntimeGame().getInputManager();
+
+        const cursor = editor._getProjectedCursor();
+        if (!cursor) {
+          return;
+        }
+
+        const [cursorX, cursorY] = cursor;
+        let [cursorTileX, cursorTileY] =
+          object.getGridCoordinatesFromSceneCoordinates(cursorX, cursorY);
+
+        const hasCursorMoved =
+          cursorTileX !== this.oldCursorTileX ||
+          cursorTileY !== this.oldCursorTileY;
+        const isLeftMouseButtonPressed = inputManager.isMouseButtonPressed(0);
+        const isLeftMouseButtonReleased = inputManager.isMouseButtonReleased(0);
+
+        if (hasCursorMoved) {
+          this.restoreTilesUnderCursor();
+        }
+
+        {
+          const [tileOffsetX, tileOffsetY] =
+            this.tileMapEditor.expandTileMapToCamera();
+          cursorTileX += tileOffsetX;
+          cursorTileY += tileOffsetY;
+          this.oldCursorTileX += tileOffsetX;
+          this.oldCursorTileY += tileOffsetY;
+        }
+
+        if (isLeftMouseButtonPressed && !this.wasLeftMouseButtonPressed) {
+          this.isDrawing = true;
+          this.startTileX = cursorTileX;
+          this.startTileY = cursorTileY;
+        }
+        if (
+          isLeftMouseButtonPressed &&
+          (!this.wasLeftMouseButtonPressed || hasCursorMoved)
+        ) {
+          // Avoid to revert the changes when the cursor moves.
+          this.saveTilesUnderCursor(cursorTileX, cursorTileY);
+        }
+        if (isLeftMouseButtonReleased) {
+          this.isDrawing = false;
+          const tileMap = object.getTileMap();
+          if (tileMap) {
+            const [tileOffsetX, tileOffsetY] = this.tileMapEditor.trimTileMap();
+            cursorTileX += tileOffsetX;
+            cursorTileY += tileOffsetY;
+            editor._sendSelectionUpdate({
+              hasSelectedObjectBeenModified: true,
+            });
+          }
+        }
+        if (hasCursorMoved) {
+          this.saveTilesUnderCursor(cursorTileX, cursorTileY);
+          this.displayCursorTiles(cursorTileX, cursorTileY);
+        }
+        this.oldCursorTileX = cursorTileX;
+        this.oldCursorTileY = cursorTileY;
+        this.wasLeftMouseButtonPressed = isLeftMouseButtonPressed;
+      }
+
+      /**
+       * Save the tiles under the cursor to be able to restore them when the
+       * cursor moves.
+       */
+      private saveTilesUnderCursor(cursorTileX: integer, cursorTileY: integer) {
+        let rectangleMinX: integer;
+        let rectangleMinY: integer;
+        let rectangleDimX: integer;
+        let rectangleDimY: integer;
+        if (this.isDrawing) {
+          rectangleMinX = Math.min(cursorTileX, this.startTileX);
+          rectangleMinY = Math.min(cursorTileY, this.startTileY);
+          rectangleDimX = Math.abs(cursorTileX - this.startTileX) + 1;
+          rectangleDimY = Math.abs(cursorTileY - this.startTileY) + 1;
+        } else {
+          rectangleMinX = cursorTileX;
+          rectangleMinY = cursorTileY;
+          rectangleDimX = this.tileMapEditor.getPickedTilesDimX();
+          rectangleDimY = this.tileMapEditor.getPickedTilesDimY();
+        }
+        this.tileMapEditor.tilesRestorer.saveTilesUnderCursor(
+          rectangleMinX,
+          rectangleMinY,
+          rectangleDimX,
+          rectangleDimY
+        );
+      }
 
       /**
        * Revert displaying picked tiles at the cursor
        */
       private restoreTilesUnderCursor() {
+        this.tileMapEditor.tilesRestorer.restoreTilesUnderCursor();
+      }
+
+      /**
+       * Display picked tiles at the cursor
+       */
+      private displayCursorTiles(cursorTileX: integer, cursorTileY: integer) {
         const object = this.tileMapEditor.object;
         if (!object) {
           return;
         }
+        let rectangleMinX: integer;
+        let rectangleMinY: integer;
+        let rectangleDimX: integer;
+        let rectangleDimY: integer;
+        if (this.isDrawing) {
+          rectangleMinX = Math.min(cursorTileX, this.startTileX);
+          rectangleMinY = Math.min(cursorTileY, this.startTileY);
+          rectangleDimX = Math.abs(cursorTileX - this.startTileX) + 1;
+          rectangleDimY = Math.abs(cursorTileY - this.startTileY) + 1;
+        } else {
+          rectangleMinX = cursorTileX;
+          rectangleMinY = cursorTileY;
+          rectangleDimX = this.tileMapEditor.getPickedTilesDimX();
+          rectangleDimY = this.tileMapEditor.getPickedTilesDimY();
+        }
+        const pickedTilesMinX = this.tileMapEditor.pickedTilesMinX;
+        const pickedTilesMinY = this.tileMapEditor.pickedTilesMinY;
         const pickedTilesDimX = this.tileMapEditor.getPickedTilesDimX();
         const pickedTilesDimY = this.tileMapEditor.getPickedTilesDimY();
+        const isFlippedOnX =
+          this.tileMapEditor.arePickedTilesFlippedHorizontally;
+        const isFlippedOnY = this.tileMapEditor.arePickedTilesFlippedVertically;
 
-        for (let offsetY = 0; offsetY < pickedTilesDimY; offsetY++) {
-          for (let offsetX = 0; offsetX < pickedTilesDimX; offsetX++) {
-            const tileX = this.oldCursorTileX + offsetX;
-            const tileY = this.oldCursorTileY + offsetY;
+        for (let offsetY = 0; offsetY < rectangleDimY; offsetY++) {
+          for (let offsetX = 0; offsetX < rectangleDimX; offsetX++) {
+            const tileX = rectangleMinX + offsetX;
+            const tileY = rectangleMinY + offsetY;
+
+            // Tiling
+            let pickedTileX =
+              offsetX === 0
+                ? 0
+                : offsetX === rectangleDimX - 1
+                  ? pickedTilesDimX - 1
+                  : 1 + ((offsetX - 1) % (pickedTilesDimX - 2));
+            let pickedTileY =
+              offsetY === 0
+                ? 0
+                : offsetY === rectangleDimY - 1
+                  ? pickedTilesDimY - 1
+                  : 1 + ((offsetY - 1) % (pickedTilesDimY - 2));
+
+            // Flipping
+            pickedTileX =
+              pickedTilesMinX +
+              (isFlippedOnX ? pickedTilesDimX - 1 - pickedTileX : pickedTileX);
+            pickedTileY =
+              pickedTilesMinY +
+              (isFlippedOnY ? pickedTilesDimY - 1 - pickedTileY : pickedTileY);
+            const tileId =
+              object.getTileSetColumnCount() * pickedTileY + pickedTileX;
+
+            object.setTileAtGridCoordinates(tileId, tileX, tileY);
+            object.flipTileOnXAtGridCoordinates(tileX, tileY, isFlippedOnX);
+            object.flipTileOnYAtGridCoordinates(tileX, tileY, isFlippedOnY);
+          }
+          console.log('');
+        }
+      }
+    }
+
+    /** @internal */
+    export class TilesRestorer {
+      tileMapEditor: SimpleTileMapEditor;
+      underCursorTiles: Array<integer> = [];
+      dimX: integer = 0;
+      minX: integer = 0;
+      minY: integer = 0;
+
+      constructor(tileMapEditor: SimpleTileMapEditor) {
+        this.tileMapEditor = tileMapEditor;
+      }
+
+      /**
+       * Save the tiles under the cursor to be able to restore them when the
+       * cursor moves.
+       */
+      saveTilesUnderCursor(
+        minX: integer,
+        minY: integer,
+        dimX: integer,
+        dimY: integer
+      ) {
+        const object = this.tileMapEditor.object;
+        if (!object) {
+          return;
+        }
+        this.underCursorTiles.length = dimX * dimY;
+        this.dimX = dimX;
+        this.minX = minX;
+        this.minY = minY;
+        for (let offsetY = 0; offsetY < dimY; offsetY++) {
+          for (let offsetX = 0; offsetX < dimY; offsetX++) {
+            const tileX = minX + offsetX;
+            const tileY = minY + offsetY;
+            const tileId = object.getTileAtGridCoordinates(tileX, tileY);
+            const isFlippedOnX = object.isTileFlippedOnXAtGridCoordinates(
+              tileX,
+              tileY
+            );
+            const isFlippedOnY = object.isTileFlippedOnYAtGridCoordinates(
+              tileX,
+              tileY
+            );
             const flippedTileId =
-              this.underCursorTiles[offsetY * pickedTilesDimX + offsetX];
+              tileId === -1
+                ? -1
+                : TileMapHelper.FlippingHelper.setFlippedHorizontally(
+                    TileMapHelper.FlippingHelper.setFlippedVertically(
+                      tileId,
+                      isFlippedOnY
+                    ),
+                    isFlippedOnX
+                  );
+            this.underCursorTiles[offsetY * dimX + offsetX] = flippedTileId;
+          }
+        }
+      }
+
+      /**
+       * Revert displaying picked tiles at the cursor
+       */
+      restoreTilesUnderCursor() {
+        const object = this.tileMapEditor.object;
+        if (!object) {
+          return;
+        }
+        const dimX = this.dimX;
+        const dimY = Math.round(this.underCursorTiles.length / dimX);
+
+        for (let offsetY = 0; offsetY < dimY; offsetY++) {
+          for (let offsetX = 0; offsetX < dimX; offsetX++) {
+            const tileX = this.minX + offsetX;
+            const tileY = this.minY + offsetY;
+            const flippedTileId =
+              this.underCursorTiles[offsetY * dimX + offsetX];
             if (flippedTileId === -1) {
               object.removeTileAtGridCoordinates(tileX, tileY);
             } else {
