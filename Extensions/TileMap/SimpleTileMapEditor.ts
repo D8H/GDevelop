@@ -200,6 +200,7 @@ namespace gdjs {
         columnsToAppend,
         rowsToAppend
       );
+      this.tilesRestorer.handleTileOffset(columnsToUnshift, rowsToUnshift);
       return [columnsToUnshift, rowsToUnshift];
     }
 
@@ -224,6 +225,7 @@ namespace gdjs {
       this.object.setY(
         this.object.getY() + shiftedRows * tileMap.getTileHeight()
       );
+      this.tilesRestorer.handleTileOffset(-shiftedColumns, -shiftedRows);
       return [-shiftedColumns, -shiftedRows];
     }
 
@@ -521,10 +523,10 @@ namespace gdjs {
           isLeftMouseButtonPressed &&
           (!this.wasLeftMouseButtonPressed || hasCursorMoved)
         ) {
-          // Avoid to revert the changes when the cursor moves.
-          this.saveTilesUnderCursor(cursorTileX, cursorTileY);
         }
         if (isLeftMouseButtonReleased) {
+          // Avoid to revert the changes when the cursor moves.
+          this.saveTilesUnderCursor(cursorTileX, cursorTileY);
           this.isDrawing = false;
           const tileMap = object.getTileMap();
           if (tileMap) {
@@ -987,6 +989,11 @@ namespace gdjs {
         this.tileMapEditor = tileMapEditor;
       }
 
+      handleTileOffset(tileOffsetX: number, tileOffsetY: number) {
+        this.minX += tileOffsetX;
+        this.minY += tileOffsetY;
+      }
+
       /**
        * Save the tiles under the cursor to be able to restore them when the
        * cursor moves.
@@ -1006,7 +1013,7 @@ namespace gdjs {
         this.minX = minX;
         this.minY = minY;
         for (let offsetY = 0; offsetY < dimY; offsetY++) {
-          for (let offsetX = 0; offsetX < dimY; offsetX++) {
+          for (let offsetX = 0; offsetX < dimX; offsetX++) {
             const tileX = minX + offsetX;
             const tileY = minY + offsetY;
             const tileId = object.getTileAtGridCoordinates(tileX, tileY);
