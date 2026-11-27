@@ -8,6 +8,7 @@ namespace gdjs {
       null;
     private freeHandTool: gdjs.SimpleTileMapEditor.FreeHandTool;
     private rectangleTool: gdjs.SimpleTileMapEditor.RectangleTool;
+    private floodFillTool: gdjs.SimpleTileMapEditor.FloodFillTool;
 
     pickedTilesMinX: integer = 0;
     pickedTilesMinY: integer = 0;
@@ -21,6 +22,7 @@ namespace gdjs {
       this.tilesRestorer = new gdjs.SimpleTileMapEditor.TilesRestorer(this);
       this.freeHandTool = new gdjs.SimpleTileMapEditor.FreeHandTool(this);
       this.rectangleTool = new gdjs.SimpleTileMapEditor.RectangleTool(this);
+      this.floodFillTool = new gdjs.SimpleTileMapEditor.FloodFillTool(this);
 
       if (gdjs.registerInGameEditorPostStepCallback) {
         gdjs.registerInGameEditorPostStepCallback((editor) =>
@@ -60,43 +62,38 @@ namespace gdjs {
     }
 
     switchToNoTool(): void {
-      if (this.currentTool) {
-        this.currentTool.onStopBeingUsed();
-      }
-      this.currentTool = null;
+      this.switchTool(null);
     }
 
     switchToFreeHand(): void {
-      if (this.currentTool) {
-        this.currentTool.onStopBeingUsed();
-      }
-      this.currentTool = this.freeHandTool;
-      this.currentTool.onStartBeingUsed();
+      this.switchTool(this.freeHandTool);
     }
 
     switchToRectangle(): void {
-      if (this.currentTool) {
-        this.currentTool.onStopBeingUsed();
-      }
-      this.currentTool = this.rectangleTool;
-      this.currentTool.onStartBeingUsed();
+      this.switchTool(this.rectangleTool);
     }
 
     switchToFloodFill(): void {
-      if (this.currentTool) {
-        this.currentTool.onStopBeingUsed();
-      }
+      this.switchTool(this.floodFillTool);
     }
 
     switchToPicker(): void {
-      if (this.currentTool) {
-        this.currentTool.onStopBeingUsed();
-      }
+      this.switchTool(null);
     }
 
     switchToEraser(): void {
+      this.switchTool(null);
+    }
+
+    private switchTool(
+      tool: gdjs.SimpleTileMapEditor.SimpleTileMapEditorTool | null
+    ) {
       if (this.currentTool) {
         this.currentTool.onStopBeingUsed();
+      }
+      this.currentTool = tool;
+      if (this.currentTool) {
+        this.currentTool.onStartBeingUsed();
       }
     }
 
@@ -226,11 +223,9 @@ namespace gdjs {
 
     export class FreeHandTool implements SimpleTileMapEditorTool {
       tileMapEditor: SimpleTileMapEditor;
-      oldCursorTileX: integer = Number.NaN;
-      oldCursorTileY: integer = Number.NaN;
-      wasLeftMouseButtonPressed = false;
-
-      underCursorTiles: Array<integer> = [];
+      private oldCursorTileX: integer = Number.NaN;
+      private oldCursorTileY: integer = Number.NaN;
+      private wasLeftMouseButtonPressed = false;
 
       constructor(tileMapEditor: SimpleTileMapEditor) {
         this.tileMapEditor = tileMapEditor;
@@ -386,13 +381,13 @@ namespace gdjs {
     /** @internal */
     export class RectangleTool implements SimpleTileMapEditorTool {
       tileMapEditor: SimpleTileMapEditor;
-      oldCursorTileX: integer = Number.NaN;
-      oldCursorTileY: integer = Number.NaN;
-      wasLeftMouseButtonPressed = false;
+      private oldCursorTileX: integer = Number.NaN;
+      private oldCursorTileY: integer = Number.NaN;
+      private wasLeftMouseButtonPressed = false;
 
-      isDrawing = false;
-      startTileX: integer = 0;
-      startTileY: integer = 0;
+      private isDrawing = false;
+      private startTileX: integer = 0;
+      private startTileY: integer = 0;
 
       constructor(tileMapEditor: SimpleTileMapEditor) {
         this.tileMapEditor = tileMapEditor;
@@ -576,7 +571,193 @@ namespace gdjs {
             object.flipTileOnXAtGridCoordinates(tileX, tileY, isFlippedOnX);
             object.flipTileOnYAtGridCoordinates(tileX, tileY, isFlippedOnY);
           }
-          console.log('');
+        }
+      }
+    }
+
+    /** @internal */
+    export class FloodFillTool implements SimpleTileMapEditorTool {
+      tileMapEditor: SimpleTileMapEditor;
+      private oldCursorTileX: integer = Number.NaN;
+      private oldCursorTileY: integer = Number.NaN;
+      private queue: Array<integer> = [];
+
+      constructor(tileMapEditor: SimpleTileMapEditor) {
+        this.tileMapEditor = tileMapEditor;
+      }
+
+      onStartBeingUsed(): void {
+        this.tileMapEditor.inGameEditor.setSelectionVisible(false);
+      }
+
+      onStopBeingUsed() {
+        this.restoreTilesUnderCursor();
+        this.tileMapEditor.inGameEditor.setSelectionVisible(true);
+      }
+
+      update(): void {
+        const editor = this.tileMapEditor.inGameEditor;
+        const object = this.tileMapEditor.object;
+        if (!object) {
+          return;
+        }
+        const inputManager = editor.getRuntimeGame().getInputManager();
+
+        const cursor = editor._getProjectedCursor();
+        if (!cursor) {
+          return;
+        }
+
+        const [cursorX, cursorY] = cursor;
+        let [cursorTileX, cursorTileY] =
+          object.getGridCoordinatesFromSceneCoordinates(cursorX, cursorY);
+
+        const hasCursorMoved =
+          cursorTileX !== this.oldCursorTileX ||
+          cursorTileY !== this.oldCursorTileY;
+        const isLeftMouseButtonReleased = inputManager.isMouseButtonReleased(0);
+
+        if (hasCursorMoved) {
+          this.restoreTilesUnderCursor();
+        }
+
+        if (isLeftMouseButtonReleased) {
+          this.restoreTilesUnderCursor();
+          this.floodFillAt(cursorTileX, cursorTileY);
+          const tileMap = object.getTileMap();
+          if (tileMap) {
+            editor._sendSelectionUpdate({
+              hasSelectedObjectBeenModified: true,
+            });
+          }
+        }
+        if (hasCursorMoved) {
+          this.saveTilesUnderCursor(cursorTileX, cursorTileY);
+          this.displayCursorTiles(cursorTileX, cursorTileY);
+        }
+        this.oldCursorTileX = cursorTileX;
+        this.oldCursorTileY = cursorTileY;
+      }
+
+      private floodFillAt(cursorTileX: integer, cursorTileY: integer): void {
+        const object = this.tileMapEditor.object;
+        if (!object) {
+          return;
+        }
+        const targetTileId = object.getTileAtGridCoordinates(
+          cursorTileX,
+          cursorTileY
+        );
+
+        const newTileId =
+          object.getTileSetColumnCount() * this.tileMapEditor.pickedTilesMinY +
+          this.tileMapEditor.pickedTilesMinX;
+
+        if (targetTileId === newTileId) {
+          return;
+        }
+
+        const tileMap = object.getTileMap();
+        if (!tileMap) {
+          return;
+        }
+        const dimX = tileMap.getDimensionX();
+        const dimY = tileMap.getDimensionY();
+
+        this.queue.length = 0;
+        this.queue.push(cursorTileX);
+        this.queue.push(cursorTileY);
+        while (this.queue.length >= 2) {
+          const tileY = this.queue.pop() || 0;
+          const tileX = this.queue.pop() || 0;
+          if (tileX < 0 || tileX >= dimX || tileY < 0 || tileY >= dimY) {
+            continue;
+          }
+          const currentTileId = object.getTileAtGridCoordinates(tileX, tileY);
+          if (currentTileId !== targetTileId) {
+            continue;
+          }
+
+          tileMap.setTile(tileX, tileY, 0, newTileId);
+          tileMap.flipTileOnX(
+            tileX,
+            tileY,
+            0,
+            this.tileMapEditor.arePickedTilesFlippedHorizontally
+          );
+          tileMap.flipTileOnY(
+            tileX,
+            tileY,
+            0,
+            this.tileMapEditor.arePickedTilesFlippedVertically
+          );
+
+          this.queue.push(tileX - 1);
+          this.queue.push(tileY);
+
+          this.queue.push(tileX + 1);
+          this.queue.push(tileY);
+
+          this.queue.push(tileX);
+          this.queue.push(tileY - 1);
+
+          this.queue.push(tileX);
+          this.queue.push(tileY + 1);
+        }
+      }
+
+      /**
+       * Save the tiles under the cursor to be able to restore them when the
+       * cursor moves.
+       */
+      private saveTilesUnderCursor(cursorTileX: integer, cursorTileY: integer) {
+        this.tileMapEditor.tilesRestorer.saveTilesUnderCursor(
+          cursorTileX,
+          cursorTileY,
+          this.tileMapEditor.getPickedTilesDimX(),
+          this.tileMapEditor.getPickedTilesDimY()
+        );
+      }
+
+      /**
+       * Revert displaying picked tiles at the cursor
+       */
+      private restoreTilesUnderCursor() {
+        this.tileMapEditor.tilesRestorer.restoreTilesUnderCursor();
+      }
+
+      /**
+       * Display picked tiles at the cursor
+       */
+      private displayCursorTiles(cursorTileX: integer, cursorTileY: integer) {
+        const object = this.tileMapEditor.object;
+        if (!object) {
+          return;
+        }
+        const pickedTilesMinX = this.tileMapEditor.pickedTilesMinX;
+        const pickedTilesMinY = this.tileMapEditor.pickedTilesMinY;
+        const pickedTilesDimX = this.tileMapEditor.getPickedTilesDimX();
+        const pickedTilesDimY = this.tileMapEditor.getPickedTilesDimY();
+        const isFlippedOnX =
+          this.tileMapEditor.arePickedTilesFlippedHorizontally;
+        const isFlippedOnY = this.tileMapEditor.arePickedTilesFlippedVertically;
+
+        for (let offsetY = 0; offsetY < pickedTilesDimY; offsetY++) {
+          for (let offsetX = 0; offsetX < pickedTilesDimX; offsetX++) {
+            const tileX = cursorTileX + offsetX;
+            const tileY = cursorTileY + offsetY;
+            const pickedTileX =
+              pickedTilesMinX +
+              (isFlippedOnX ? pickedTilesDimX - 1 - offsetX : offsetX);
+            const pickedTileY =
+              pickedTilesMinY +
+              (isFlippedOnY ? pickedTilesDimY - 1 - offsetY : offsetY);
+            const tileId =
+              object.getTileSetColumnCount() * pickedTileY + pickedTileX;
+            object.setTileAtGridCoordinates(tileId, tileX, tileY);
+            object.flipTileOnXAtGridCoordinates(tileX, tileY, isFlippedOnX);
+            object.flipTileOnYAtGridCoordinates(tileX, tileY, isFlippedOnY);
+          }
         }
       }
     }
