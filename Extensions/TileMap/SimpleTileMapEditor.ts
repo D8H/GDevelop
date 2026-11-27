@@ -66,6 +66,7 @@ namespace gdjs {
         this.currentTool.onStopBeingUsed();
       }
       this.currentTool = this.freeHandTool;
+      this.currentTool.onStartBeingUsed();
     }
 
     switchToRectangle(): void {
@@ -192,7 +193,7 @@ namespace gdjs {
         return [0, 0];
       }
       const result = tileMap.trimEmptyColumnsAndRowToFitLayer(0);
-      console.log("trimTileMap", result);
+      console.log('trimTileMap', result);
       if (!result) {
         return [0, 0];
       }
@@ -211,6 +212,7 @@ namespace gdjs {
   /** @internal */
   export namespace SimpleTileMapEditor {
     export interface SimpleTileMapEditorTool {
+      onStartBeingUsed(): void;
       update(tileMapEditor: SimpleTileMapEditor): void;
       onStopBeingUsed(): void;
     }
@@ -225,6 +227,16 @@ namespace gdjs {
 
       constructor(tileMapEditor: SimpleTileMapEditor) {
         this.tileMapEditor = tileMapEditor;
+      }
+
+      onStartBeingUsed(): void {
+        this.tileMapEditor.inGameEditor.setSelectionVisible(false);
+      }
+
+      onStopBeingUsed() {
+        this.restoreTilesUnderCursor();
+        this.tileMapEditor.trimTileMap();
+        this.tileMapEditor.inGameEditor.setSelectionVisible(true);
       }
 
       update(): void {
@@ -269,7 +281,6 @@ namespace gdjs {
           this.displayCursorTiles(cursorTileX, cursorTileY);
           // Avoid to revert the changes when the cursor moves.
           this.saveTilesUnderCursor(cursorTileX, cursorTileY);
-
         }
         if (isLeftMouseButtonReleased) {
           const tileMap = object.getTileMap();
@@ -289,11 +300,6 @@ namespace gdjs {
         this.oldCursorTileX = cursorTileX;
         this.oldCursorTileY = cursorTileY;
         this.wasLeftMouseButtonPressed = isLeftMouseButtonPressed;
-      }
-
-      onStopBeingUsed() {
-        this.restoreTilesUnderCursor();
-        this.tileMapEditor.trimTileMap();
       }
 
       /**

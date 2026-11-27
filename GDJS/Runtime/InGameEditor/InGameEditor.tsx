@@ -1777,6 +1777,7 @@ namespace gdjs {
     private _extensionToolbars = new Map<string, ExtensionToolbar>();
     private _extensionToolbarsContainer: HTMLElement | null = null;
     private _isEditing2DCustomObject = false;
+    private _isSelectionHidden = false;
 
     constructor(
       game: RuntimeGame,
@@ -3299,6 +3300,9 @@ namespace gdjs {
     }
 
     private _createBoundingBoxIfNeeded(object: RuntimeObject): void {
+      if (this._isSelectionHidden) {
+        return;
+      }
       {
         const objectBoxHelper = this._selectionBoxes.get(object);
         if (objectBoxHelper) {
@@ -3316,6 +3320,18 @@ namespace gdjs {
           : new ObjectSelectionBoxHelper3D(this, object);
       objectBoxHelper.setVisible(true);
       this._selectionBoxes.set(object, objectBoxHelper);
+    }
+
+    setSelectionVisible(visible: boolean) {
+      this._isSelectionHidden = !visible;
+      if (!visible) {
+        // Cleanup selection boxes
+        this._selectionBoxes.forEach((box) => {
+          box.setVisible(false);
+        });
+        this._selectionBoxes.clear();
+        this._selectionControls.remove();
+      }
     }
 
     activate(enable: boolean) {
@@ -4142,7 +4158,9 @@ namespace gdjs {
           }
         });
       this._updateInstances(instances);
-      this._selectionControls.forceUpdate();
+      if (!this._isSelectionHidden) {
+        this._selectionControls.forceUpdate();
+      }
     }
 
     addInstances(instances: Array<InstanceData>) {
@@ -4846,7 +4864,9 @@ namespace gdjs {
       this._capturedLeftMouseButton.update(inputManager);
       this._handleTransformControlsMode();
       this._handleCameraMovement();
-      this._selectionControls.step();
+      if (!this._isSelectionHidden) {
+        this._selectionControls.step();
+      }
       this._updateSelectionBox();
       this._handleSelection({ objectUnderCursor });
       this._updateSelectionOutline({ objectUnderCursor });
@@ -4857,7 +4877,7 @@ namespace gdjs {
       // they will be at (0; 0; 0) during the 1st step.
       // When they are selected and `switchToSceneOrVariant` has just been
       // called, it avoid to put the control at (0; 0; 0).
-      if (!this._isFirstFrame) {
+      if (!this._isFirstFrame && !this._isSelectionHidden) {
         this._selectionControls.update();
       }
       this._updateInnerAreaOutline();
