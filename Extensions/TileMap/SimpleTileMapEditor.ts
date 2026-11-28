@@ -247,27 +247,28 @@ namespace gdjs {
       if (!this.object) {
         return;
       }
+      const tileMap = this.object.getTileMap();
+      if (!tileMap) {
+        return;
+      }
       console.log('setCursorPosition', tileMinX, tileMinY);
-      let minX = this.object.getSceneXCoordinateOfTileCenter(
-        tileMinX - 0.5,
-        tileMinY - 0.5
+      const centerTileX = tileMinX + tileDimX / 2;
+      const centerTileY = tileMinY + tileDimY / 2;
+      const centerX = this.object.getSceneXCoordinateOfTileCenter(
+        centerTileX - 0.5,
+        centerTileY - 0.5
       );
-      let minY = this.object.getSceneYCoordinateOfTileCenter(
-        tileMinX - 0.5,
-        tileMinY - 0.5
+      const centerY = this.object.getSceneYCoordinateOfTileCenter(
+        centerTileX - 0.5,
+        centerTileY - 0.5
       );
-      let maxX = this.object.getSceneXCoordinateOfTileCenter(
-        tileMinX + tileDimX - 0.5,
-        tileMinY + tileDimY - 0.5
-      );
-      let maxY = this.object.getSceneYCoordinateOfTileCenter(
-        tileMinX + tileDimX - 0.5,
-        tileMinY + tileDimY - 0.5
-      );
-      this.cursor.position.x = (minX + maxX) / 2;
-      this.cursor.position.y = (minY + maxY) / 2;
-      this.cursor.scale.x = maxX - minX;
-      this.cursor.scale.y = maxY - minY;
+      this.cursor.position.x = centerX;
+      this.cursor.position.y = centerY;
+      this.cursor.scale.x =
+        tileDimX * tileMap.getTileWidth() * this.object.getScaleX();
+      this.cursor.scale.y =
+        tileDimY * tileMap.getTileHeight() * this.object.getScaleY();
+      this.cursor.rotation.z = gdjs.toRad(this.object.getAngle());
     }
 
     setCursorVisible(visible: boolean): void {
