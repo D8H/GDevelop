@@ -150,14 +150,16 @@ namespace gdjs {
       }
       const game = this.inGameEditor.getRuntimeGame();
 
+      const tileWidth = tileMap.getTileWidth() * this.object.getScaleX();
+      const tileHeight = tileMap.getTileHeight() * this.object.getScaleY();
+
       const zoomFactor = this.inGameEditor.getZoomFactor();
       const cameraTilesRadius =
         Math.floor(
           Math.max(
-            game.getGameResolutionWidth() /
-              Math.max(8, tileMap.getTileHeight() * zoomFactor),
+            game.getGameResolutionWidth() / Math.max(8, tileWidth * zoomFactor),
             game.getGameResolutionHeight() /
-              Math.max(8, tileMap.getTileWidth() * zoomFactor)
+              Math.max(8, tileHeight * zoomFactor)
           )
         ) /
           2 +
@@ -165,11 +167,9 @@ namespace gdjs {
       const cameraCenter = this.inGameEditor.getCameraCenterFor2D();
 
       const tileOffsetX =
-        (cameraCenter ? cameraCenter[0] - this.object.getX() : 0) /
-        tileMap.getTileWidth();
+        (cameraCenter ? cameraCenter[0] - this.object.getX() : 0) / tileWidth;
       const tileOffsetY =
-        (cameraCenter ? cameraCenter[1] - this.object.getY() : 0) /
-        tileMap.getTileHeight();
+        (cameraCenter ? cameraCenter[1] - this.object.getY() : 0) / tileHeight;
 
       const tileMinX = Math.floor(tileOffsetX - cameraTilesRadius);
       const tileMinY = Math.floor(tileOffsetY - cameraTilesRadius);
@@ -187,12 +187,7 @@ namespace gdjs {
         rowsToAppend,
         rowsToUnshift
       );
-      this.object.setX(
-        this.object.getX() - columnsToUnshift * tileMap.getTileWidth()
-      );
-      this.object.setY(
-        this.object.getY() - rowsToUnshift * tileMap.getTileHeight()
-      );
+      this.applyOffsetToObject(columnsToUnshift, rowsToUnshift);
 
       if (
         columnsToUnshift ||
@@ -228,14 +223,25 @@ namespace gdjs {
       }
       const shiftedColumns = result.shiftedColumns;
       const shiftedRows = result.shiftedRows;
-      this.object.setX(
-        this.object.getX() + shiftedColumns * tileMap.getTileWidth()
-      );
-      this.object.setY(
-        this.object.getY() + shiftedRows * tileMap.getTileHeight()
-      );
+      this.applyOffsetToObject(-shiftedColumns, -shiftedRows);
       this.tilesRestorer.handleTileOffset(-shiftedColumns, -shiftedRows);
       return [-shiftedColumns, -shiftedRows];
+    }
+
+    private applyOffsetToObject(tileOffsetX: integer, tileOffsetY: integer) {
+      if (!this.object) {
+        return;
+      }
+      const tileMap = this.object.getTileMap();
+      if (!tileMap) {
+        return;
+      }
+      const deltaX =
+        -tileOffsetX * tileMap.getTileWidth() * this.object.getScaleX();
+      const deltaY =
+        -tileOffsetY * tileMap.getTileHeight() * this.object.getScaleY();
+      this.object.setX(this.object.getX() + deltaX);
+      this.object.setY(this.object.getY() + deltaY);
     }
 
     setCursorPosition(
