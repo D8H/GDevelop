@@ -194,12 +194,21 @@ namespace gdjs {
         this.object.getY() - rowsToUnshift * tileMap.getTileHeight()
       );
 
-      console.log(
-        columnsToUnshift,
-        rowsToUnshift,
-        columnsToAppend,
+      if (
+        columnsToUnshift ||
+        rowsToUnshift ||
+        columnsToAppend ||
         rowsToAppend
-      );
+      ) {
+        console.log(
+          'expandTileMapToCamera',
+          columnsToUnshift,
+          rowsToUnshift,
+          columnsToAppend,
+          rowsToAppend
+        );
+      }
+
       this.tilesRestorer.handleTileOffset(columnsToUnshift, rowsToUnshift);
       return [columnsToUnshift, rowsToUnshift];
     }
@@ -238,6 +247,7 @@ namespace gdjs {
       if (!this.object) {
         return;
       }
+      console.log('setCursorPosition', tileMinX, tileMinY);
       let minX = this.object.getSceneXCoordinateOfTileCenter(
         tileMinX - 0.5,
         tileMinY - 0.5
@@ -332,6 +342,13 @@ namespace gdjs {
         const isLeftMouseButtonPressed = inputManager.isMouseButtonPressed(0);
         const isLeftMouseButtonReleased = inputManager.isMouseButtonReleased(0);
 
+        this.tileMapEditor.setCursorPosition(
+          cursorTileX,
+          cursorTileY,
+          this.tileMapEditor.getPickedTilesDimX(),
+          this.tileMapEditor.getPickedTilesDimY()
+        );
+
         if (hasCursorMoved) {
           this.restoreTilesUnderCursor();
         }
@@ -388,13 +405,6 @@ namespace gdjs {
         this.oldCursorTileX = cursorTileX;
         this.oldCursorTileY = cursorTileY;
         this.wasLeftMouseButtonPressed = isLeftMouseButtonPressed;
-
-        this.tileMapEditor.setCursorPosition(
-          cursorTileX,
-          cursorTileY,
-          this.tileMapEditor.getPickedTilesDimX(),
-          this.tileMapEditor.getPickedTilesDimY()
-        );
       }
 
       /**
@@ -501,6 +511,8 @@ namespace gdjs {
         const isLeftMouseButtonPressed = inputManager.isMouseButtonPressed(0);
         const isLeftMouseButtonReleased = inputManager.isMouseButtonReleased(0);
 
+        this.setCursorPosition(cursorTileX, cursorTileY);
+
         if (hasCursorMoved) {
           this.restoreTilesUnderCursor();
         }
@@ -545,7 +557,9 @@ namespace gdjs {
         this.oldCursorTileX = cursorTileX;
         this.oldCursorTileY = cursorTileY;
         this.wasLeftMouseButtonPressed = isLeftMouseButtonPressed;
+      }
 
+      private setCursorPosition(cursorTileX: integer, cursorTileY: integer) {
         let rectangleMinX: integer;
         let rectangleMinY: integer;
         let rectangleDimX: integer;
@@ -714,6 +728,13 @@ namespace gdjs {
           cursorTileY !== this.oldCursorTileY;
         const isLeftMouseButtonReleased = inputManager.isMouseButtonReleased(0);
 
+        this.tileMapEditor.setCursorPosition(
+          cursorTileX,
+          cursorTileY,
+          this.tileMapEditor.getPickedTilesDimX(),
+          this.tileMapEditor.getPickedTilesDimY()
+        );
+
         if (hasCursorMoved) {
           this.restoreTilesUnderCursor();
         }
@@ -734,13 +755,6 @@ namespace gdjs {
         }
         this.oldCursorTileX = cursorTileX;
         this.oldCursorTileY = cursorTileY;
-
-        this.tileMapEditor.setCursorPosition(
-          cursorTileX,
-          cursorTileY,
-          this.tileMapEditor.getPickedTilesDimX(),
-          this.tileMapEditor.getPickedTilesDimY()
-        );
       }
 
       private floodFillAt(cursorTileX: integer, cursorTileY: integer): void {
@@ -908,6 +922,8 @@ namespace gdjs {
         const isLeftMouseButtonPressed = inputManager.isMouseButtonPressed(0);
         const isLeftMouseButtonReleased = inputManager.isMouseButtonReleased(0);
 
+        this.setCursorPosition(cursorTileX, cursorTileY);
+
         {
           const [tileOffsetX, tileOffsetY] =
             this.tileMapEditor.expandTileMapToCamera();
@@ -934,7 +950,9 @@ namespace gdjs {
           }
         }
         this.wasLeftMouseButtonPressed = isLeftMouseButtonPressed;
+      }
 
+      private setCursorPosition(cursorTileX: integer, cursorTileY: integer) {
         let rectangleMinX: integer;
         let rectangleMinY: integer;
         let rectangleDimX: integer;
